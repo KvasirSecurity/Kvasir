@@ -1,0 +1,178 @@
+{{extend 'layout.html'}}
+
+<div class="row-fluid">
+    <div class="span8">
+        <div class="widget-box">
+            <div class="widget-title">
+                <span class="icon">
+                 <i class="icon-info-sign"></i>
+                </span>
+                <h5>{{=T('IPv4 Calculator')}}</h5>
+            </div>
+            <div class="widget-content">
+                <form id="ipv4_subnet" name="ipv4_subnet">
+                <input type="text" size="14" name="in_ipv4_address" value="192.168.0.0" onkeyup="update_ipv4();" /> /
+                    <select name="in_ipv4_netmask" id="in_ipv4_netmask" onchange="update_ipv4();">
+                        <option value="32">255.255.255.255 (32 bits)</option>
+                        <option value="31">255.255.255.254 (31 bits)</option>
+                        <option value="30">255.255.255.252 (30 bits)</option>
+                        <option value="29">255.255.255.248 (29 bits)</option>
+                        <option value="28">255.255.255.240 (28 bits)</option>
+                        <option value="27">255.255.255.224 (27 bits)</option>
+                        <option value="26">255.255.255.192 (26 bits)</option>
+                        <option value="25">255.255.255.128 (25 bits)</option>
+                        <option selected value="24">255.255.255.0   (24 bits)</option>
+                        <option value="23">255.255.254.0   (23 bits)</option>
+                        <option value="22">255.255.252.0   (22 bits)</option>
+                        <option value="21">255.255.248.0   (21 bits)</option>
+                        <option value="20">255.255.240.0   (20 bits)</option>
+                        <option value="19">255.255.224.0   (19 bits)</option>
+                        <option value="18">255.255.192.0   (18 bits)</option>
+                        <option value="17">255.255.128.0   (17 bits)</option>
+                        <option value="16">255.255.0.0     (16 bits)</option>
+                        <option value="15">255.254.0.0     (15 bits)</option>
+                        <option value="14">255.252.0.0     (14 bits)</option>
+                        <option value="13">255.248.0.0     (13 bits)</option>
+                        <option value="12">255.240.0.0     (12 bits)</option>
+                        <option value="11">255.224.0.0     (11 bits)</option>
+                        <option value="10">255.192.0.0     (10 bits)</option>
+                        <option value="9" >255.128.0.0     (9 bits)</option>
+                        <option value="8" >255.0.0.0       (8 bits)</option>
+                        <option value="7" >254.0.0.0       (7 bits)</option>
+                        <option value="6" >252.0.0.0       (6 bits)</option>
+                        <option value="5" >248.0.0.0       (5 bits)</option>
+                        <option value="4" >240.0.0.0       (4 bits)</option>
+                        <option value="3" >224.0.0.0       (3 bits)</option>
+                        <option value="2" >192.0.0.0       (2 bits)</option>
+                        <option value="1" >128.0.0.0       (1 bits)</option>
+                        <option value="0" >0.0.0.0         (0 bits)</option>
+                    </select>
+                </form>
+
+                <table class="table table-striped" id="ipv4_table">
+                    <tbody>
+                        <tr>
+                            <th></th>
+                            <th>dot quad</th>
+                            <th>binary quad</th>
+                            <th>integer</th>
+                            <th>count</th>
+                        </tr><tr>
+                            <th>Address:</th>
+                            <td><code><span id="ipv4_dotquad">unset</span></td>
+                            <td><code><span id="ipv4_binary">unset</span></code></td>
+                            <td style="text-align:right"><code><span id="ipv4_integer">unset</span></code></td>
+                            <td></td>
+                        </tr><tr>
+                            <th>Netmask:</th>
+                            <td><code><span id="ipv4_netmask_dotquad">unset</span></code></td>
+                            <td><code><span id="ipv4_netmask_binary">unset</span></code></td>
+                            <td style="text-align:right"><code><span id="ipv4_netmask_integer">unset</span></code></td>
+                            <td><code><span id="ipv4_netmask_bits">unset</span></code></td>
+                        </tr><tr>
+                            <th>Network:</th>
+                            <td><code><span id="ipv4_netaddress_dotquad">unset</span></code></td>
+                            <td><code><span id="ipv4_netaddress_binary">unset</span></code></td>
+                            <td style="text-align:right"><code><span id="ipv4_netaddress_integer">unset</span></code></td>
+                            <td></td>
+                        </tr><tr>
+                            <th>Broadcast:</th>
+                            <td><code><span id="ipv4_netbcast_dotquad">unset</span></code></td>
+                            <td><code><span id="ipv4_netbcast_binary">unset</span></code></td>
+                            <td style="text-align:right"><code><span id="ipv4_netbcast_integer">unset</span></code></td>
+                            <td><code><span id="ipv4_netpossible_quantity">unset</span></code></td>
+                        </tr>
+                    </tbody>
+                </table>
+
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row-fluid">
+    <div class="span8">
+        <div class="widget-box">
+            <div class="widget-title">
+                <span class="icon">
+                 <i class="icon-info-sign"></i>
+                </span>
+                <h5>{{=T('IPv6 Calculator')}}</h5>
+            </div>
+            <div class="widget-content">
+
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row-fluid">
+    <div class="span8">
+        <div class="widget-box">
+            <div class="widget-title">
+                <span class="icon">
+                 <i class="icon-info-sign"></i>
+                </span>
+                <h5>{{=T('Teredo Decode')}}</h5>
+            </div>
+            <div class="widget-content">
+                <label>Teredo Address:</label>
+                <input id="teredo" type="text" placeholder="Enter Teredo address...">
+                <button type="submit" onclick="teredocalc();" class="btn btn-small">Convert</button>
+                <table class="table table-condensed">
+                    <tr>
+                        <td>Teredo Prefix</td>
+                        <td id="teredo-prefix"></td>
+                    </tr>
+                    <tr>
+                        <td>Teredo Server</td>
+                        <td id="teredo-server"></td>
+                    </tr>
+                    <tr>
+                        <td>Teredo IP</td>
+                        <td id="teredo-ip"></td>
+                        </tr>
+                    <tr>
+                        <td>Teredo Port</td>
+                        <td id="teredo-port"></td>
+                    </tr>
+                    <tr>
+                        <td>Teredo Flags</td>
+                        <td id="teredo-flags"></td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script type="text/javascript">
+    function update_ipv4( ) {
+        for( s = 0; s < 33; s ++ ) {
+            if( document.ipv4_subnet.in_ipv4_netmask[s].selected ) {
+                use_subnet_bits = document.ipv4_subnet.in_ipv4_netmask[s].value;
+            }
+        }
+        var myIP = new IPv4_Address( document.ipv4_subnet.in_ipv4_address.value, use_subnet_bits );
+        document.getElementById( 'ipv4_dotquad' ).firstChild.data = myIP.addressDotQuad;
+        document.getElementById( 'ipv4_integer' ).firstChild.data = myIP.addressInteger;
+        document.getElementById( 'ipv4_binary' ).firstChild.data = IPv4_BinaryDotQuad( myIP.addressBinStr );
+
+        document.getElementById( 'ipv4_netmask_dotquad' ).firstChild.data = myIP.netmaskDotQuad;
+        document.getElementById( 'ipv4_netmask_integer' ).firstChild.data = myIP.netmaskInteger;
+        document.getElementById( 'ipv4_netmask_binary' ).firstChild.data = IPv4_BinaryDotQuad( myIP.netmaskBinStr );
+        document.getElementById( 'ipv4_netmask_bits' ).firstChild.data = myIP.netmaskBits + ' bits';
+
+        document.getElementById( 'ipv4_netaddress_binary' ).firstChild.data = IPv4_BinaryDotQuad( myIP.netaddressBinStr );
+        document.getElementById( 'ipv4_netaddress_integer' ).firstChild.data = myIP.netaddressInteger;
+        document.getElementById( 'ipv4_netaddress_dotquad' ).firstChild.data = myIP.netaddressDotQuad;
+
+        document.getElementById( 'ipv4_netbcast_binary' ).firstChild.data = IPv4_BinaryDotQuad( myIP.netbcastBinStr );
+        document.getElementById( 'ipv4_netbcast_integer' ).firstChild.data = myIP.netbcastInteger;
+        document.getElementById( 'ipv4_netbcast_dotquad' ).firstChild.data = myIP.netbcastDotQuad;
+
+        document.getElementById( 'ipv4_netpossible_quantity' ).firstChild.data = ( parseFloat( myIP.netbcastInteger ) - parseFloat( myIP.netaddressInteger ) +1 ) + ' IPs';
+    }
+
+    window.onload(update_ipv4());
+</script>

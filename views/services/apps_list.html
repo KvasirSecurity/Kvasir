@@ -1,0 +1,10 @@
+{{extend 'layout.html'}}
+
+<h2>Select services_apps</h2>
+
+{{if rows:}}
+  {{headers=dict((str(k),k.label) for k in db.t_services_apps_refs)}}
+  {{=SQLTABLE(rows,headers=headers)}}
+{{else:}}
+  {{=TAG.blockquote(T('No Data'))}}
+{{pass}}

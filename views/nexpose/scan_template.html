@@ -1,0 +1,11 @@
+{{extend 'layout.html'}}
+
+<h2>List Nexpose Scan Templates</h2>
+{{=form}}
+
+<div class="table">
+     <table>
+         {{for e in html:}}<TR><TD>{{=e}}</TD></TR>{{pass}}
+     </table>
+</div>
+{{=form2}}

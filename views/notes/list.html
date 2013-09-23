@@ -1,0 +1,48 @@
+{{extend 'layout.html'}}
+
+{{=XML(add_note.formModal())}}
+<div id="notes_list">
+    <div id="notessbtns" class="navbar btn-toolbar">
+        {{=XML(add_note.btn_show())}}
+        <a id="delete_note" class="btn btn-small"><i class="icon-remove"></i> Delete</a>
+        <a id="reload_note" class="btn btn-small" onclick="javascript:notestable.fnReloadAjax(); return false;"><i class="icon-refresh"></i> Reload</a>
+    </div>
+    {{=notes}}
+</div>
+
+<script>
+var notestable;
+
+jQuery(document).ready(function() {
+
+    $("#delete_note").click(function(e) {
+        e.preventDefault();
+
+        //bootbox.options.onEscape =
+        var checks = dt_checkboxer_select_DT_RowIds(notestable);
+        if (checks == '') { alert('Nothing selected'); return false; }
+
+        bootbox.confirm('These items will be permanently deleted and cannot be recovered. Are you sure?', "Cancel", "Delete Note(s)", function(confirmed) {
+            if(confirmed) {
+                var data = "note_ids=" + checks;
+                url = "{{=URL('notes', 'delete.json', user_signature=True)}}";
+                $.web2py.ajax_page( 'POST', url, data, 'undefined' );
+            }
+        });
+    });
+
+    notestable = jQuery('#notestable').dataTable( {
+        "sDom": 'T<"clear"><"checkboxer-min">lfrtip',
+        "oTableTools": {
+            "sRowSelect": "multi",
+            "sSelectedClass": "row_selected",
+            "sSwfPath": "{{=URL('static', 'TableTools/swf/copy_csv_xls.swf')}}"
+        },
+        {{if request.args(0):}}
+        "sAjaxSource": "{{=URL('list.json', args=request.args(0))}}",
+        {{else:}}
+        "sAjaxSource": "{{=URL('list.json')}}",
+        {{pass}}
+    } );
+} );
+</script>

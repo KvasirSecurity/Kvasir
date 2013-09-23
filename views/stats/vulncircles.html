@@ -1,0 +1,111 @@
+{{extend 'layout.html'}}
+
+  <div class="widget-box">
+    <div class="widget-title">
+      <span class="icon">
+        <i class="icon-signal"></i>
+      </span>
+      <h5>Vulnerabilities</h5>
+    </div>
+    <div class="widget-content">
+      <div id="loading">
+        loading...    
+      </div>
+      <div id="vulncircles">
+        <svg></svg>
+      </div>
+    </div>
+  </div>
+
+<!-- Dependencies -->
+<link href="{{=URL('static','css/tipsy.css')}}" rel="stylesheet" type="text/css" />
+<script src="{{=URL('static','js/jquery.tipsy.js')}}"></script>
+
+<script type="text/javascript">
+
+var rd;
+var node;
+
+var diameter = 960,
+    format = d3.format(",d"),
+    color = d3.scale.category20c();
+
+var bubble = d3.layout.pack()
+    .sort(null)
+    .size([diameter, diameter])
+    .padding(1.75);
+
+var svg = d3.select("#vulncircles svg").attr("width", diameter)
+    .attr("height", diameter)
+    .attr("class", "bubble");
+
+d3.json("{{=URL('stats', 'vulncircles_data.json')}}", function(error, root) {
+
+  node = svg.selectAll(".node")
+      .data(bubble.nodes(classes(root))
+      .filter(function(d) { return !d.children; }))
+    .enter().append("a") // A element
+      .attr("class", "node")
+      .attr("xlink:href", function(d) { 
+        return "{{=URL('vulns', 'vulninfo_by_vulnid')}}" + "/" + d.packageName; })
+      .attr("transform", function(d) { return "translate(" + d.x + "," + d.y + ")"; });
+
+  node.append("circle")
+      .attr("r", function(d) { return d.r; })
+      .style("fill", function(d) { return color(d.packageName); })
+    .on("mouseover", function(d, i) {      
+      d3.select(this).style("fill", d3.rgb(31, 120, 180)).style("stroke","black").style("stroke-width", "2px");
+    })
+    .on("mouseout", function() {
+      d3.select(this).style("fill", function(d) { return color(d.packageName); }).style("stroke", function(d) { return color(d.packageName); })
+    });
+
+  node.append("text")
+      .attr("dy", ".3em")
+      .style("text-anchor", "middle")
+      // .text(function(d) { return d.className });
+      .text(function(d) { return d.className.substring(0, d.r / 2); });
+
+  $('svg circle').tipsy({
+    gravity: 'w',
+    html: true,
+    title: function() {
+      var d = this.__data__;
+      var vulnName = d.className;
+      var vulnVal = d.value;
+      return vulnName + "<br> Score: " + vulnVal; 
+    }
+  }); 
+
+  $('svg text').tipsy({
+    gravity: 'w',
+    html: true,
+    title: function() {
+      var d = this.__data__;      
+      var vulnName = d.className;
+      var vulnVal = d.value;
+      return vulnVal; 
+    }
+  }); 
+
+  $('#loading').fadeOut();
+
+});
+
+// Returns a flattened hierarchy containing all leaf nodes under the root.
+function classes(root) {
+  var classes = [];
+
+  function flatten(name, node) {
+    for (i=0;i<node.length;i++) {
+      node[i].children.forEach(function(child) {
+        classes.push({packageName: child.name, className: child.name, value: child.size });
+      });
+    }
+  }
+
+  flatten(null,root);
+  return {children: classes};
+}
+
+</script>

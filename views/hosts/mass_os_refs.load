@@ -1,0 +1,10 @@
+<style type="text/css">
+    #mass_os_form input {
+        width: 300px;
+    }
+</style>
+
+<div class="span4">
+    {{=form}}
+</div>
+

@@ -1,0 +1,47 @@
+{{extend 'layout.html'}}
+
+<div id="accounts_list">
+    <div id="accountsbtns" class="navbar btn-toolbar">
+            <a id="delete_account" class="btn btn-small"><i class="icon-remove"></i> Delete</a>
+    </div>
+    {{=form}}
+</div>
+
+<script>
+var accounttable;
+
+jQuery(document).ready(function() {
+
+    var accounttable = jQuery('#accounttable').dataTable( {
+        "sDom": 'T<"clear">lfrtip',
+        "oTableTools": {
+            "sRowSelect": "multi",
+            "sSelectedClass": "row_selected",
+            "sSwfPath": "{{=URL(request.application, 'static', 'TableTools/swf/copy_csv_xls.swf')}}",
+            "aButtons": [
+                "select_all",
+                "select_none",
+                "copy",
+                "csv",
+                "print"
+            ]
+        }
+    } );
+
+    jQuery("#delete_account").click(function(e) {
+        e.preventDefault();
+
+        //bootbox.options.onEscape =
+        bootbox.confirm('These items will be permanently deleted and cannot be recovered. Are you sure?', "Cancel", "Delete", function(confirmed) {
+            if(confirmed) {
+                var checks = dt_checkboxer_select_DT_RowIds(accounttable);
+                if (checks == '') { alert('Nothing selected'); return false; }
+                var data = "ids=" + checks;
+                url = "{{=URL('accounts', 'delete.json', user_signature=True)}}"
+                $.web2py.ajax_page( 'POST', url, data, 'undefined' );
+            }
+        });
+    });
+
+} );
+</script>

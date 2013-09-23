@@ -1,0 +1,10 @@
+{{
+if settings is not None:
+    import cStringIO
+    stream=cStringIO.StringIO()
+    form.export_to_csv_file(stream)
+    response.headers['Content-Type']='application/vnd.ms-excel'
+    response.write(stream.getvalue(), escape=False)
+else:
+    response.write("No settings")
+}}

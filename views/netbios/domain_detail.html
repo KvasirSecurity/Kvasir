@@ -1,0 +1,58 @@
+{{extend 'layout.html'}}
+
+<form action="#" name="domainform">
+Select a domain: {{=SELECT('', OPTGROUP(domains), _name="domain", _onchange="document.domainform.submit();")}}
+</form>
+
+{{=table}}
+
+<script type="text/javascript" language="javascript">
+
+var accounttable;
+
+jQuery(document).ready(function() {
+
+    netbiostable = $('#netbiostable').dataTable( {
+        "sDom": 'TC<"clear">lfrtip',
+        "oTableTools": {
+            "sSwfPath": "{{=URL('static','TableTools/swf/copy_csv_xls.swf')}}"
+        },
+        "aoColumnDefs": [
+            { "bVisible": false, "aTargets": [2] }
+        ],
+        "aaSorting": [[ 1, "asc" ]],
+    } );
+
+    function accountDetails ( nTr ) {
+        var aData = netbiostable.fnGetData( nTr );
+        var rData = JSON.parse(aData[2])
+        var sOut = "<table class=\"table\">\n"
+        sOut += "<thead><tr><th>Username</th><th>Password</th><th>Level</th><th>Hashes</th><th>Source</th><th>Port</th></thead>\n"
+        sOut += "<tbody>\n"
+        for (i=0; i < rData.length; i++) {
+            sOut += "<tr>"
+            for (x=0; x < rData[i].length; x++) {
+                sOut += "<td>" + rData[i][x] + "</td>\n"
+            }
+            sOut += "</tr>\n"
+        }
+        sOut += "</table>\n"
+        return sOut;
+    }
+
+    jQuery('#netbiostable tbody td img').live( 'click', function () {
+        var nTr = this.parentNode.parentNode;
+        if ( this.src.match('details_close') ) {
+            /* This row is already open - close it */
+            this.src = "{{=URL('static','images/details_open.png')}}";
+            netbiostable.fnClose( nTr );
+        } else {
+            /* Open this row */
+            this.src = "{{=URL('static','images/details_close.png')}}";
+            netbiostable.fnOpen( nTr, accountDetails(nTr), 'details' );
+        }
+        $(nTr).removeClass('row_selected');
+    } );
+
+} );
+</script>

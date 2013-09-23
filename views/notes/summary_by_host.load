@@ -1,0 +1,62 @@
+<style>
+  div.dataTables_scrollHead {
+    display: none;
+  }
+</style>
+
+<div>
+    <span>
+        <a href="#" onclick="javascript:notesumstable.fnReloadAjax();"><i class="icon-refresh" id="notesumtable_refresh"></i> Refresh</a>
+        <a href="{{=URL('notes', 'list', extension='html', args=request.args(0))}}" target="_blank"><i class="icon-share-alt"></i> New Window</a>
+    </span>
+    <form id="notes_sum_add_form" enctype="multipart/form-data">
+    <textarea style="width:95%; height:30px;" id="textarea_notes_summ" name="f_note"></textarea>
+    <input type="hidden" name="f_hosts_id" value="{{=request.args(0)}}">
+    <input type="hidden" name="_formname" value="t_host_notes_create">
+
+    </form>
+    {{=notes}}
+</div>
+
+
+<script>
+var notesumstable;
+function delnotes_summ(id)
+{
+    data = "note_ids=" + id
+    url = "{{=URL('notes', 'delete.json', user_signature=True)}}"
+    $.web2py.ajax_page( 'POST', url, data, 'undefined' );
+}
+
+jQuery(document).ready(function() {
+
+  notesumstable = jQuery('#notestable_summary').dataTable( {
+    "bPaginate": false,
+    "bProcessing": true,
+    "bJQueryUI": false,
+    "bAutoWidth": false,
+    "sScrollY": "100px",
+    "bFilter": false,
+    "bSort": false,
+    "sAjaxSource": "{{=URL('summary_by_host', extension='json', args=request.args(0))}}",
+    "bRetrieve": true,
+    "aoColumnDefs": [
+        { "sWidth": "5%", "aTargets": [ 0 ] }
+    ],
+  } );
+
+  jQuery('#textarea_notes_summ').keypress(function(event){
+    if(event.which == 13)
+    {
+        if($('#textarea_notes_summ').val()=="") return false;
+        var data = jQuery('#notes_sum_add_form').serialize();
+        url = "{{=URL('notes', 'add_ajax.json')}}";
+        $.web2py.ajax_page( 'POST', url, data, 'undefined' );
+        $('#textarea_notes_summ').val('');
+        return false;
+    }
+} );
+
+} );
+
+</script>

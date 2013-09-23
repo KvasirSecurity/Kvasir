@@ -1,0 +1,116 @@
+{{extend 'layout.html'}}
+
+<link rel="stylesheet" type="text/css" media="screen" href="{{=URL('static','fancybox/jquery.fancybox-1.3.4.css')}}"></link>
+<script src="{{=URL('static','fancybox/jquery.fancybox-1.3.4.pack.js')}}"></script>
+
+<br/>
+
+<div id="evidence_list">
+
+    <div id="evidence_buttons" class="navbar btn-toolbar">
+        <a id="add_evidence" href="#add_evidence_modal" data-toggle="modal" class="btn btn-small"><i class="icon-plus"></i> Add</a>
+        <a id="delete_evidence" class="btn btn-small"><i class="icon-remove"></i> Delete</a>
+        <a id="reload_evidence" class="btn btn-small" onclick="javascript:evidencetable.fnReloadAjax(); return false;"><i class="icon-refresh"></i> Reload</a>
+    </div>
+
+    {{
+    if evidence:
+        =evidence
+    else:
+        =TAG.blockquote(T('No Data'))
+    pass
+    }}
+</div>
+
+<div id="add_evidence_modal" class="modal hide fade" tabindex="-1" role="dialog" aria-hidden="true">
+    <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal" aria-hidden="true">?</button>
+        <h3 id="add_evidence_header">Add Evidence</h3>
+    </div>
+
+    <div class="modal-body">
+    </div>
+
+    <div class="modal-footer">
+        <button class="btn" data-dismiss="modal" aria-hidden="true">Close</button>
+        <button class="btn btn-primary add_evidence_saveBtn">Save</button>
+    </div>
+</div>
+
+<script>
+var evidencetable;
+
+jQuery(document).ready(function() {
+
+    $("#delete_evidence").click(function(e) {
+        e.preventDefault();
+
+        //bootbox.options.onEscape =
+        bootbox.confirm('These items will be permanently deleted and cannot be recovered. Are you sure?', "Cancel", "Delete", function(confirmed) {
+            if(confirmed) {
+                var checks = dt_checkboxer_select_DT_RowIds(evidencetable);
+                if (checks == '') { alert('Nothing selected'); return false; }
+                var data = "ids=" + checks;
+                url = "{{=URL('delete.json', user_signature=True)}}"
+                $.web2py.ajax_page( 'POST', url, data, 'undefined' );
+            }
+        });
+    });
+
+    jQuery(document).ready(function() {
+        jQuery("#t_evidence_f_hosts_id").chosen();
+        jQuery('#t_evidence_f_other_type__row').hide();
+        jQuery('#t_evidence_f_type').change(function() {
+            if(jQuery('#t_evidence_f_type option:selected').val() == "Other") {
+                jQuery('#t_evidence_f_other_type__row').show();
+            } else {
+                jQuery('#t_evidence_f_other_type__row').hide();
+            }
+        } );
+    } );
+
+    jQuery("#add_evidence_modal").on('show', function() {
+        jQuery("#add_evidence_modal .modal-body").load("{{
+            if host:
+                =URL('evidence', 'add.load', args=[host.id])
+            else:
+                =URL('evidence', 'add.load')
+            pass
+            }}");
+    });
+
+    jQuery("#add_evidence_modal .add_evidence_saveBtn").on("click", function(event) {
+        ajax_form_submit('#evidence_add_form');
+        jQuery('#add_evidence_modal').modal('hide');
+    });
+
+    evidencetable = jQuery('#evidencetable').dataTable( {
+        "sDom": 'T<"clear">lfrtip',
+        "oTableTools": {
+            "sRowSelect": "multi",
+            "sSelectedClass": "row_selected",
+            "sSwfPath": "{{=URL('static', 'TableTools/swf/copy_csv_xls.swf')}}",
+            "aButtons": [
+                "select_all",
+                "select_none",
+                "copy",
+                "csv",
+                "print"
+            ]
+        },
+        "fnDrawCallback": function() {
+            jQuery('a#evidence_image').fancybox();
+        },
+        "aoColumnDefs": [
+            { "bSortable": false, "aTargets": [ 0 ] }
+        ],
+        "aaSorting": [[ 1, "asc" ]],
+        "sAjaxSource": "{{=URL('list.json', args=request.args(0))}}",
+    } );
+
+    $.extend( $.fn.dataTableExt.oStdClasses, {
+        "sWrapper": "dataTables_wrapper form-inline",
+    } );
+
+} );
+</script>

@@ -1,0 +1,28 @@
+{{extend 'layout.html'}}
+<div class="row-fluid">
+{{if request.args(0)=='login':}}
+    <div class="span4">
+        <div id="signin-logo">
+            <img src="{{=URL('static', '/images/Kvasir_portrait.png')}}">
+        </div>
+    </div>
+{{pass}}
+    <div class="span8">
+        <div id="signin">
+            <div class="widget-box">
+                <div class="widget-title">
+                    <h5>Enter username and password to continue.</h5> 
+                </div>    
+                <div class="widget-content">
+                    {{=form}}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{{if request.env.remote_addr in ['::1', '127.0.0.1', '::ffff:127.0.0.1']:}}
+<div class="alert alert-block">
+    <p>Since you're connecting via localhost you can <a href="{{=URL('appadmin', 'insert/db/auth_user')}}">create a new user</a></p>
+</div>
+{{pass}}

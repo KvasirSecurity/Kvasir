@@ -1,0 +1,20 @@
+{{if alert:}}
+<div class="alert-msf-settings">
+      <div class="alert alert-block alert-error fade in">
+        <button type="button" class="close" data-dismiss="alert">&times;</button>
+        <h4 class="alert-heading">Invalid Metasploit Pro Settings</h4>
+        <p>Unable to speak to Metasploit Pro via the API. This could be due to the service not being active,
+           firewalls or network connectivity, invalid API key, etc.</p>
+        {{if error:}}
+        <br>
+        <h4 class="alert-heading">Error message</h4>
+        <p>{{=error}}</p>
+        {{pass}}
+        <br>
+        <p>
+          <a class="btn btn-small btn-danger" href="{{=URL('metasploit', 'api_settings')}}">Edit Metasploit API Settings</a>
+        </p>
+      </div>
+    </div>
+</div>
+{{pass}}

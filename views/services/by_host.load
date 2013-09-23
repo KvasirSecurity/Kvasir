@@ -1,0 +1,103 @@
+<h2>Services for host {{=host_title_maker(host)}}</h2>
+
+{{=XML(add.formModal())}}
+
+<div id="services_list">
+    <div id="services_buttons" class="navbar btn-toolbar">
+        {{=XML(add.btn_show())}}
+        <a id="delete_service" class="btn btn-small"><i class="icon-remove"></i> Delete</a>
+        <a id="webshot_service" class="btn btn-small"><i class="icon-camera"></i> Webshot</a>
+        <a id="reload_service" class="btn btn-small" onclick="javascript:servicetable.fnReloadAjax(); return false;"><i class="icon-refresh"></i> Reload</a>
+    </div>
+    {{=form}}
+</div>
+
+<script>
+var servicetable;
+
+function serviceDetails ( nTr ) {
+    var aData = servicetable.fnGetData( nTr );
+    var sOut = aData[1]
+
+    return sOut;
+}
+
+jQuery(document).ready(function() {
+
+    $("#delete_service").click(function(e) {
+        e.preventDefault();
+
+        //bootbox.options.onEscape =
+        bootbox.confirm('These items will be permanently deleted and cannot be recovered. Are you sure?', "Cancel", "Delete", function(confirmed) {
+            if(confirmed) {
+                var checks = dt_checkboxer_select_DT_RowIds(servicetable);
+                if (checks == '') { alert('Nothing selected'); return false; }
+                var data = "ids=" + checks;
+                url = "{{=URL('services', 'delete.json', user_signature=True)}}"
+                $.web2py.ajax_page( 'POST', url, data, 'undefined' );
+            }
+        });
+    });
+
+    $("#webshot_service").click(function(e) {
+        e.preventDefault();
+
+        var checks = dt_checkboxer_select_DT_RowIds(servicetable);
+        if (checks == '') {
+            alert('No services selected');
+            return false;
+        }
+
+        bootbox.confirm('Grab web screenshots?', "Cancel", "Ok", function(confirmed) {
+            if(confirmed) {
+                var data = "ids=" + checks;
+                url = "{{=URL('services', 'webshot_ajax.json', user_signature=True)}}";
+                $.web2py.ajax_page( 'POST', url, data, 'undefined' );
+            }
+        });
+    });
+
+    servicetable = jQuery('#servicetable').dataTable( {
+        "sDom": 'T<"clear">lfrtip',
+        "oTableTools": {
+            "sRowSelect": "multi",
+            "sSelectedClass": "row_selected",
+            "sSwfPath": "{{=URL('static','TableTools/swf/copy_csv_xls.swf')}}",
+            "aButtons": [
+                "select_all",
+                "select_none",
+                "copy",
+                "csv"
+            ]
+        },
+        "aoColumns": [
+            /* MoreInfo */  null,
+            /* Info */      { "bVisible": false },
+            /* Edit */      null,
+            /* Proto */     { "aDataSort": [ 3, 4] },
+            /* Port */      { "aDataSort": [ 4, 3 ] },
+            /* Status */    null,
+            /* Name */      null,
+            /* Banner */    null,
+        ],
+        "aaSorting": [[ 4, "asc" ]],
+        "sAjaxSource": "{{=URL('by_host.json', args=request.args(0))}}",
+    } );
+
+    jQuery('#servicetable tbody td img').live( 'click', function () {
+        var nTr = this.parentNode.parentNode;
+        if ( this.src.match('details_close') ) {
+            /* This row is already open - close it */
+            this.src = "{{=URL('static','images/details_open.png')}}";
+            servicetable.fnClose( nTr );
+        } else {
+            /* Open this row */
+            this.src = "{{=URL('static','images/details_close.png')}}";
+            servicetable.fnOpen( nTr, serviceDetails(nTr), 'details' );
+        }
+        $(nTr).removeClass('row_selected');
+} );
+
+} );
+</script>
+

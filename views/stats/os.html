@@ -1,0 +1,138 @@
+{{extend 'layout.html'}}
+
+<div id="toolbar" class="btn-toolbar">
+    <a id="filter_hosts" class="btn btn-small" data-toggle="modal" href="#filterModal"><i class="icon-filter"></i> Filter</a>
+</div>
+
+<div class="tabheader" style="clear: both;">
+
+    <div id="tabs">
+        <ul id="tabs-ul" class="nav nav-tabs">
+            <li class="active"><a href="#vendor_counts" data-toggle="tab"><u>V</u>endors</a></li>
+            <li><a href="#os_counts" data-toggle="tab"><u>O</u>perating Systems</a></li>
+            <li><a href="#family_counts" data-toggle="tab"><u>F</u>amilies</a></li>
+            <li><a href="#class_counts" data-toggle="tab"><u>C</u>lasses</a></li>
+        </ul>
+
+    <div id="TabContent" class="tab-content">
+        <div class="tab-pane active" id="vendor_counts">
+            <table id="vendortable" class="datatable">
+                <thead>
+                    <th>Vendor</th>
+                    <th>Count</th>
+                </thead>
+                <tbody>
+                    {{for p in vendor_counts:}}
+                    <tr>
+                        <td>{{=p}}</td>
+                        <td>{{=vendor_counts[p]}}</td>
+                    </tr>
+                    {{pass}}
+                </tbody>
+            </table>
+        </div>
+
+        <div class="tab-pane" id="os_counts">            
+            <table id="ostable" class="datatable">
+                <thead>
+                    <th>Operating System</th>
+                    <th>Count</th>
+                </thead>
+                <tbody>
+                    {{for p in os_counts:}}
+                    <tr>
+                        <td>{{=p}}</td>
+                        <td>{{=os_counts[p]}}</td>
+                    </tr>
+                    {{pass}}
+                </tbody>
+            </table>
+        </div>
+
+        <div class="tab-pane" id="family_counts">
+            <table id="familytable" class="datatable">
+                <thead>
+                    <th>Family</th>
+                    <th>Count</th>
+                </thead>
+                <tbody>
+                    {{for p in family_counts:}}
+                    <tr>
+                        <td>{{=p}}</td>
+                        <td>{{=family_counts[p]}}</td>
+                    </tr>
+                    {{pass}}
+                </tbody>
+            </table>
+        </div>
+
+        <div class="tab-pane" id="class_counts">
+            <table id="classtable" class="datatable">
+                <thead>
+                    <th>Class</th>
+                    <th>Count</th>
+                </thead>
+                <tbody>
+                    {{for p in class_counts:}}
+                    <tr>
+                        <td>{{=p}}</td>
+                        <td>{{=class_counts[p]}}</td>
+                    </tr>
+                    {{pass}}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<script>
+var $refreshpage = true;
+
+$(document).ready(function() {
+
+    // Mousetrap bindings
+    Mousetrap.bind(['v','V','1'], function() { jQuery('#tabs-ul a[href="#vendor_counts"]').tab('show'); });
+    Mousetrap.bind(['o','O','2'], function() { jQuery('#tabs-ul a[href="#os_counts"]').tab('show'); });
+    Mousetrap.bind(['f','F','3'], function() { jQuery('#tabs-ul a[href="#family_counts"]').tab('show'); });
+    Mousetrap.bind(['c','C','4'], function() { jQuery('#tabs-ul a[href="#class_counts"]').tab('show'); });
+
+    var vendortable;
+    vendortable = $('#vendortable').dataTable( {
+          "aaSorting": [ [1, "desc"] ],
+          "sDom": 'T<"clear">lfrtip',
+          "oTableTools": {
+              "sSwfPath": "{{=URL(request.application,'static','TableTools/swf/copy_csv_xls.swf')}}"
+          },
+    } );
+
+    var ostable;
+    ostable = $('#ostable').dataTable( {
+          "aaSorting": [ [1, "desc"] ],
+          "sDom": 'T<"clear">lfrtip',
+          "oTableTools": {
+              "sSwfPath": "{{=URL(request.application,'static','TableTools/swf/copy_csv_xls.swf')}}"
+          },
+    } );
+
+    var familytable;
+    familytable = $('#familytable').dataTable( {
+          "aaSorting": [ [1, "desc"] ],
+          "sDom": 'T<"clear">lfrtip',
+          "oTableTools": {
+              "sSwfPath": "{{=URL(request.application,'static','TableTools/swf/copy_csv_xls.swf')}}"
+          },
+    } );
+
+    var classtable;
+    classtable = $('#classtable').dataTable( {
+          "aaSorting": [ [1, "desc"] ],
+          "sDom": 'T<"clear">lfrtip',
+          "oTableTools": {
+              "sSwfPath": "{{=URL(request.application,'static','TableTools/swf/copy_csv_xls.swf')}}"
+          },
+    } );
+
+});
+</script>
+
+{{include 'filter_hosts.html'}}

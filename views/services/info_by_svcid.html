@@ -1,0 +1,24 @@
+{{extend 'layout.html'}}
+
+<script type="text/javascript" language="javascript">
+
+var svcinfo_table;
+
+jQuery(document).ready(function() {
+    svcinfo_table = $('#datatable').dataTable( {
+        "sDom": 'T<"clear">lfrtip',
+        "oTableTools": {
+            "sSwfPath": "{{=URL('static','TableTools/swf/copy_csv_xls.swf')}}"
+        },
+    } );
+
+} );
+
+</script>
+<h2>Service Information List</h2>
+
+{{if rows:}}
+    {{=SQLTABLE(rows, headers='labels', truncate=255, _id="datatable")}}
+{{else:}}
+    {{=TAG.blockquote(T('No Data'))}}
+{{pass}}

@@ -1,0 +1,77 @@
+{{extend 'layout.html'}}
+
+<script>
+var jquerytabs;
+
+jQuery(function() {
+    jquerytabs=jQuery( "#tabs" ).tabs();
+} );
+
+jQuery(document).ready(function() {
+    jQuery('.datatable').dataTable( {
+        "sDom": 'T<"clear">lfrtip',
+        "oTableTools": {
+            "sSwfPath": "{{=URL('static','TableTools/swf/copy_csv_xls.swf')}}"
+        },
+} );
+
+    $(document).ready(function() {
+        Mousetrap.bind(['i','I','1'], function() { jquerytabs.tabs("select",'serviceinfo_list'); });
+        Mousetrap.bind(['v','V','2'], function() { jquerytabs.tabs("select",'vulns_list'); });
+        Mousetrap.bind(['t','T','4'], function() { jquerytabs.tabs("select",'accounts_list'); });
+
+        Mousetrap.bind(['n','N'], function() { window.location.href = $('#nextservicelink').attr('href'); });
+        Mousetrap.bind(['p','P'], function() { window.location.href = $('#prevservicelink').attr('href'); });
+    });
+
+});
+
+} );
+</script>
+
+{{if pagination:}}
+<div style="float:left; width:40%">{{=pagination['form']}} </div>
+<div style="float:left; width:20%; text-align:center">{{=pagination['service_number']}}</div>
+{{pass}}
+<div class="clear"></div>
+
+<div id="service">
+{{#=A(T('Edit'),_href=URL('edt',args=request.args(0)))}}
+<br/>
+
+{{=service}}
+</div>
+
+<div class="tabheader">
+    <div id="tabs">
+        <ul>
+            <li><a href="#serviceinfo_list" title="Press i or 1 to select"><u>I</u>nformation</a></li>
+            <li><a href="#vulns_list" title="Press v or 2 to select"><u>V</u>ulnerabilties</a></li>
+            <li><a href="#accounts_list" title="Press t or 4 to select">Accoun<u>t</u>s</a></li>
+        </ul>
+
+    <div id="serviceinfo_list">
+        {{if svcinfotable:}}
+            {{=svcinfotable}}
+        {{else:}}
+            {{=TAG.blockquote(T('No Service Information'))}}
+        {{pass}}
+    </div>
+
+    <div id="vulns_list">
+        {{if vulns:}}
+            {{=vulns}}
+        {{else:}}
+            {{=TAG.blockquote(T('No Vulnerabilities'))}}
+        {{pass}}
+    </div>
+
+    <div id="accounts_list">
+        {{if accts:}}
+            {{=accts}}
+        {{else:}}
+            {{=TAG.blockquote(T('No Accounts'))}}
+        {{pass}}
+    </div>
+</div>
+</div>

@@ -1,0 +1,23 @@
+{{extend 'layout.html'}}
+
+<div class="row-fluid">
+    <div class="span8">
+        <div class="widget-box">
+            <div class="widget-title">
+              <span class="icon">
+                <i class="icon-book"></i>
+              </span>
+              <h5>{{=response.title or request.application}}</h5>
+            </div>
+            <div class="widget-content">
+                {{=form}}
+            </div>
+        </div>
+    </div>
+    <div class="alert alert-info span4">
+        <p>John the Ripper .pot files can be located on a path the server running Kvasir can access or uploaded.</p>
+        <p>Paths can either be manually defined or use the pre-defined ones.</p>
+    </div>
+</div>
+
+{{include 'loading.html'}}

@@ -1,0 +1,10 @@
+{{if not form:}}
+{{=XML(addnetbios.formModal())}}
+<div class="span8">
+    <span>{{=XML(addnetbios.btn_show())}}</span>
+</div>
+{{else:}}
+<div class="span8">
+    {{=form}}
+</div>
+{{pass}}

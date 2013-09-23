@@ -1,0 +1,73 @@
+{{extend 'layout.html'}}
+
+<a class="btn btn-small" href="vulndata_add"><i class="icon-plus"></i>Add Vulnerability</a>
+<br/>
+
+<script type="text/javascript" language="javascript">
+
+var vulntable;
+
+function fnFormatDetails ( nTr ) {
+    var aData = vulntable.fnGetData( nTr );
+    var sOut = '<table cellpadding="5" cellspacing="0" border="0" style="padding-left:50px;">';
+    sOut += '<tr><td>PCI:</td><td>'+aData[5]+'</td></tr>';
+    sOut += '<tr><td>Description:</td><td>'+aData[7]+'</td></tr>';
+    sOut += '<tr><td>Solution:</td><td>'+aData[8]+'</td></tr>';
+    sOut += '<tr><td>&nbsp;</td></tr>';
+    sOut += '</table>';
+
+    return sOut;
+}
+
+jQuery(document).ready(function() {
+    vulntable = $('#datatable').dataTable( {
+        "bServerSide": true,
+        "sAjaxSource": "vulndata_list.json",
+        "sDom": 'T<"clear">lfrtip',
+        "oTableTools": {
+            "sSwfPath": "{{=URL('static','TableTools/swf/copy_csv_xls.swf')}}"
+        },
+        "aoColumnDefs": [
+            { "bSortable": false, "aTargets": [ 0 ] },
+            { "bVisible": false, "aTargets": [ 5 ] },
+            { "bVisible": false, "aTargets": [ 7 ] },
+            { "bVisible": false, "aTargets": [ 8 ] },
+        ]
+    } );
+
+    jQuery('#datatable tbody td img').live( 'click', function () {
+        var nTr = this.parentNode.parentNode;
+        if ( this.src.match('details_close') ) {
+            /* This row is already open - close it */
+            this.src = "../static/images/details_open.png";
+            vulntable.fnClose( nTr );
+        } else {
+            /* Open this row */
+            this.src = "../static/images/details_close.png";
+            vulntable.fnOpen( nTr, fnFormatDetails(nTr), 'details' );
+        }
+        $(nTr).removeClass('row_selected');
+    } );
+
+    //new FixedHeader( vulntable );
+
+} );
+
+</script>
+
+<div id="table">
+<table cellpadding="0" cellspacing="0" border="0" width="99%" class="display" id="datatable">
+    <thead>
+        <tr>
+            <th width="4%"></th>
+            <th>ID</th>
+            <th>Vulnerability ID</th>
+            <th>Title</th>
+            <th>Severity</th>
+            <th>PCI Severity</th>
+            <th>CVSS Score</th>
+            <th>Description</th>
+            <th>Solution</th>
+        </tr>
+    </thead>
+</table>

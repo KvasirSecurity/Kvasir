@@ -1,0 +1,13 @@
+{{extend 'layout.html'}}
+
+<div class="span8">
+    <h3>{{=T('Kvasir has encountered an error!')}}</h3>
+    <div class="lead error">
+        {{=msg}}
+    </div>
+</div>
+
+<div>
+    <h3>{{=T('Please enjoy the following humerous image as compensation')}}</h3>
+    {{=IMG(_src=URL('static', 'images/oreally/%s' % (err404)), _alt="Whoopsie!", _class="img-responsive img-rounded")}}
+</div>

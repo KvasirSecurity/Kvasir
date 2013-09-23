@@ -1,0 +1,57 @@
+{{extend 'layout.html'}}
+
+<div id="vulnlist_div">
+    <div id="vulnlist_form" class="btn-toolbar">
+        <a id="filter_hosts" class="btn btn-small" data-toggle="modal" href="#filterModal"><i class="icon-filter"></i> Filter</a>
+    </div>
+
+    <TABLE id="vulnlist" class="datatable" width="100%">
+    <THEAD>
+      <TH>Vulnerability ID</TH>
+      <TH>Status</TH>
+      <TH>Count</TH>
+      <TH>Severity</TH>
+      <TH>CVSS Score</TH>
+    </THEAD>
+    {{
+    for k,v in vulnlist.iteritems():
+      for r in v:}}
+    <TR>
+      <TD>{{=A(k, _href=URL(request.application, 'vulns', 'vulninfo_by_vulnid', args=k), _target="blank")}}</TD>
+      <TD>{{=r[0]}}</TD>
+      <TD>{{=r[1]}}</TD>
+      <TD>{{=r[2]}}</TD>
+      <TD>{{=r[3]}}</TD>
+    </TR>
+    {{
+      pass
+    pass
+    }}
+    </TABLE>
+
+</div>
+
+<SCRIPT>
+var $refreshpage = true;
+var vulnlist;
+
+jQuery(document).ready(function() {
+    vulnlist = $('#vulnlist').dataTable( {
+          "aaSorting": [ [3, "desc"], [2, "desc"] ],
+          "sDom": 'T<"clear">lfrtip',
+          "oTableTools": {
+              "sSwfPath": "{{=URL(request.application,'static','TableTools/swf/copy_csv_xls.swf')}}",
+              "aButtons": [
+                  "select_all",
+                  "select_none",
+                  "copy",
+                  "csv",
+                  "print"
+              ]
+          },
+    } );
+} );
+
+</SCRIPT>
+
+{{include 'filter_hosts.html'}}

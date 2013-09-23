@@ -1,0 +1,24 @@
+{{extend 'layout.html'}}
+
+<div class="row-fluid">
+    <div class="span8">
+        <div class="widget-box">
+            <div class="widget-title">
+              <span class="icon">
+                <i class="icon-upload"></i>
+              </span>
+              <h5>{{=response.title or request.application}}</h5>
+            </div>
+            <div class="widget-content">
+                {{=form}}
+            </div>
+        </div>
+    </div>
+    <div class="alert alert-info span4">
+        <p>Obtain the latest XML file from <a href="https://nvd.nist.gov/cpe.cfm" target="blank" rel="noreferrer">
+            https://nvd.nist.gov/cpe.cfm</a> or click the checkbox to have Kvasir
+            download the latest file and process it.</p>
+    </div>
+</div>
+
+{{include 'loading.html'}}

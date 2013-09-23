@@ -1,0 +1,243 @@
+{{extend 'layout.html'}}
+{{include 'metasploit.html'}}
+
+{{if form:}}
+<div class="row-fluid">
+    <div class="span8">
+        <div class="widget-box">
+            <div class="widget-title">
+              <span class="icon">
+                <i class="icon-fire"></i>
+              </span>
+              <h5>{{=response.title or request.application}}</h5>
+            </div>
+            <div class="widget-content">
+                <div id="form">
+                    <fieldset>
+                        {{=form.custom.begin}}
+                        <legend>Selection</legend>
+                        <div class="control-group">
+                            <label class="control-label" for="msfpro_bruteforce_targets">{{=form.custom.label.targets}}
+                                <i class="icon-question-sign" rel="tooltip" data-content="{{=form.custom.comment.targets}}"></i>
+                            </label>
+                            <div class="controls">
+                                {{=form.custom.widget.targets}}
+                            </div>
+                        </div>
+                        <div class="control-group">
+                            <label class="control-label" for="msfpro_bruteforce_services">{{=form.custom.label.services}}
+                                <i class="icon-question-sign" rel="tooltip" data-content="{{=form.custom.comment.services}}"></i>
+                            </label>
+                            <div class="controls">
+                                {{=form.custom.widget.services}} Select: <a href="#" class="btn btn-small" id="btn-services-all">All</a> <a href="#" class="btn btn-small" id="btn-services-none">None</a>
+                            </div>
+                        </div>
+                        <div class="control-group">
+                            <label class="control-label" for="msfpro_bruteforce_blacklist_hosts">{{=form.custom.label.blacklist}}
+                                <i class="icon-question-sign" rel="tooltip" data-content="{{=form.custom.comment.blacklist}}"></i>
+                            </label>
+                            <div class="controls">
+                                {{=form.custom.widget.blacklist}}
+                            </div>
+                        </div>
+                        <div class="control-group">
+                            <label class="control-label" for="msfpro_bruteforce_stop_on_success">{{=form.custom.label.stop_on_success}}
+                                <i class="icon-question-sign" rel="tooltip" data-content="{{=form.custom.comment.stop_on_success}}"></i>
+                            </label>
+                            <div class="controls">
+                                {{=form.custom.widget.stop_on_success}}
+                            </div>
+                        </div>
+                        <div class="control-group">
+                            <label class="control-label" for="msfpro_bruteforce_scope">{{=form.custom.label.scope}}
+                            </label>
+                            <div class="controls">
+                                {{=form.custom.widget.scope}}
+                            </div>
+                        </div>
+                        <div class="control-group">
+                            <label class="control-label" for="msfpro_bruteforce_speed">{{=form.custom.label.speed}}
+                            </label>
+                            <div class="controls">
+                                {{=form.custom.widget.speed}}
+                            </div>
+                        </div>
+
+                        <div class="control-group">
+                            <label class="control-label" for="msfpro_bruteforce_recombine_creds">{{=form.custom.label.recombine_creds}}
+                                <i class="icon-question-sign" rel="tooltip" data-content="{{=form.custom.comment.recombine_creds}}"></i>
+                            </label>
+                            <div class="controls">
+                                {{=form.custom.widget.recombine_creds}}
+                            </div>
+                        </div>
+
+                        <div class="control-group">
+                            <label class="control-label" for="msfpro_bruteforce_smb_domains">{{=form.custom.label.smb_domains}}
+                                <i class="icon-question-sign" rel="tooltip" data-content="{{=form.custom.comment.smb_domains}}"></i>
+                            </label>
+                            <div class="controls">
+                                {{=form.custom.widget.smb_domains}}
+                            </div>
+                        </div>
+                        <div class="control-group">
+                            <label class="control-label" for="msfpro_bruteforce_mssql_windows_auth">{{=form.custom.label.mssql_windows_auth}}
+                                <i class="icon-question-sign" rel="tooltip" data-content="{{=form.custom.comment.mssql_windows_auth}}"></i>
+                            </label>
+                            <div class="controls">
+                                {{=form.custom.widget.mssql_windows_auth}}
+                            </div>
+                        </div>
+
+                        <div class="control-group">
+                            <label class="control-label">{{=T('Skip accounts')}}:
+                            </label>
+                            <div class="controls">
+                                <label class="checkbox inline">
+                                    {{=form.custom.label.skip_blank_pw}} {{=form.custom.widget.skip_blank_pw}}
+                                </label>
+                                <label class="checkbox inline">
+                                    {{=form.custom.label.skip_machine_names}} {{=form.custom.widget.skip_machine_names}}
+                                </label>
+                                <label class="checkbox inline">
+                                    {{=form.custom.label.skip_builtin_windows}} {{=form.custom.widget.skip_builtin_windows}}
+                                </label>
+                                <label class="checkbox inline">
+                                    {{=form.custom.label.skip_builtin_unix}} {{=form.custom.widget.skip_builtin_unix}}
+                                </label>
+                            </div>
+                        </div>
+
+                        <legend>Maximum Guesses...</legend>
+                        <div class="control-group">
+                            <label class="control-label" for="msfpro_bruteforce_max_guess_per_svc">{{=form.custom.label.max_guess_per_svc}}
+                            </label>
+                            <div class="controls">
+                                {{=form.custom.widget.max_guess_per_svc}}
+                            </div>
+                        </div>
+                        <div class="control-group">
+                            <label class="control-label" for="msfpro_bruteforce_max_guess_per_user">{{=form.custom.label.max_guess_per_user}}
+                            </label>
+                            <div class="controls">
+                                {{=form.custom.widget.max_guess_per_user}}
+                            </div>
+                        </div>
+                        <div class="control-group">
+                            <label class="control-label" for="msfpro_bruteforce_max_guess_overall">{{=form.custom.label.max_guess_overall}}
+                            </label>
+                            <div class="controls">
+                                {{=form.custom.widget.max_guess_overall}}
+                            </div>
+                        </div>
+
+                        <legend>Maximum Time...</legend>
+                        <div class="control-group">
+                            <label class="control-label" for="msfpro_bruteforce_max_time_per_svc">{{=form.custom.label.max_time_per_svc}}
+                                <i class="icon-question-sign" rel="tooltip" data-content="{{=form.custom.comment.max_time_per_svc}}"></i>
+                            </label>
+                            <div class="controls">
+                                {{=form.custom.widget.max_time_per_svc}}
+                            </div>
+                        </div>
+                        <div class="control-group">
+                            <label class="control-label" for="msfpro_bruteforce_max_time">{{=form.custom.label.max_time}}
+                                <i class="icon-question-sign" rel="tooltip" data-content="{{=form.custom.comment.max_time}}"></i>
+                            </label>
+                            <div class="controls">
+                                {{=form.custom.widget.max_time}}
+                            </div>
+                        </div>
+
+                        <legend>Payload Session</legend>
+                        <div class="control-group">
+                            <label class="control-label" for="msfpro_bruteforce_getsession">{{=form.custom.label.getsession}}
+                                <i class="icon-question-sign" rel="tooltip" data-content="{{=form.custom.comment.getsession}}"></i>
+                            </label>
+                            <div class="controls">
+                                {{=form.custom.widget.getsession}}
+                            </div>
+                        </div>
+                        <div class="control-group">
+                            <label class="control-label" for="msfpro_bruteforce_payload">{{=form.custom.label.payload}}
+                            </label>
+                            <div class="controls">
+                                {{=form.custom.widget.payload}}
+                            </div>
+                        </div>
+                        <div class="control-group">
+                            <label class="control-label" for="msfpro_bruteforce_payload_type">{{=form.custom.label.payload_type}}
+                            </label>
+                            <div class="controls">
+                                {{=form.custom.widget.payload_type}}
+                            </div>
+                        </div>
+                        <div class="control-group">
+                            <label class="control-label" for="msfpro_bruteforce_payload_ports">{{=form.custom.label.payload_ports}}
+                                <i class="icon-question-sign" rel="tooltip" data-content="{{=form.custom.comment.payload_ports}}"></i>
+                            </label>
+                            <div class="controls">
+                                {{=form.custom.widget.payload_ports}}
+                            </div>
+                        </div>
+
+                        <div class="control-group">
+                            <label class="control-label" for="msfpro_bruteforce_verbose">{{=form.custom.label.verbose}}
+                            </label>
+                            <div class="controls">
+                                {{=form.custom.widget.verbose}}
+                            </div>
+                        </div>
+                        <div class="control-group">
+                            <label class="control-label" for="msfpro_bruteforce_dry_run">{{=form.custom.label.dry_run}}
+                                <i class="icon-question-sign" rel="tooltip" data-content="{{=form.custom.comment.dry_run}}"></i>
+                            </label>
+                            <div class="controls">
+                                {{=form.custom.widget.dry_run}}
+                            </div>
+                        </div>
+                        {{=form.custom.submit}}
+                        {{=form.custom.end}}
+                    </fieldset>
+                </div>
+            </div>
+        </div>
+
+    </div>
+    <div class="alert alert-info span4">
+        <dl>
+            <dt>Current Workspace Name</dt>
+                <dd>{{=session.msf_workspace}}</dd>
+            <dt>Current Workspace Number</dt>
+                <dd>{{=session.msf_workspace_num}}</dd>
+            <dt>Metasploit User</dt>
+                <dd>{{=session.msf_user}}</dd>
+        </dl>
+        <a class="btn btn-small" href="{{=URL('metasploit', 'api_settings')}}">Update</a>
+        <p>Metasploit Pro's Bruteforce routine will launch multiple account login requests to hosts and services
+        found within its database. These hosts and services must already exist in the Workspace which can be
+        done by <a href="{{=URL('metasploit', 'send_scanxml')}}" target="_blank">sending scan result files</a>.</p>
+
+        <div class="alert">Currently Kvasir does not support using pre-loaded credentials as part of Bruteforce's options.</div>
+    </div>
+</div>
+
+<script>
+$(document).ready(function(){
+    $("[rel=tooltip]").popover({
+        placement: 'right',
+        trigger: 'hover',
+    });
+
+    $("#btn-services-all").on("click", function(){
+        $("#msfpro_bruteforce_services option").prop("selected", true);
+        $("#msfpro_bruteforce_services").trigger("chosen:updated");
+    });
+
+    $("#btn-services-none").on("click", function(){
+        $("#msfpro_bruteforce_services option").prop("selected", false);
+        $("#msfpro_bruteforce_services").trigger("chosen:updated");
+    });
+});
+</script>
+{{pass}}

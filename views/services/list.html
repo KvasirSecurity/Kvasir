@@ -1,0 +1,145 @@
+{{extend 'layout.html'}}
+{{include 'filter_hosts.html'}}
+
+{{=XML(add.formModal())}}
+<div id="services">
+    <div id="servicesform"  class="btn-toolbar">
+        {{=XML(add.btn_show())}}
+        <a id="delete_service" class="btn btn-small"><i class="icon-remove"></i> Delete</a>
+        <a id="webshot_service" class="btn btn-small"><i class="icon-camera"></i> Webshot</a>
+        <a id="reload" onclick="javascript:servicetable.fnReloadAjax(); return false;" class="btn btn-small"><i class="icon-refresh"></i> Reload</a>
+        <a id="filter_hosts" class="btn btn-small" data-toggle="modal" href="#filterModal"><i class="icon-filter"></i> Filter</a>
+    </div>
+
+    <br/>
+    <table cellpadding="0" cellspacing="0" border="0" class="datatable" id="servicetable" width="100%">
+        <thead>
+            <tr>
+                <th width="4%"></th>
+                <th width="4%"></th>
+                <th>Info</th>
+                <th>Host</th>
+                <th>Protocol</th>
+                <th>Port Number</th>
+                <th>Status</th>
+                <th>Vulns</th>
+                <th>VulnInfo</th>
+                <th>Exploit</th>
+                <th>ExpInfo</th>
+                <th>Name</th>
+                <th>Banner</th>
+            </tr>
+        </thead>
+    </table>
+</div>
+
+<script type="text/javascript" language="javascript">
+
+var servicetable;
+
+function fnFormatDetails ( nTr ) {
+    var aData = servicetable.fnGetData( nTr );
+    var sOut = '<table class="table table-condensed">';
+    if (aData[2])
+        sOut += "<tr><td>Info:</td><td>"+aData[2]+"</td></tr>";
+    if (aData[10])
+        sOut += "<tr><td>Exploits:</td><td>"+aData[10]+"</td></tr>";
+    if (aData[8])
+        sOut += "<tr><td>Vulnerabilities:</td><td>"+aData[8]+"</td></tr>";
+    sOut += "</table>"
+    return sOut;
+}
+
+jQuery(document).ready(function() {
+
+    servicetable = $('#servicetable').dataTable( {
+        "bServerSide": true,
+        "sDom": 'T<"clear">lfrtip',
+        "oTableTools": {
+            "sRowSelect": "multi",
+            "sSelectedClass": "row_selected",
+            "sSwfPath": "{{=URL('static','TableTools/swf/copy_csv_xls.swf')}}",
+            "aButtons": [
+                "select_all",
+                "select_none",
+                "copy",
+                "csv",
+                "print"
+            ]
+        },
+        "fnDrawCallback": function() {
+            jQuery('#servicetable tbody tr td:contains("Yes")').css("background-color", "red").css("font-weight", "bold");
+        },
+        "aoColumns": [
+            /* MoreInfo */  null,
+            /* ID */        { "sSortDataType": "dom-text", "sType": "numeric" },
+            /* Info */      { "bVisible": false },
+            /* IP */        { "sSortDataType": "dom-text", "sType": "numeric" },
+            /* Proto */     null,
+            /* Port */      { "sSortDataType": "dom-text", "sType": "numeric" },
+            /* Status */    null,
+            /* Vulncount */ { "sSortDataType": "dom-text", "sType": "numeric" },
+            /* VulnInfo */  { "bVisible": false },
+            /* Exploit */   { "sSortDataType": "dom-text", "sType": "numeric" },
+            /* ExpInfo */   { "bVisible": false },
+            /* Name */      null,
+            /* Banner */    null,
+        ],
+        "aaSorting": [[3, 'asc'], [2, 'asc']],
+        "sAjaxSource": "list.json"
+    } );
+
+    servicetable.fnSetFilteringDelay(1800);
+
+    jQuery('#servicetable tbody td img').live( 'click', function () {
+        var nTr = this.parentNode.parentNode;
+        if ( this.src.match('details_close') ) {
+            this.src = "{{=URL('static','images/details_open.png')}}";
+            servicetable.fnClose( nTr );
+        } else {
+            this.src = "{{=URL('static','images/details_close.png')}}";
+            servicetable.fnOpen( nTr, fnFormatDetails(nTr), 'details' );
+        }
+        $(nTr).removeClass('row_selected');
+    } );
+
+    //new FixedHeader( servicetable );
+
+    $("#delete_service").click(function(e) {
+        e.preventDefault();
+
+        //bootbox.options.onEscape =
+        bootbox.confirm('These items will be permanently deleted and cannot be recovered. Are you sure?', "Cancel", "Delete", function(confirmed) {
+            if(confirmed) {
+                var checks = dt_checkboxer_select_DT_RowIds(servicetable);
+                if (checks == '') { alert('Nothing selected'); return false; }
+                var data = "ids=" + checks;
+                url = "{{=URL('services', 'delete.json', user_signature=True)}}"
+                $.web2py.ajax_page( 'POST', url, data, 'undefined' );
+            }
+        });
+    });
+
+    var dialog_add_service = jQuery('<div></div>').appendTo('body');
+
+    $("#webshot_service").click(function(e) {
+        e.preventDefault();
+
+        var checks = dt_checkboxer_select_DT_RowIds(servicetable);
+        if (checks == '') {
+            alert('No services selected');
+            return false;
+        }
+
+        bootbox.confirm('Grab web screenshots?', "Cancel", "Ok", function(confirmed) {
+            if(confirmed) {
+                var data = "ids=" + checks;
+                url = "{{=URL('services', 'webshot_ajax.json', user_signature=True)}}";
+                $.web2py.ajax_page( 'POST', url, data, 'undefined' );
+            }
+        });
+    });
+
+} );
+
+</script>

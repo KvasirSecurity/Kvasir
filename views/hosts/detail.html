@@ -1,0 +1,265 @@
+{{extend 'layout.html'}}
+{{include 'filter_hosts.html'}}
+
+<div class="row-fluid">
+  <div class="span12">
+    <div style="float:left; width:40%">{{=host_pagination['form']}} </div>
+    <div style="float:left; width:20%; text-align:center">{{=host_pagination['host_number']}}</div>
+    <div style="float:right; width:40%; text-align:right">
+        <a id="filter_hosts" class="btn btn-small" data-toggle="modal" href="#filterModal"><i class="icon-filter"></i> Filter</a>
+    </div>
+  </div>
+</div>
+
+<style>
+    .hosts_checkbox {
+        display: inline-block;
+        margin-right: 30px;
+    }
+</style>
+
+<div class="row-fluid">
+  <div class="span12">
+    <div class="span6">
+      <a href="#" onclick="launchterm('{{=host.record.id}}')" id="launchtermlink">
+      <img src="{{=URL(request.application,'static/images', 'terminal.png')}}" width="20" height="20" style="float:left"/>
+      </a>
+      <b><u>C</u>onfirmed: </b>
+      {{=host.custom.widget.f_confirmed}}&nbsp;&nbsp;
+      <b>Accesse<u>d</u>: </b>
+      {{=host.custom.widget.f_accessed}}&nbsp;&nbsp;
+      <b><u>F</u>ollow Up: </b>
+      {{=host.custom.widget.f_followup}}
+    </div>
+
+    <div class="span6" style="text-align:right">
+      <b>Assigned to: </b><span id="assignedto">{{=engineername}}</span> | <b>Asset group: </b><span id="assetgroup">{{=host.custom.widget.f_asset_group}}</span>
+    </div>
+  </div>
+</div>
+
+<hr class="bs-docs-separator">
+
+<div class="row-fluid">
+  <div class="span12">
+    <div class="span3 well well-small" >
+        <h5>{{=T('Host Information')}}
+        <a href="javascript:void();" id="button_host_edit"><i class="icon-edit"></i> edit</a></h5>
+        <table>
+        <tr><td><b>IPv4: </b></td><td>{{=host.custom.widget.f_ipv4}}</td></tr>
+        <tr><td><b>IPv6: </b></td><td>{{=host.custom.widget.f_ipv6}}</td></tr>
+        <tr><td><b>MAC: </b></td><td>{{=host.custom.widget.f_macaddr}}</td></tr>
+        <tr><td><b>Hostname: </b></td><td>{{=host.custom.widget.f_hostname}}</td></tr>
+        <tr><td><b>NetBIOS: </b></td><td>{{=host.custom.widget.f_netbios_name}}</td></tr>
+        </table>
+    </div>
+
+    <div class="span4 well well-small">
+        <h5>{{=T('Host Details')}}</h5>
+
+            <table>
+                <tr>
+                    <td><b>Operating System:</b></td>
+                    <td>{{=host_points['os'][1]}} / {{=host_points['os'][0]}}</td>
+                </tr>
+                {{if host_points.has_key('netb_domain'):}}
+                <tr>
+                    <td><b>NetBIOS Info:</b></td>
+                    <td>{{=A(host_points['netb_domain'], _target=host_points['netb_domain'], _href=URL('netbios', 'domain_detail.html', vars={'domain': host_points['netb_domain']})) }} :: {{=host_points['netb_type']}}</td>
+                </tr>
+                {{pass}}
+                <tr>
+                    <td><b>Accounts / Passwords</b></td>
+                    <td>{{=host_points['account_cnt']}} / {{=host_points['password_cnt']}} ({{=host_points['cracked_pct']}}%)</td>
+                </tr>
+                <tr>
+                    <td><b>Vulnerability Count</b></td>
+                    <td>Total ({{=host_points['vuln_cnt']}}) / Exploited ({{=host_points['vuln_exploited_cnt']}}) / Potential ({{=host_points['vuln_potential_cnt']}})</td>
+                </tr>
+                <tr>
+                    <td><b>Severity Breakdown</b></td>
+                    <td>{{=host_points['sev_sum']}} :: <span class="severity_sparkline" values={{=host_points['sev_sum_spark']}}>Loading...</span></td>
+                </tr>
+            </table>
+    </div>
+
+    <div class="span5 well well-small">
+        <h5>{{=T('Notes')}}</h5>
+        <div id="notes_summary">
+            {{=LOAD('notes', 'summary_by_host.load',args=[host.record.id],ajax=False,target='notes_summary')}}
+        </div>
+    </div>
+
+  </div>
+</div>
+
+<hr class="bs-docs-separator">
+
+<div class="tabheader" style="clear: both;">
+
+    <div id="tabs">
+        <ul id="tabs-ul" class="nav nav-tabs">
+            <li class="active"><a href="#aa_list" data-toggle="tab"><u>a</u>a</a></li>
+            <li><a href="#service_list" data-toggle="tab"><u>S</u>ervices</a></li>
+            <li><a href="#vulns_list" data-toggle="tab"><u>V</u>ulnerabilties</a></li>
+            <li><a href="#evidence_list" data-toggle="tab"><u>E</u>vidence</a></li>
+            <li><a href="#os_list" data-toggle="tab"><u>O</u>perating System</a></li>
+            <li><a href="#accounts_list" data-toggle="tab">Accoun<u>t</u>s</a></li>
+            <li><a href="#snmp_list" data-toggle="tab">SN<u>M</u>P</a></li>
+            <li><a href="#netbios_info" data-toggle="tab">Net<u>B</u>IOS</a></li>
+        </ul>
+
+    <div id="TabContent" class="tab-content">
+        <div class="tab-pane active" id="aa_list" >
+            {{=LOAD('vulns','aa_by_host.load',args=[host.record.id],ajax=False,target='aa_list')}}
+        </div>
+
+        <div class="tab-pane" id="service_list">
+            {{=LOAD('services','by_host.load',args=[host.record.id],ajax=False,target='service_list')}}
+        </div>
+
+        <div class="tab-pane" id="vulns_list">
+            {{=LOAD('vulns','vulndata_by_host.load',args=[host.record.id],ajax=False,target='vulns_list')}}
+        </div>
+
+        <div class="tab-pane" id="evidence_list">
+            {{=LOAD('evidence', 'list.load', args=[host.record.id], ajax=False,target='evidence_list')}}
+        </div>
+
+        <div class="tab-pane" id="os_list">
+            {{=LOAD('os','refs_by_host.load',args=[host.record.id],ajax=False,target='os_list')}}
+        </div>
+
+        <div class="tab-pane" id="accounts_list">
+            {{=LOAD('accounts', 'by_host.load', args=[host.record.id], ajax=False,target='accounts_list')}}
+        </div>
+
+        <div class="tab-pane" id="snmp_list">
+            {{=LOAD('snmp', 'by_host.load', args=[host.record.id], ajax=False,target='snmp_list')}}
+        </div>
+
+        <div class="tab-pane" id="netbios_info">
+            <div class="span8" id="netbios_form">
+                {{=LOAD('netbios', 'by_host.load', args=[host.record.id], ajax=True, target='netbios_form')}}
+            </div>
+        </div>
+    </div>
+    </div>
+
+</div>
+
+<div id="edit_host_modal" class="modal hide fade">
+  <div class="modal-header">
+    <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+    <h3>Edit Host Data</h3>
+  </div>
+  <div class="modal-body">
+  </div>
+  <div class="modal-footer">
+    <a href="#" class="btn" data-dismiss="modal">Close</a>
+    <a href="#" class="btn btn-primary saveBtn">Save</a>
+  </div>
+</div>
+
+<hr>
+
+<script>
+//var jquerytabs;
+jQuery(function() {
+    //jquerytabs=jQuery( "#tabs" ).tabs();
+
+    jQuery('#t_hosts_f_confirmed').on('click', function() {
+        // confirmed box clicked - grab value and send ajax request.
+        chkval = jQuery("#t_hosts_f_confirmed:checked").length;
+        data = "host=" + {{=host.record.id}} + "&checked=" + chkval;
+        url = "{{=URL('hosts', 'confirm.json', user_signature=True)}}";
+        $.web2py.ajax_page( 'POST', url, data, 'undefined' );
+        //return false;
+    } );
+
+    jQuery('#t_hosts_f_confirmed').attr('disabled', false).removeClass('span8');
+
+    jQuery('#t_hosts_f_accessed').on('click', function() {
+        // accessed box clicked - grab value and send ajax request.
+        chkval = jQuery("#t_hosts_f_accessed:checked").length;
+        data = "host=" + {{=host.record.id}} + "&checked=" + chkval;
+        url = "{{=URL('hosts', 'accessed.json', user_signature=True)}}";
+        $.web2py.ajax_page( 'POST', url, data, 'undefined' );
+        //return false;
+    } );
+
+    jQuery('#t_hosts_f_accessed').attr('disabled', false).removeClass('span8');
+
+    jQuery('#t_hosts_f_followup').on('click', function() {
+        // followup box clicked - grab value and send ajax request.
+        chkval = jQuery("#t_hosts_f_followup:checked").length;
+        data = "host=" + {{=host.record.id}} + "&checked=" + chkval;
+        url = "{{=URL('hosts', 'followup.json', user_signature=True)}}";
+        $.web2py.ajax_page( 'POST', url, data, 'undefined' );
+        //return false;
+    } );
+
+    jQuery('#t_hosts_f_followup').attr('disabled', false).removeClass('span8');
+});
+
+$(document).ready(function() {
+
+    // Mousetrap bindings
+    Mousetrap.bind(['a','A','1'], function() { jQuery('#tabs-ul a[href="#aa_list"]').tab('show'); });
+    Mousetrap.bind(['s','S','2'], function() { jQuery('#tabs-ul a[href="#service_list"]').tab('show'); });
+    Mousetrap.bind(['v','V','3'], function() { jQuery('#tabs-ul a[href="#vulns_list"]').tab('show'); });
+    Mousetrap.bind(['e','E','4'], function() { jQuery('#tabs-ul a[href="#evidence_list"]').tab('show'); });
+    Mousetrap.bind(['o','O','5'], function() { jQuery('#tabs-ul a[href="#os_list"]').tab('show'); });
+    Mousetrap.bind(['t','T','6'], function() { jQuery('#tabs-ul a[href="#accounts_list"]').tab('show'); });
+    Mousetrap.bind(['m','M','7'], function() { jQuery('#tabs-ul a[href="#snmp_list"]').tab('show'); });
+    Mousetrap.bind(['b','B','8'], function() { jQuery('#tabs-ul a[href="#netbios_info"]').tab('show'); });
+
+    Mousetrap.bind(['c','C'], function() {
+       jQuery('#t_hosts_f_confirmed')
+           .attr('checked', !$('#t_hosts_f_confirmed').attr('checked'));
+
+       jQuery('#t_hosts_f_confirmed').click();
+       jQuery('#t_hosts_f_confirmed')
+            .attr('checked', !$('#t_hosts_f_confirmed').attr('checked'));
+    } );
+
+    Mousetrap.bind(['d','D'], function() {
+       jQuery('#t_hosts_f_accessed')
+           .attr('checked', !$('#t_hosts_f_accessed').attr('checked'));
+
+       jQuery('#t_hosts_f_accessed').click();
+       jQuery('#t_hosts_f_accessed')
+            .attr('checked', !$('#t_hosts_f_accessed').attr('checked'));
+    } );
+
+    Mousetrap.bind(['f','F'], function() {
+       jQuery('#t_hosts_f_followup')
+           .attr('checked', !$('#t_hosts_f_followup').attr('checked'));
+
+       jQuery('#t_hosts_f_followup').click();
+       jQuery('#t_hosts_f_followup')
+            .attr('checked', !$('#t_hosts_f_followup').attr('checked'));
+    } );
+
+    Mousetrap.bind('ctrl+n', function() { jQuery('#textarea_notes_summ').first().focus(); });
+    Mousetrap.bind(['n','N'], function() { window.location.href = jQuery('#nexthostlink').attr('href'); });
+    Mousetrap.bind(['p','P'], function() { window.location.href = jQuery('#prevhostlink').attr('href'); });
+    Mousetrap.bind(['l','L'], function() { jQuery('#launchtermlink').click(); });
+
+    $("#button_host_edit").click(function(e) {
+        jQuery("#edit_host_modal").modal({
+            "remote": "{{=URL('hosts', 'edit.load', args=[host.record.id])}}"
+        });
+    });
+
+    jQuery("#edit_host_modal .saveBtn").click(function() {
+        ajax_form_submit('#host_edit_form');
+        jQuery('#edit_host_modal').modal('hide');
+    });
+
+    jQuery('.severity_sparkline').sparkline('html', { type: 'bar', barColor: 'red',
+        colorMap: [ "grey", "grey", "grey", "blue", "blue", "magenta", "magenta", "red", "red", "red" ] } );
+
+});
+
+</script>

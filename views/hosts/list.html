@@ -1,0 +1,305 @@
+{{extend 'layout.html'}}
+{{include 'filter_hosts.html'}}
+
+{{=XML(add_hosts.formModal())}}
+
+<div id="table">
+
+    <div id="hostform" class="btn-toolbar">
+
+        {{=XML(add_hosts.btn_show())}}
+        <a id="del_host" class="btn btn-small"><i class="icon-remove"></i> Delete Host</a>
+        <div class="btn-group">
+            <a class="btn btn-small dropdown-toggle" data-toggle="dropdown" href="#">
+            <i class="icon-pencil"></i> Mark
+            <span class="caret"></span>
+            </a>
+            <ul class="dropdown-menu">
+            <li><a id="confirm_hosts">Confirm</a></li>
+            <li><a id="unconfirm_hosts">Unconfirm</a></li>
+            <li><a id="accessed_hosts">Accessed</a></li>
+            <li><a id="unaccessed_hosts">Unaccessed</a></li>
+            <li><a id="follow_up">Follow-up</a></li>
+            <li><a id="no_follow_up">No Follow-up</a></li>
+            </ul>
+        </div>
+        <div class="btn-group">
+            <a class="btn btn-small dropdown-toggle" data-toggle="dropdown" href="#">
+            <i class="icon-asterisk"></i> Mass Actions
+            <span class="caret"></span>
+            </a>
+            <ul class="dropdown-menu">
+            <li><a id="mass_os">Update OS</a></li>
+            <li><a id="mass_asset">Update Asset Group</a></li>
+            <li><a id="mass_bruteforce">MSF Pro Bruteforce</a></li>
+            <li><a id="mass_exploit">MSF Pro Exploit</a></li>
+            </ul>
+        </div>
+        <a id="reload_hosts" class="btn btn-small"><i class="icon-refresh"></i> Reload</a>
+        <a id="filter_hosts" class="btn btn-small" data-toggle="modal" href="#filterModal"><i class="icon-filter"></i> Filter</a>
+    </div>
+
+    <table cellpadding="0" cellspacing="0" border="0" class="datatable" id="hosttable" width="100%">
+        <thead>
+            <tr>
+                <th width="5%">C</th>
+                <th>IPv4</th>
+                <th>IPv6</th>
+                <th width="5%">Services</th>
+                <th width="5%">Vulns</th>
+                <th width="8%">Vuln Graph</th>
+                <th width="5%">Exploits</th>
+                <th>Hostname</th>
+                <th>NetBIOS</th>
+                <th>OS</th>
+                <th>Engineer</th>
+                <th>Asset Group</th>
+            </tr>
+        </thead>
+    </table>
+
+</div>
+
+<script type="text/javascript" language="javascript">
+
+var hosttable;
+function doSpark() {
+    jQuery('.severity_sparkline').sparkline('html', { type: 'bar', barColor: 'red',
+        colorMap: [ "grey", "grey", "grey", "blue", "blue", "magenta", "magenta", "red", "red", "red" ] } );
+}
+
+jQuery(document).ready(function() {
+
+    hosttable = $('#hosttable').dataTable( {
+        "sAjaxSource": "list.json",
+        "bDeferRender": true,
+        "sDom": 'TC<"clear">lfrtip',
+        "oTableTools": {
+            "sRowSelect": "multi",
+            "sSelectedClass": "row_selected",
+            "sSwfPath": "{{=URL(request.application, 'static', 'TableTools/swf/copy_csv_xls.swf')}}",
+            "aButtons": [
+                {
+                    "sExtends":  "collection",
+                    "sButtonText": "Select",
+                    "aButtons": [
+                        {
+                            "sExtends": "text",
+                            "sButtonText": "All",
+                            "fnClick": function( nButton, oConfig, oFlash ) {
+                                jQuery(hosttable.fnGetDisplayNodes()).addClass('row_selected');
+                            }
+                        },
+                        {
+                            "sExtends": "text",
+                            "sButtonText": "None",
+                            "fnClick": function( nButton, oConfig, oFlash ) {
+                                jQuery(hosttable.fnGetDisplayNodes()).removeClass('row_selected');
+                            }
+                        },
+                        {
+                            "sExtends": "text",
+                            "sButtonText": "Confirmed",
+                            "fnClick": function( nButton, oConfig, oFlash ) {
+                                jQuery(hosttable.fnGetDisplayNodes()).removeClass('row_selected');
+                                jQuery("#hosttable .hosts_select_confirmed").each(function() {
+                                    jQuery(this).parent().parent().addClass('row_selected');
+                                });
+                            }
+                        },
+                        {
+                            "sExtends": "text",
+                            "sButtonText": "Unconfirmed",
+                            "fnClick": function( nButton, oConfig, oFlash ) {
+                                jQuery("#hosttable tr").removeClass('row_selected');
+                                jQuery("#hosttable .hosts_select_unconfirmed").each(function() {
+                                    jQuery(this).parent().parent().addClass('row_selected');
+                                });
+                            }
+                        }
+
+                    ]
+                },
+                "copy",
+                "csv",
+                "print"
+            ]
+        },
+        "fnDrawCallback": function(nRow, aData, iDisplayIndex, iDisplayIndexFull) {
+            jQuery('#hosttable tbody tr td:nth-child(7)').css("color", "red").css("font-weight", "bold"); //Column 7 is exploits
+            doSpark();
+        },
+        "aoColumnDefs": [
+            { "sType": "ip-address", "aTargets": [ 1 ] },
+            { "sSortDataType": "formatted-num", "aTargets": [ 6 ] },
+            { "sType": "numeric", "aTargets": [ 3, 4 ] },
+            { "sClass": "center", "aTargets": [ 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 ] },
+            { "bSortable": false, "aTargets": [ 0, 5 ] },
+        ],
+        "aaSorting": [[ 1, "asc" ]],
+    } );
+
+    //new FixedHeader( hosttable );
+
+    jQuery('#reload_hosts').click( function () {
+        hosttable.fnReloadAjax();
+        doSpark();
+        return false;
+    } );
+
+    $("#del_host").click( function() {
+        $("#delete-modal .modal-title").html('Delete Host(s)');
+        var checks = dt_checkboxer_select_DT_RowIds(hosttable);
+        if (checks == '')
+            $("#delete-modal .modal-body-content").html("No records selected for deletion");
+        else
+            $("#delete-modal .modal-body-content").html('These items will be permanently deleted and cannot be recovered. This includes all accounts, evidence files, notes, services and vulnerabilities.');
+        $("#delete-modal").modal();
+    });
+
+    $("#delete-modal .btn-primary").click( function(e) {
+        var checks = dt_checkboxer_select_DT_RowIds(hosttable);
+        if (checks == '')
+            return false;
+        var data = "ids=" + checks;
+        url = "{{=URL('hosts', 'delete.json', user_signature=True)}}";
+        $.web2py.ajax_page( 'POST', url, data, 'undefined' );
+    } );
+
+    jQuery('#accessed_hosts').click( function(e) {
+        // accessed hosts button clicked, confirmed/unconfirmed accordingly
+        var idreq = dt_checkboxer_select_DT_RowIds(hosttable);
+        if (idreq == '') { alert('Nothing selected'); return false; }
+        var data = "method=accessed&ids=" + idreq
+        url = "{{=URL('hosts', 'accessed_multi.json', user_signature=True)}}";
+        $.web2py.ajax_page( 'POST', url, data, 'undefined' );
+        return false;
+    } );
+
+    jQuery('#unaccessed_hosts').click( function(e) {
+        // unaccessed hosts button clicked, confirmed/unconfirmed accordingly
+        var idreq = dt_checkboxer_select_DT_RowIds(hosttable);
+        if (idreq == '') { alert('Nothing selected'); return false; }
+        var data = "method=unaccessed&ids=" + idreq
+        url = "{{=URL('hosts', 'accessed_multi.json', user_signature=True)}}";
+        $.web2py.ajax_page( 'POST', url, data, 'undefined' );
+        return false;
+    } );
+
+    jQuery('#confirm_hosts').click( function(e) {
+        // confirm hosts button clicked, confirmed/unconfirmed accordingly
+        var idreq = dt_checkboxer_select_DT_RowIds(hosttable);
+        if (idreq == '') { alert('Nothing selected'); return false; }
+        var data = "method=confirm&ids=" + idreq
+        url = "{{=URL('hosts', 'confirmation_multi.json', user_signature=True)}}";
+        $.web2py.ajax_page( 'POST', url, data, 'undefined' );
+        return false;
+    } );
+
+    jQuery('#unconfirm_hosts').click( function(e) {
+        // unconfirm hosts button clicked, confirmed/unconfirmed accordingly
+        var idreq = dt_checkboxer_select_DT_RowIds(hosttable);
+        if (idreq == '') { alert('Nothing selected'); return false; }
+        var data = "method=unconfirm&ids=" + idreq
+        url = "{{=URL('hosts', 'confirmation_multi.json', user_signature=True)}}";
+        $.web2py.ajax_page( 'POST', url, data, 'undefined' );
+        return false;
+    } );
+
+    jQuery('#follow_up').click( function(e) {
+        // follow up hosts button clicked
+        var idreq = dt_checkboxer_select_DT_RowIds(hosttable);
+        if (idreq == '') { alert('Nothing selected'); return false; }
+        var data = "method=nofollowup&ids=" + idreq
+        url = "{{=URL('hosts', 'followup_multi.json', user_signature=True)}}";
+        $.web2py.ajax_page( 'POST', url, data, 'undefined' );
+        return false;
+    } );
+
+    jQuery('#no_follow_up').click( function(e) {
+        // unconfirm hosts button clicked, confirmed/unconfirmed accordingly
+        var idreq = dt_checkboxer_select_DT_RowIds(hosttable);
+        if (idreq == '') { alert('Nothing selected'); return false; }
+        var data = "method=nofollowup&ids=" + idreq
+        url = "{{=URL('hosts', 'followup_multi.json', user_signature=True)}}";
+        $.web2py.ajax_page( 'POST', url, data, 'undefined' );
+        return false;
+    } );
+
+    var dialog_mass_os = jQuery('<div></div>').appendTo('body');
+
+    $("#mass_os").click(function(e) {
+        e.preventDefault();
+
+        dialog_mass_os.load("{{=URL(request.application, 'hosts','mass_os_refs.load', user_signature=True)}}", function() {
+            jQuery('#t_host_os_refs_f_os_id').chosen();
+        } );
+
+        var idreq = dt_checkboxer_select_DT_RowIds(hosttable);
+        if (idreq == '') { alert('Nothing selected'); return false; }
+
+        bootbox.confirm(dialog_mass_os, "Cancel", "Submit", function(confirmed) {
+            if(confirmed) {
+                // mass_os button clicked, grab list of selected hosts and ask for
+                // os_ref information to gratefully add that info to the db
+                var data = jQuery('#mass_os_form').serialize();
+                data = data + "&host_ids=" + idreq;
+                url = "{{=URL('hosts', 'mass_os_refs.json', user_signature=True)}}";
+                $.web2py.ajax_page( 'POST', url, data, 'undefined' );
+            }
+        });
+    });
+
+    var dialog_mass_asset = jQuery('<div></div>').appendTo('body');
+
+    $("#mass_asset").click(function(e) {
+        e.preventDefault();
+
+        dialog_mass_asset.load("{{=URL(request.application, 'hosts','mass_asset_group.load', user_signature=True)}}");
+
+        var idreq = dt_checkboxer_select_DT_RowIds(hosttable);
+        if (idreq == '') { alert('Nothing selected'); return false; }
+
+        bootbox.confirm(dialog_mass_asset, "Cancel", "Submit", function(confirmed) {
+            if(confirmed) {
+                // mass_asset button clicked, grab list of selected hosts and ask for
+                // Asset Group information to gratefully add that info to the db
+                var data = jQuery('#mass_asset_form').serialize();
+                data = data + "&host_ids=" + idreq;
+                url = "{{=URL('hosts', 'mass_asset_group.json', user_signature=True)}}";
+                $.web2py.ajax_page( 'POST', url, data, 'undefined' );
+            }
+        });
+    });
+
+    $("#mass_bruteforce").click(function(e) {
+        var idreq = dt_checkboxer_select_DT_RowIds(hosttable);
+            if (idreq == '') { alert('Nothing selected'); return false; }
+
+        bootbox.confirm('Send checked hosts to MSF Bruteforcer?', "Cancel", "Ok", function(confirmed) {
+           if(confirmed) {
+                url = "{{=URL('metasploit', 'bruteforce')}}?host_records=" + idreq
+                window.open(url, '_blank');
+            }
+        });
+    });
+
+    $("#mass_exploit").click(function(e) {
+        var idreq = dt_checkboxer_select_DT_RowIds(hosttable);
+            if (idreq == '') { alert('Nothing selected'); return false; }
+
+        bootbox.confirm('Send checked hosts to MSF Exploiter?', "Cancel", "Ok", function(confirmed) {
+           if(confirmed) {
+                url = "{{=URL('metasploit', 'exploit')}}?host_records=" + idreq
+                window.open(url, '_blank');
+            }
+        });
+    });
+
+    $.extend( $.fn.dataTableExt.oStdClasses, {
+        "sWrapper": "dataTables_wrapper form-inline",
+    } );
+
+} );
+
+</script>

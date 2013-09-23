@@ -1,0 +1,31 @@
+{{extend 'layout.html'}}
+
+<div class="row-fluid">
+    <div class="span8">
+        <div class="widget-box">
+            <div class="widget-title">
+              <span class="icon">
+                <i class="icon-book"></i>
+              </span>
+              <h5>{{=response.title or request.application}}</h5>
+            </div>
+            <div class="widget-content">
+                {{=form}}
+            </div>
+        </div>
+    </div>
+    <div class="alert alert-info span4">
+        <p>This process will load a list of hashes and cleartext to search through
+           the account database. Any matching hash will assign the cleartext and
+           compromise the account. Hashes must exactly match.</p>
+        <p>The following file formats are supported:</p>
+        <dl>
+            <dt>John the Ripper PWDUMP</dt>
+            <dd>Output when you use -format:LM or -format:NT</dd>
+            <dt>John the Ripper Shadow</dt>
+            <dd>Output when password file is a UNIX-formatted</dd>
+            <dt>Hash:Password</dt>
+            <dt>Password:Hash</dt>
+        </dl>
+    </div>
+</div>

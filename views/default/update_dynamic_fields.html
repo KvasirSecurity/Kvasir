@@ -1,0 +1,20 @@
+{{extend 'layout.html'}}
+
+<div class="span8">
+    {{=form}}
+</div>
+
+<div class="span4 alert alert-info">
+    <p>Dynamic database fields are generally only updated after large actions such as imports are performed.
+    These fields include the following:</p>
+
+    <dl>
+        <li>Vulnerabilities to Exploits</li>
+        <li>Service counts</li>
+        <li>Vulnerabilty counts</li>
+        <li>Vulnerability sparkline</li>
+    </dl>
+</div>
+
+{{=IMG(_class="err404", _src=URL('static', 'images/oreally/%s' % (err404)), _alt="Whoopsie!")}}
+

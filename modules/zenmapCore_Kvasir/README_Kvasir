@@ -1,0 +1,3 @@
+This is an import of the zenmapCore library distributed with nmap. It has been
+modified so the libraries could be loaded into a web2py application.
+

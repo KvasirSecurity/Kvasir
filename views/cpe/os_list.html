@@ -1,0 +1,62 @@
+{{extend 'layout.html'}}
+
+<div id="accountsbtns" class="navbar btn-toolbar">
+    <a id="add_to_kvasir" class="btn btn-small"><i class="icon-plus"></i> Add to Kvasir</a>
+</div>
+
+<table cellpadding="0" cellspacing="0" border="0" class="datatable" id="cpeostable" width="100%">
+    <thead>
+        <tr>
+            <th>ID</th>
+            <th></th>
+            <th>CPE Name</th>
+            <th>Title</th>
+            <th>Vendor</th>
+            <th>Product</th>
+            <th>Version</th>
+            <th>Update</th>
+            <th>Edition</th>
+            <th>Language</th>
+        </tr>
+    </thead>
+</table>
+
+<script type="text/javascript" language="javascript">
+
+var cpeostable;
+
+jQuery(document).ready(function() {
+    var cpeostable = $('#cpeostable').dataTable( {
+        "bServerSide": true,
+        "sDom": 'T<"clear">lfrtip',
+        "oTableTools": {
+            "sRowSelect": "multi",
+            "sSelectedClass": "row_selected",
+            "fnRowSelected": function ( node ) {
+                jQuery(node).find("input[type=checkbox]").attr("checked", true);
+            },
+            "fnRowDeselected": function ( node ) {
+                jQuery(node).find("input[type=checkbox]").attr("checked", false);
+            },
+            "sSwfPath": "{{=URL('static', 'TableTools/swf/copy_csv_xls.swf')}}"
+        },
+        "sAjaxSource": "os_list.json",
+    } );
+
+    jQuery('#add_to_kvasir').click( function() {
+        // add to kvasir button clicked, run through list of input#sel_id and
+        // submit to add the records to kvasir
+        // builds a json array to send to host_confirm
+        var checks = jQuery('#sel_id', cpeostable.fnGetNodes()).serializeArray();
+        if (checks == '') { alert('Nothing selected'); return false; }
+        var idreq=dt_checkboxer_make_idReq(checks);
+        var data = "ids=" + idreq;
+        url = "{{=URL('os_add_to_kvasir.json', user_signature=True)}}";
+        $.web2py.ajax_page( 'POST', url, data, 'undefined' );
+        jQuery('input:checkbox').attr('checked', false);
+        return false;
+    } );
+
+} );
+
+</script>

@@ -1,0 +1,67 @@
+<h2>OS Records for {{=host_title_maker(host)}}</h2>
+
+{{=XML(add_os_refs.formModal())}}
+{{=XML(add_non_cpe.formModal())}}
+
+<div id="os_list">
+    <div id="os_buttons" class="navbar btn-toolbar">
+        {{=XML(add_os_refs.btn_show())}}
+        <a id="delete_os" class="btn btn-small"><i class="icon-remove"></i> Delete</a>
+        <a id="reload_os" class="btn btn-small" onclick="javascript:ostable.fnReloadAjax(); return false;"><i class="icon-refresh"></i> Reload</a>
+        <div class="btn-group">
+            <a class="btn btn-small dropdown-toggle" data-toggle="dropdown" href="#">
+                <i class="icon-arrow-down"></i> CPE OS Functions
+                <span class="caret"></span>
+            </a>
+            <ul class="dropdown-menu">
+                <li><a href="{{=URL('cpe', 'os_list.html')}}" target="_blank" id="add_cpe">Add CPE to OS DB</a></li>
+                <li>{{=XML(add_non_cpe.btn_show(btn_role="", btn_class="", icon=""))}}</li>
+            </ul>
+        </div>
+    </div>
+
+    {{=form}}
+</div>
+
+<script>
+var ostable;
+
+jQuery(document).ready(function() {
+
+    $("#delete_os").click(function(e) {
+        e.preventDefault();
+
+        //bootbox.options.onEscape =
+        bootbox.confirm('These items will be permanently deleted and cannot be recovered. Are you sure?', "Cancel", "Delete", function(confirmed) {
+            if(confirmed) {
+                var checks = dt_checkboxer_select_DT_RowIds(ostable);
+                if (checks == '') { alert('Nothing selected'); return false; }
+                var data = "ids=" + checks;
+                url = "{{=URL('os', 'refs_delete.json', user_signature=True)}}"
+                $.web2py.ajax_page( 'POST', url, data, 'undefined' );
+            }
+        });
+    });
+
+    ostable = jQuery('#ostable').dataTable( {
+        "sDom": 'T<"clear">lfrtip',
+        "oTableTools": {
+            "sRowSelect": "multi",
+            "sSelectedClass": "row_selected",
+            "sSwfPath": "{{=URL('static', 'TableTools/swf/copy_csv_xls.swf')}}",
+            "aButtons": [
+                "select_all",
+                "select_none",
+                "copy",
+                "csv",
+                "print"
+            ]
+        },
+        "aoColumnDefs": [
+            { "bSortable": false, "aTargets": [ 0 ] }
+        ],
+        "aaSorting": [[ 3, "asc" ]],
+        "sAjaxSource": "{{=URL('refs_by_host.json', args=request.args(0))}}",
+    } );
+} );
+</script>

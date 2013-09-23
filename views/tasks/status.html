@@ -1,0 +1,109 @@
+{{ extend 'layout.html'}}
+
+<div id="status">
+    <table class="table table-bordered">
+        <tr>
+            <td style="background-color: #D9EDF7" width="80%">
+                <div id='task_header'>
+                    <div id='task_title'><strong>Status:</strong> <span id='task_status'></span></div>
+                    <div id='task_worker'><strong>Worker:</strong> <span id='task_worker_name'></span></div>
+                    <div id='task_start_time'><strong>Queued:</strong> {{=task.start_time}}</div>
+                </div>
+            </td>
+            <td rowspan="2">
+                <div id='task_end_time'><strong>Started:</strong> <span id='task_worker_start'></span></div>
+                <div id='task_end_time'><strong>Ended:</strong> <span id='task_worker_end'></span></div>
+                </br>
+                <div id='task_stop'><button id="stop_button" class="btn btn-small btn-danger"><i class="icon-stop"></i> Stop Task</button></div>
+            </td>
+        </tr>
+        <tr class="info">
+            <td><strong>Arguments:</strong> {{=task.args}} {{=task.vars}}</td>
+        </tr>
+    </table>
+</div>
+
+<div id="tasklog">
+    <h2>Task Log</h2>
+    <pre id='task_logs' style="overflow: auto; height: 300px; background-color: black; color: #EEE;">
+    </pre>
+</div>
+
+<div id="traceback" style="display: none;">
+    <h2>Traceback</h2>
+    <pre id='task_traceback' style="overflow: auto; height: 300px; background-color: black; color: #EEE;">
+    </pre>
+</div>
+
+<script>
+    $(document).ready(function() {
+        $("traceback").toggle();
+        $("traceback").click(function() {
+            $(this).toggle();
+        });
+
+        $("#stop_button").on('click', function() {
+            if (! $(this).hasClass('disabled')) {
+                var url = "{{=URL('tasks', 'stop.json', user_signature=True)}}";
+                $.web2py.ajax_page( 'POST', url, "id={{=task.id}}", 'undefined' );
+            }
+        });
+    });
+
+    (function() {
+
+      jQuery(function($) {
+        return $(function() {
+          return $(document).ready(function() {
+            var $log, task, updateLog;
+            $log = $('#task_logs');
+            task = $log.attr('task');
+            $log.bind('scrollToBottom', function() {
+              return $(this).scrollTop($(this).attr('scrollHeight'));
+            });
+
+            $log.bind('addLine', function(event, html) {
+              var prevLine;
+              prevLine = $(this).data('prevLine');
+              if (html !== prevLine) {
+                $(this).append(html).trigger('scrollToBottom');
+              }
+              return $(this).data('prevLine', html);
+            });
+
+            updateLog = function() {
+              var lines;
+              if ($("#task_logs .end").length === 0) {
+                lines = $log.children().length;
+                return $.get("{{=URL('tasks', 'output.json', args=task.id)}}", function(data) {
+
+                  $('#task_status').html(data['status']);
+                  $('#task_logs').html(data['output']);
+                  $('#task_traceback').html(data['traceback']);
+                  $('#task_worker_name').html(data['worker']);
+                  $('#task_worker_start').html(data['start']);
+                  $('#task_worker_end').html(data['ended']);
+
+                  if (!(data['status'] == 'QUEUED') || (data['status'] == 'RUNNING')) {
+                    //(data['status'] == 'COMPLETED') || (data['status'] == 'FAILED') || (data['status'] == 'TIMEOUT')) {
+                    $('#stop_button').addClass('disabled');
+                    $('#task_worker_end').html("{{=task.stop_time}}");
+                    if ((data['status'] == 'FAILED') || (data['status'] == 'TIMEOUT') ){
+                        $('#task_status').addClass('text-error');
+                        $('#traceback').show();
+                    }
+                    return clearTimeout(updateLog);
+                  }
+                  return window.setTimeout(updateLog, 3000);
+                });
+              }
+            };
+            $log.trigger('scrollToBottom');
+            return updateLog();
+          });
+        });
+      });
+
+    }).call(this);
+
+</script>

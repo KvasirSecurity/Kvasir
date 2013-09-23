@@ -1,0 +1,36 @@
+<div id="loading_modal" class="modal hide fade">
+  <div class="modal-header">
+    <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+    <h3>Please wait...</h3>
+  </div>
+  <div class="modal-body">
+    <video id="loadingvid" controls="controls" loop="loop" style="max-width:inherit;">
+        <source src="{{=URL('static', 'videos/loading.m4v')}}" type="video/mp4"/>
+        Your browser does not support the video tag.
+    </video>
+  </div>
+</div>
+
+<hr>
+
+<script>
+
+$(document).ready(function() {
+
+    //document.getElementById('loadingvid').pause();
+
+    jQuery('#loading_modal').on('show', function() {
+        document.getElementById('loadingvid').play();
+    });
+
+    jQuery('#loading_modal').on('hide', function() {
+        document.getElementById('loadingvid').pause();
+    });
+
+    jQuery('input[type="submit"]').click( function() {
+      jQuery('form').submit();
+      jQuery("#loading_modal").modal('show');
+    });
+
+});
+</script>

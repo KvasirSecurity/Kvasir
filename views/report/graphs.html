@@ -1,0 +1,31 @@
+{{extend 'layout.html'}}
+{{include 'filter_hosts.html'}}
+
+<h2>-=( Graphs )=-</h2>
+
+<h3>NOTE: You must reload the page after changing a filter. Bummer, dude.</h3>
+
+<div id="graph_selection">
+    <div id="vulnlist_form" class="btn-toolbar">
+        <a id="filter_hosts" class="btn btn-small" data-toggle="modal" href="#filterModal"><i class="icon-filter"></i> Filter</a>
+        {{=form}}
+    </div>
+</div>
+
+<script>
+    $('#no_table_chart_type').change(function() {
+        var chart_type = $("#no_table_chart_type").val();
+        chgImage(chart_type);
+    } );
+
+    function chgImage(chart_type) {
+        var ct = chart_type;
+        document.graph_img.src = 'graphs?chart_type='+ct;
+    }
+</script>
+
+<hr>
+
+<div id="graph">
+  <img id="graph_img" src=""/>
+</div>

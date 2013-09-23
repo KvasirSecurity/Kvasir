@@ -1,0 +1,45 @@
+{{extend 'layout.html'}}
+{{include 'markitup_markmin.html'}}
+
+<div class="row-fluid">
+    <div class="span10">
+        <div class="widget-box">
+            <div class="widget-title">
+              <span class="icon">
+                <i class="icon-edit"></i>
+              </span>
+              <h5>{{=response.title or request.application}}</h5>
+            </div>
+            <div class="widget-content">
+                {{=form}}
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="tabheader" style="clear: both;">
+
+    <div id="tabs">
+        <ul id="tabs-ul" class="nav nav-tabs">
+            <li class="active"><a href="#hosts_list" data-toggle="tab">Host list</a></li>
+            <li><a href="#references_list" data-toggle="tab">References</a></li>
+            <li><a href="#exploits_list" data-toggle="tab">Exploits</a></li>
+        </ul>
+
+        <div id="TabContent" class="tab-content">
+
+            <div class="tab-pane active" id="hosts_list">
+                {{=hosts}}
+            </div>
+
+            <div class="tab-pane" id="references_list">
+				{{=refs}}
+			</div>
+
+            <div class="tab-pane" id="exploits_list">
+				{{=exploits}}
+			</div>
+
+		</div>
+	</div>
+</div>

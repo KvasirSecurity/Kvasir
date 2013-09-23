@@ -1,0 +1,30 @@
+{{extend 'layout.html'}}
+
+<div class="row-fluid">
+    <div class="span8">
+        <div class="widget-box">
+            <div class="widget-title">
+                <span class="icon">
+                 <i class="icon-align-justify"></i>
+                </span>
+                <h5>{{=response.title or settings.title}}</h5>
+            </div>
+            <div class="widget-content">
+                {{=form}}
+            </div>
+        </div>
+    </div>
+    <div id="info" class="span4 alert alert-info">
+        <h3>ShodanHQ Overview</h3>
+        <p><a href="http://www.shodanhq.com/" target="blank" rel="noreferrer">ShodanHQ</a> scans the publicly accessible Internet
+            address ranges probing for open services and gathers information.</p>
+        <p>IP addresses will count against the total scan credits. As of 11/2013 this exchange rate is 1 credit = 1,000 results.
+           Additional information is available <a href="http://www.shodanhq.com/help/export" target="blank" rel="noreferrer">here</a>.</p>
+        <p>Scan results may be downloaded through the use of the <a href="http://docs.shodanhq.com/" target="blank" rel="noreferrer">Developer API</a>
+            or manually. API calls may require credits from your ShodanHQ account. Cisco Systems is not
+            responsible for the use of this API and any errors that may deduct credits from your account.</p>
+        <p>To use the Developer API edit your models/db.py file and enter it in 'settings.shodanhq_apikey'</p>
+    </div>
+</div>
+
+{{include 'loading.html'}}

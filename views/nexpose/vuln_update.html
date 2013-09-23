@@ -1,0 +1,20 @@
+{{extend 'layout.html'}}
+
+<div class="row-fluid">
+    <div class="span8">
+        <div class="widget-box">
+            <div class="widget-title">
+              <span class="icon">
+                <i class="icon-edit"></i>
+              </span>
+              <h5>{{=response.title or request.application}}</h5>
+            </div>
+            <div class="widget-content">
+                {{=form}}
+            </div>
+        </div>
+    </div>
+    <div class="span4 alert alert-info">
+        <p><b>Warning!</b> -- This queries the Nexpose API nearly 15,000 times for each vulnerability. It can take 15 to 30 minutes to perform!</p>
+    </div>
+</div>

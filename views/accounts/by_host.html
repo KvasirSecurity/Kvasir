@@ -1,0 +1,160 @@
+{{extend 'layout.html'}}
+
+<h2>Accounts for host {{=host_title_maker(host)}}</h2>
+
+{{=XML(add.formModal())}}
+<div id="accounts_list">
+
+    <div id="accountsbtns" class="navbar btn-toolbar">
+        {{=XML(add.btn_show())}}
+        <a id="delete_account" class="btn btn-small"><i class="icon-remove"></i> Delete</a>
+        <a id="reload_account" class="btn btn-small" onclick="javascript:accounttable.fnReloadAjax(); return false;"><i class="icon-refresh"></i> Reload</a>
+        <a id="import_account" class="btn btn-small"><i class="icon-upload"></i> Import File</a>
+        <a id="paste_account" class="btn btn-small"><i class="icon-pencil"></i> Paste File</a>
+        <a id="show_pwdump" class="btn btn-small"><i class="icon-user"></i> Show PWDUMP</a>
+    </div>
+    <div id="accountsform">
+    {{=form}}
+    </div>
+</div>
+
+
+<script>
+var accounttable;
+
+jQuery(document).ready(function() {
+
+    jQuery("#delete_account").click(function(e) {
+        e.preventDefault();
+
+        //bootbox.options.onEscape =
+        bootbox.confirm('These items will be permanently deleted and cannot be recovered. Are you sure?', "Cancel", "Delete", function(confirmed) {
+            if(confirmed) {
+                var checks = dt_checkboxer_select_DT_RowIds(accounttable);
+                if (checks == '') { alert('Nothing selected'); return false; }
+                var data = "ids=" + checks;
+                url = "{{=URL('accounts', 'delete.json', user_signature=True)}}"
+                $.web2py.ajax_page( 'POST', url, data, 'undefined' );
+            }
+        });
+    });
+
+    var dialog_import_account = jQuery('<div></div>').appendTo('body');
+
+    jQuery("#import_account").click(function(e) {
+        e.preventDefault();
+
+        dialog_import_account.load("{{=URL('accounts', 'import_file.load', vars={'host_id': host.id})}}")
+
+        bootbox.confirm(dialog_import_account, "Cancel", "Submit", function(confirmed) {
+            if(confirmed) {
+                var import_obj = jQuery('#accounts_import_form');
+                var import_action = import_obj.attr('action').replace('.load', '.json');
+                import_obj.get(0).setAttribute('action', import_action);
+                ajax_form_submit(import_obj);
+            }
+        });
+    });
+
+    var dialog_paste_account = jQuery('<div></div>').appendTo('body');
+
+    jQuery("#paste_account").click(function(e) {
+        e.preventDefault();
+
+        dialog_paste_account.load("{{=URL('accounts', 'paste.load', vars={'host_id': host.id})}}")
+
+        bootbox.confirm(dialog_paste_account, "Cancel", "Submit", function(confirmed) {
+            if(confirmed) {
+                var data = jQuery('#accounts_paste_form').serialize();
+                var url = "{{=URL('accounts', 'paste.json', vars={'host_id': host.id})}}";
+                $.web2py.ajax_page( 'POST', url, data, 'undefined' );
+            }
+        });
+    });
+
+    jQuery('#show_pwdump').click( function() {
+        var pwdumptext='';
+        var rows;
+        rows = accounttable.$('tr', {'filter':'applied'}).toArray();
+        rows.forEach( function(node) {
+            if (node.cells[6].innerText == 'LM') {
+                pwdumptext += node.cells[3].innerText + ':' +
+                             node.cells[4].innerText + ':' +
+                             node.cells[7].innerText + ':' +
+                             node.cells[9].innerText + ':::\n';
+            }
+        } );
+        bootbox.alert('<pre>'+pwdumptext+'</pre>').addClass('bigModal');
+    } );
+
+    accounttable = jQuery('#accounttable').dataTable( {
+        "sDom": 'TC<"clear">lfrtip',
+        "oTableTools": {
+            "sRowSelect": "multi",
+            "sSelectedClass": "row_selected",
+            "sSwfPath": "{{=URL(request.application, 'static', 'TableTools/swf/copy_csv_xls.swf')}}",
+            "aButtons": [
+                {
+                    "sExtends":  "collection",
+                    "sButtonText": "Select",
+                    "aButtons": [
+                        {
+                            "sExtends": "text",
+                            "sButtonText": "All",
+                            "fnClick": function( nButton, oConfig, oFlash ) {
+                                jQuery(accounttable.fnGetFilteredNodes()).addClass('row_selected');
+                            }
+                        },
+                        {
+                            "sExtends": "text",
+                            "sButtonText": "None",
+                            "fnClick": function( nButton, oConfig, oFlash ) {
+                                jQuery(accounttable.fnGetFilteredNodes()).removeClass('row_selected');
+                            }
+                        },
+                        {
+                            "sExtends": "text",
+                            "sButtonText": "Compromised",
+                            "fnClick": function( nButton, oConfig, oFlash ) {
+                                jQuery(accounttable.fnGetFilteredNodes()).removeClass('row_selected');
+                                jQuery("#accounttable .acct_compromised").each(function() {
+                                    jQuery(this).parent().parent().addClass('row_selected');
+                                });
+                            }
+                        },
+                        {
+                            "sExtends": "text",
+                            "sButtonText": "Uncompromised",
+                            "fnClick": function( nButton, oConfig, oFlash ) {
+                                jQuery(accounttable.fnGetFilteredNodes()).removeClass('row_selected');
+                                jQuery("#accounttable .acct_uncompromised").each(function() {
+                                    jQuery(this).parent().parent().addClass('row_selected');
+                                });
+                            }
+                        }
+
+                    ]
+                },
+                "copy",
+                "csv",
+                "print"
+             ]
+        },
+        "aoColumnDefs": [
+            { "bSortable": false, "aTargets": [ 0, 1 ] },
+        ],
+        "aaSorting": [[ 2, "asc" ]],
+        "sAjaxSource": "{{=URL('accounts', 'by_host.json', args=[request.args(0)])}}",
+        "aoColumnDefs": [
+            { "bSortable": false, "aTargets": [ 0 ] },
+        ],
+        "aaSorting": [[ 2, "asc" ]],
+    } );
+
+    $.extend( $.fn.dataTableExt.oStdClasses, {
+        "sWrapper": "dataTables_wrapper form-inline",
+    } );
+
+} );
+</script>
+

@@ -1,0 +1,66 @@
+{{extend 'layout.html'}}
+
+{{=A(T('Add CPE Application'),_href=URL('app_add'))}}
+<br/>
+
+<div id="accountsbtns" class="navbar btn-toolbar">
+    <a id="add_to_kvasir" class="btn btn-small"><i class="icon-plus"></i> Add to Kvasir</a>
+</div>
+
+<div id="table">
+<table cellpadding="0" cellspacing="0" border="0" class="datatable" id="cpeappstable" width="100%">
+    <thead>
+        <tr>
+            <th>ID</th>
+            <th></th>
+            <th>CPE Name</th>
+            <th>Title</th>
+            <th>Vendor</th>
+            <th>Product</th>
+            <th>Version</th>
+            <th>Update</th>
+            <th>Edition</th>
+            <th>Language</th>
+        </tr>
+    </thead>
+</table>
+
+<script type="text/javascript" language="javascript">
+
+var oTable;
+
+jQuery(document).ready(function() {
+    var cpeappstable = $('#cpeappstable').dataTable( {
+        "bServerSide": true,
+        "sDom": 'T<"clear">lfrtip',
+        "oTableTools": {
+            "sRowSelect": "multi",
+            "sSelectedClass": "row_selected",
+            "fnRowSelected": function ( node ) {
+                jQuery(node).find("input[type=checkbox]").attr("checked", true);
+            },
+            "fnRowDeselected": function ( node ) {
+                jQuery(node).find("input[type=checkbox]").attr("checked", false);
+            },
+            "sSwfPath": "{{=URL('static', 'TableTools/swf/copy_csv_xls.swf')}}"
+        },
+        "sAjaxSource": "apps_select.json",
+    } );
+
+    jQuery('#add_to_kvasir').click( function() {
+        // add to kvasir button clicked, run through list of input#sel_id and
+        // submit to add the records to kvasir
+        // builds a json array to send to host_confirm
+        var checks = jQuery('#sel_id', cpeappstable.fnGetNodes()).serializeArray();
+        if (checks == '') { alert('Nothing selected'); return false; }
+        var idreq=dt_checkboxer_make_idReq(checks);
+        var data = "ids=" + idreq;
+        url = "{{=URL('cpe', 'apps_add_to_kvasir.json', user_signature=True)}}";
+        $.web2py.ajax_page( 'POST', url, data, 'undefined' );
+        jQuery('input:checkbox').attr('checked', false);
+        return false;
+    } );
+
+} );
+
+</script>

@@ -1,0 +1,7 @@
+{{
+import cStringIO
+stream=cStringIO.StringIO()
+ip_list.export_to_csv_file(stream)
+response.headers['Content-Type']='text/plain'
+response.write(stream.getvalue(), escape=False)
+}}

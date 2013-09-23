@@ -1,0 +1,83 @@
+{{extend 'layout.html'}}
+
+<div id="toolbar" class="btn-toolbar">
+    <a id="filter_hosts" class="btn btn-small" data-toggle="modal" href="#filterModal"><i class="icon-filter"></i> Filter</a>
+</div>
+
+<div class="tabheader" style="clear: both;">
+
+    <div id="tabs">
+        <ul id="tabs-ul" class="nav nav-tabs">
+            <li class="active"><a href="#port_counts" data-toggle="tab"><u>P</u>ort Statistics</a></li>
+            <li><a href="#name_counts" data-toggle="tab"><u>N</u>ame Statistics</a></li>
+        </ul>
+
+    <div id="TabContent" class="tab-content">
+        <div class="tab-pane active" id="port_counts" >
+            <table id="porttable" class="datatable">
+                <thead>
+                    <th>Port Number</th>
+                    <th>Count</th>
+                </thead>
+                <tbody>
+                    {{for p in port_counts:}}
+                    <tr>
+                        <td>{{=p}}</td>
+                        <td>{{=port_counts[p]}}</td>
+                    </tr>
+                    {{pass}}
+                </tbody>
+            </table>
+        </div>
+
+        <div class="tab-pane" id="name_counts">
+            <table id="nametable" class="datatable">
+                <thead>
+                    <th>Port Number</th>
+                    <th>Count</th>
+                </thead>
+                <tbody>
+                    {{for p in name_counts:}}
+                    <tr>
+                        <td>{{=p}}</td>
+                        <td>{{=name_counts[p]}}</td>
+                    </tr>
+                    {{pass}}
+                </tbody>
+            </table>
+        </div>
+
+    </div>
+</div>
+
+<script>
+var $refreshpage = true;
+
+$(document).ready(function() {
+
+    // Mousetrap bindings
+    Mousetrap.bind(['p','P','1'], function() { jQuery('#tabs-ul a[href="#port_counts"]').tab('show'); });
+    Mousetrap.bind(['n','N','2'], function() { jQuery('#tabs-ul a[href="#name_counts"]').tab('show'); });
+
+    var porttable;
+    porttable = $('#porttable').dataTable( {
+          "aaSorting": [ [1, "desc"] ],
+          "sDom": 'T<"clear">lfrtip',
+          "oTableTools": {
+              "sSwfPath": "{{=URL(request.application,'static','TableTools/swf/copy_csv_xls.swf')}}"
+          },
+    } );
+
+    var nametable;
+    nametable = $('#nametable').dataTable( {
+          "aaSorting": [ [1, "desc"] ],
+          "sDom": 'T<"clear">lfrtip',
+          "oTableTools": {
+              "sSwfPath": "{{=URL(request.application,'static','TableTools/swf/copy_csv_xls.swf')}}"
+          },
+    } );
+
+});
+</script>
+
+{{include 'filter_hosts.html'}}

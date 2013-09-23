@@ -1,0 +1,36 @@
+{{extend 'layout.html'}}
+{{include 'metasploit.html'}}
+
+{{if form:}}
+<div class="row-fluid">
+    <div class="span8">
+        <div class="widget-box">
+            <div class="widget-title">
+              <span class="icon">
+                <i class="icon-upload"></i>
+              </span>
+              <h5>{{=response.title or request.application}}</h5>
+            </div>
+            <div class="widget-content">
+                {{=form}}
+            </div>
+        </div>
+    </div>
+    <div class="alert alert-info span4">
+        <dl>
+            <dt>Current Workspace Name</dt>
+                <dd>{{=session.msf_workspace}}</dd>
+            <dt>Current Workspace Number</dt>
+                <dd>{{=session.msf_workspace_num}}</dd>
+            <dt>Metasploit User</dt>
+                <dd>{{=session.msf_user}}</dd>
+        </dl>
+        <p>Note that we are unable to learn the number of your Metasploit workspace. You must <strong>manually</strong>
+        set this value here in order for links to Metasploit to work correctly. By default we select the number
+        '1' because that's generally on everyone's setup.</p>
+
+        <p>This number can be found by looking at your Metasploit URL. For example the workspace number is <strong>10</strong> for the
+        URL </i>https://localhost:3790/workspaces/10</i>.</p>
+    </div>
+</div>
+{{pass}}

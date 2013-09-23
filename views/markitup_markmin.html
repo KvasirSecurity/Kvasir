@@ -1,0 +1,11 @@
+<script type="text/javascript" src="{{=URL(r=request,c='static',f='markitup')}}/js/jquery.markitup.js"></script>
+<script type="text/javascript" src="{{=URL(r=request,c='static',f='markitup')}}/sets/markmin/set.js"></script>
+
+<link rel="stylesheet" type="text/css" href="{{=URL(r=request,c='static',f='markitup')}}/css/markitup.css" />
+<link rel="stylesheet" type="text/css" href="{{=URL(r=request,c='static',f='markitup')}}/sets/markmin/style.css" />
+
+<script>
+jQuery(document).ready(function() {
+  jQuery('textarea').markItUp(mySettings);
+});
+</script>

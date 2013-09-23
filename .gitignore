@@ -33,3 +33,20 @@ nosetests.xml
 .mr.developer.cfg
 .project
 .pydevproject
+
+# web2py crud
+.*.swp
+*.log
+*.log.*
+.DS_Store
+data/
+sessions/
+errors/
+uploads/
+databases/
+cache/
+.idea/
+
+# keep your db.py away
+models/db.py
+

@@ -1,0 +1,26 @@
+{{extend 'layout.html'}}
+
+<div class="row-fluid">
+    <div class="span8">
+        <div class="widget-box">
+            <div class="widget-title">
+              <span class="icon">
+                <i class="icon-book"></i>
+              </span>
+              <h5>{{=response.title or request.application}}</h5>
+            </div>
+            <div class="widget-content">
+                {{=form}}
+            </div>
+        </div>
+    </div>
+    <div class="span4 alert alert-info">
+        <p>For Windows accounts use the "info/0" service</p>
+        <p>Supported password file types:</p>
+        <ul>
+            {{for f in settings.password_file_types:}}
+            <li>{{=f}}</li>
+            {{pass}}
+        </ul>
+    </div>
+</div>

@@ -1,0 +1,76 @@
+{{extend 'layout.html'}}
+
+{{=XML(add.formModal())}}
+<div id="os_list">
+    <div id="osform" class="btn-toolbar">
+        {{=XML(add.btn_show())}}
+        <a href="{{=URL('cpe','os_list')}}" target="_blank" id="add_cpe_to_kvasir" class="btn btn-small"><i class="icon-plus"></i> Add CPE</button>
+        <a id="delete_os" class="btn btn-small"><i class="icon-plus"></i> Delete</a>
+        <a id="reload" onclick="javascript:ostable.fnReloadAjax(); return false;" class="btn btn-small"><i class="icon-refresh"></i> Reload</a>
+    </div>
+
+<table cellpadding="0" cellspacing="0" border="0" class="datatable" id="ostable" width="100%">
+    <thead>
+    <tr>
+        <th>ID</th>
+        <th>CPE Name</th>
+        <th>Title</th>
+        <th>Vendor</th>
+        <th>Product</th>
+        <th>Version</th>
+        <th>Update</th>
+        <th>Edition</th>
+        <th>Language</th>
+    </tr>
+    </thead>
+</table>
+
+</div>
+
+<script type="text/javascript" language="javascript">
+
+var ostable;
+
+jQuery(document).ready(function() {
+
+    ostable = $('#ostable').dataTable( {
+        //"bServerSide": true,
+        "sDom": 'T<"clear">lfrtip',
+        "oTableTools": {
+            "sRowSelect": "multi",
+            "sSelectedClass": "row_selected",
+            "sSwfPath": "{{=URL(request.application, 'static', 'TableTools/swf/copy_csv_xls.swf')}}",
+            "aButtons": [
+                "select_all",
+                "select_none",
+                "copy",
+                "csv",
+                "print"
+            ]
+        },
+        "sAjaxSource": "list.json",
+        "fnServerData": function ( sSource, aoData, fnCallback ) {
+            jQuery.getJSON( sSource, aoData, function (json) {
+                fnCallback(json);
+            } );
+        },
+    } );
+
+    $("#del_os").click(function(e) {
+        e.preventDefault();
+
+        //bootbox.options.onEscape =
+        bootbox.confirm('These items will be permanently deleted and cannot be recovered. Are you sure?', "Cancel", "Delete", function(confirmed) {
+            if(confirmed) {
+                var checks = dt_checkboxer_select_DT_RowIds(hosttable);
+                if (checks == '') { alert('Nothing selected'); return false; }
+                var data = "ids=" + checks;
+                url = "{{=URL('os', 'delete.json', user_signature=True)}}";
+                $.web2py.ajax_page( 'POST', url, data, 'undefined' );
+            }
+        });
+    });
+
+} );
+
+</script>

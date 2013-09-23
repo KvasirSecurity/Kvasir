@@ -1,0 +1,42 @@
+{{
+# Hotkey definitions
+#
+# This file defines the global hotkeys and their supportive elements.
+# Hotkeys are set by using the "Mousetrap.bind()" function:
+#
+# Mousetrap.bind('<key combination>', function() { } );
+#
+# Where <key combination> can be any keyboard key and modifer.
+#
+# For modifier keys you can use shift, ctrl, alt, option, meta, and command.
+#
+# Other special keys are backspace, tab, enter, return, capslock, esc, escape,
+# space, pageup, pagedown, end, home, left, up, right, down, ins, and del.
+#
+# Any other key you should be able to reference by name like a, /, $, *, or =.
+#
+# To define multiple key combos put them in an array: ['a', 'A']
+#
+# Key sequences are also possible: 'g o command+enter'
+#
+# Any bindings loaded after this will overwrite an existing binding. To remove
+# a binding use "Mousetrap.unbind()"
+#
+# More information on Mousetrap is available at: http://craig.is/killing/mice
+# and https://github.com/ccampbell/mousetrap
+}}
+
+
+<script src="{{=URL(request.application,'static','js/mousetrap.js')}}"></script>
+
+<script><!--
+
+    Mousetrap.bind(['j', 'J', 'command-j'], function(e) {
+        bootbox.prompt("Jump to IP/Record", function(result) {
+          if (result) {
+              window.location.href = "{{=URL('hosts', 'detail')}}/" + result;
+          }
+        });
+    } );
+
+--></script>

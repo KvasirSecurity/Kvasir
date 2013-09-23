@@ -1,0 +1,31 @@
+{{
+import re
+from gluon.contrib.markmin.markmin2pdf import markmin2pdf
+def markmin_serializer(text,tag=None,attr={}):
+    if tag==None: return re.sub('\s+',' ',text)
+    if tag=='br': return '\n\n'
+    if tag=='h1': return '# '+text+'\n\n'
+    if tag=='h2': return '#'*2+' '+text+'\n\n'
+    if tag=='h3': return '#'*3+' '+text+'\n\n'
+    if tag=='h4': return '#'*4+' '+text+'\n\n'
+    if tag=='p': return text+'\n\n'
+    if tag=='li': return '\n- '+text.replace('\n',' ')
+    if tag=='tr': return text[3:].replace('\n',' ')+'\n'
+    if tag in ['table','blockquote']: return '\n-----\n'+text+'\n------\n'
+    if tag in ['td','th']: return ' | '+text
+    if tag in ['b','strong','label']: return '**%s**' % text
+    if tag in ['em','i']: return "''%s''" % text
+    if tag in ['tt','code']: return '``%s``' % text
+    if tag=='a': return '[[%s %s]]' % (text,attr.get('_href',''))
+    return text
+html=response.render('%s/%s.html' % (request.controller,request.function))
+markmin=TAG(html).element('#content').flatten(markmin_serializer)
+pdf,warnings,errors=markmin2pdf(markmin)
+if errors:
+   response.headers['Content-Type']='text'
+   response.write(HTML(BODY(H1('errors'),LU(*errors),H1('warnings'),LU(*warnings))))
+else:
+   response.headers['Content-Type']='application/pdf'
+   response.write(pdf,escape=False)
+pass
+}}

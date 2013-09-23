@@ -1,0 +1,50 @@
+#
+# zshrc functions to automatically create and start web2py and Kvasir
+# change variables to suit your own locations
+#
+# if using web2py.app
+# http://www.web2py.com/examples/static/web2py_osx.zip
+#
+export WEB2PY_HOME="/Applications/web2py.app/Contents/Resources"
+alias web2py="python /Applications/web2py.app/Contents/Resources/web2py.py"
+
+#
+# if using Postgres.app
+# http://postgresapp.com/
+#
+PATH=/Applications/Postgres.app/Contents/MacOS/bin:$PATH
+
+#
+# create new kvasir instance
+# eg. kvnew foowidgets
+#
+function kvnew () {
+    # create and install the customer directory
+    CUSTOMER=$1
+    mkdir /opt/data/$CUSTOMER
+    KV_HOME=/opt/data/$CUSTOMER/kvasir
+
+    git clone https://github.com/KvasirSecurity/Kvasir /opt/data/$1/kvasir
+    cp -R $HOME/tools/kvasir-dev $KV_HOME
+
+    # seems like this directory should already exist. bug?
+    mkdir $KV_HOME/databases
+
+    ln -s $KV_HOME $WEB2PY_HOME/applications/$CUSTOMER
+
+    # database setup and config
+    createdb $CUSTOMER
+    mv $KV_HOME/models/db.py.sample $KV_HOME/models/db.py
+    sed -i ".sample" "s/settings.database_uri = .*/settings.database_uri = 'postgres:\/\/$USER@localhost:5432\/$1'/g" $KV_HOME/models/db.py
+
+    export KV_HOME
+}
+
+#
+# start kvasir instance
+# eg. 'kvstart foowidgets'
+#
+function kvstart () {
+    web2py -a password -X -K $1
+}
+

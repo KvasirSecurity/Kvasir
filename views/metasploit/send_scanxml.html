@@ -1,0 +1,34 @@
+{{extend 'layout.html'}}
+{{include 'metasploit.html'}}
+
+{{if form:}}
+<div class="row-fluid">
+    <div class="span8">
+        <div class="widget-box">
+            <div class="widget-title">
+              <span class="icon">
+                <i class="icon-upload"></i>
+              </span>
+              <h5>{{=response.title or request.application}}</h5>
+            </div>
+            <div class="widget-content">
+                <div id="form">
+                    {{=form}}
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="alert alert-info span4">
+        <p>Note that this requires Metasploit Pro and the Kvasir web server are on the same system or networked file systems.</p>
+        <dl>
+            <dt>Current Workspace Name</dt>
+                <dd>{{=session.msf_workspace}}</dd>
+            <dt>Current Workspace Number</dt>
+                <dd>{{=session.msf_workspace_num}}</dd>
+            <dt>Metasploit User</dt>
+                <dd>{{=session.msf_user}}</dd>
+        </dl>
+        <a class="btn btn-small" href="{{=URL('metasploit', 'api_settings')}}">Update</a>
+    </div>
+</div>
+{{pass}}

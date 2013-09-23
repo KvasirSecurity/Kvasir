@@ -1,0 +1,236 @@
+{{extend 'layout.html'}}
+
+<div class="row-fluid"> 
+  <div class="span8">
+    <div class="box-container">
+      <div class="span6">
+        <div class="widget-box">
+          <div class="widget-title">
+            <h5>Top Host Severities</h5>
+          </div>
+          <div class="widget-content">
+            <div id="chart_host_sev"></div>
+          </div>
+        </div>
+      </div>
+      <div class="span6">
+        <div class="widget-box">
+          <div class="widget-title">
+            <h5>Vulnerabilities by Severity</h5>
+          </div>
+          <div class="widget-content">
+            <div id="chart_vuln_sev"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+<script>
+
+$(function () {
+  $('#chart_host_sev').highcharts({
+        chart: {
+            type: 'column'
+        },
+        title: {
+          text: ''
+        },
+        xAxis: {
+            gridLineWidth: 1,
+            categories: ['1','2','3','4','5','6','7','8','9','10']
+        },
+        legend: { enabled: false },
+        dataLabels: {
+          enabled: true
+        },
+        series: [{
+          name: 'Hosts',
+          data: [ {{=XML(graphs['top_host_sev_count'])}} ]
+        }]
+  });
+
+  $('#chart_vuln_sev').highcharts({
+        chart: {
+            type: 'column'
+        },
+        title: {
+          text: ''
+        },
+        xAxis: {
+            gridLineWidth: 1,
+            categories: ['1','2','3','4','5','6','7','8','9','10']
+        },
+        legend: { enabled: false },
+        dataLabels: {
+          enabled: true
+        },
+        series: [{
+          name: 'Vulns',
+          data: [ {{=XML(graphs['vuln_by_sev_count'])}} ]
+        }]
+  });
+
+});
+</script>
+
+  <div class="widget-box">
+    <div class="widget-title">
+      <h5>Top Vulnerabilties (8+)</h5>
+    </div>
+    <div class="widget-content">
+      <p align="right"><a target="vulncloud" href="{{=URL('stats', 'vulncloud')}}">Show All</a></p>
+      <div id="vulncloud"></div>
+    </div>
+  </div>
+
+<script type="text/javascript">
+    jQuery(function() {
+        jQuery.getJSON("{{=URL('stats', 'vulncloud.json', args='8')}}", function(data) {
+            var d = data['vulncloud']
+            jQuery("#vulncloud").tagCloud(d, {'click': function(tag, event) {
+                popup("{{=URL(request.application, 'vulns', 'vulninfo_by_vulnid')}}/" + tag, 'vulninfo_by_vulnid' + tag);
+            }
+        } );
+      } );
+    } );
+</script>
+</div>
+
+<div class="span4">
+  <div class="widget-box">
+    <div class="widget-title">
+      <h5>Summary</h5>
+    </div>
+    <div class="widget-content">
+      <div id="stats" class="portlet-content">
+        <table class="table table-bordered table-hover">
+          <tr>
+            <th>Total Hosts</th>
+            <td>{{=statistics['hosts']}}
+            </td>
+          </tr>
+          <tr>
+            <td>Confirmed Hosts</td>
+            <td>{{=statistics['hosts_confirmed']}}
+            </td>
+          </tr>
+          <tr>
+            <td>Unconfirmed Hosts</td>
+            <td>{{=statistics['hosts_unconfirmed']}}
+            </td>
+          </tr>
+          <tr>
+            <td>Accessed Hosts</td>
+            <td>{{=statistics['hosts_accessed']}}
+            </td>
+          </tr>
+
+          <tr>
+            <td><b>Services/Vulnerabilities</b></td><td></td>
+          </tr>
+          <tr>
+            <td>Total Services</td>
+            <td>{{=statistics['services']}}
+            </td>
+          </tr>
+          <tr>
+            <td>Total Vulnerabilities</td>
+            <td>{{=statistics['service_vulns']}}
+            </td>
+          </tr>
+          <tr>
+            <td>Hosts w/ Vulns</td>
+            <td>{{=statistics['vuln_host_count']}} ({{=statistics['vuln_host_pct']}})
+            </td>
+          </tr>
+          <tr>
+            <td>Hosts w/ High Vulns (=> 8)</td>
+            <td>{{=statistics['high_vuln_host_count']}} ({{=statistics['high_vuln_host_pct']}})
+            </td>
+          </tr>
+          <tr>
+            <td>Services w/ Vulns</td>
+            <td>{{=statistics['services_with_vulns']}}
+            </td>
+          </tr>
+          <tr>
+            <td>Services w/ High Vulns (=> 8)</td>
+            <td>{{=statistics['services_with_high_vulns']}}
+            </td>
+          </tr>
+
+          <tr>
+            <td>Total Accounts</td>
+            <td>{{=statistics['accounts']}}
+            </td>
+          </tr>
+          <tr>
+            <td>Compromised Accounts</td>
+            <td>{{=statistics['compromised_accounts']}}
+            </td>
+          </tr>
+          <tr>
+            <td>Passwords</td>
+            <td>{{=statistics['passwords']}}
+            </td>
+          </tr>
+          <tr>
+            <td>Joe Accounts</td>
+            <td>{{=statistics['joe']}}
+            </td>
+          </tr>
+        </table>
+      </div>
+    </div>
+  </div>
+
+    <div class="widget-box">
+        <div class="widget-content">
+          <table class="table table-bordered table-hover">
+            <tr>
+              <td width="50%">Domains Discovered</td>
+              <td>{{for dom in adv_stats['domains']:}}<a target="_blank" href="{{=URL('netbios', 'domain_detail', vars={'domain':dom})}}">{{=dom}}</a></br>{{pass}}
+              </td>
+            </tr>
+            <tr>
+              <td>Passwords Cracked</td>
+              <td>ROOT: {{=adv_stats['ROOT']}}<br>
+              Administrator: {{=adv_stats['Administrator']}}<br>
+              USER: {{=adv_stats['USER']}}
+              </td>
+            </tr>
+            <tr>
+              <td>SNMP Accesses</td>
+              <td>READ: {{=adv_stats['SNMP_read']}}<br>
+              WRITE: {{=adv_stats['SNMP_write']}}
+              </td>
+            </tr>
+          </table>
+        </div>
+    </div>
+
+  <div class="widget-box">
+       <div class="widget-title">
+        <h5>Asset Groups</h5>
+       </div>
+        <div class="widget-content">
+            {{
+              count=db.t_hosts.f_asset_group.count()
+              =SQLTABLE(db().select(db.t_hosts.f_asset_group, count, groupby=db.t_hosts.f_asset_group), headers={'t_hosts.f_asset_group':'Asset Group', 'COUNT(t_hosts.f_asset_group)':'Count'}, _style='width:100%')
+            }}
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="widget-box">
+        <div class="widget-title">
+          <h5>Top Services</h5>
+        </div>
+        <div class="widget-content">
+            {{
+              count=db.t_services.f_proto.count()
+              =SQLTABLE(db().select(db.t_services.f_proto, db.t_services.f_number, db.t_services.f_name, count, groupby=db.t_services.f_proto|db.t_services.f_number|db.t_services.f_name,orderby=~count,limitby=(0,15)), headers={'t_services.f_proto':'Protocol', 't_services.f_number':'Number', 't_services.f_name':'Name', 'COUNT(t_services.f_proto)':'Count'}, _style='width:99%')
+            }}
+        </div>
+    </div>
+</div>

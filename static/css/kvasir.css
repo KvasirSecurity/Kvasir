@@ -1,0 +1,330 @@
+/* CSS overrides and unique settings for Kvasir */
+
+.navbar-inverse .brand, .navbar-inverse .nav > li > a {
+  color: #fff;
+  font-size: 12px;
+  border: 1px solid rgba(255,255,255,.05);
+  border-width: 0 1px;
+  border-right: 1px solid rgba(0,0,0,.5);
+}
+
+/* Header Style */
+.navbar-inverse .navbar-inner {
+  box-shadow: 0 1px 0 #333333;
+  background-color: #333333;
+  background-image: -webkit-gradient(linear, 0 0%, 0 100%, from(#3F3F3F), to(#222222));
+  background-image: -webkit-linear-gradient(top, #3F3F3F 0%, #222222 100%);
+  background-image: -moz-linear-gradient(top, #3F3F3F 0%, #222222 100%);
+  background-image: -ms-linear-gradient(top, #3F3F3F 0%, #222222 100%);
+  background-image: -o-linear-gradient(top, #3F3F3F 0%, #222222 100%);
+  background-image: linear-gradient(top, #3F3F3F 0%, #222222 100%);
+  border-bottom: 1px solid #555555;
+}
+
+body {
+  font: 10px;
+  background-color: #F1F1F1;
+  padding: 40px;
+}
+
+.mastheader {
+  margin-right: -40px;
+}
+
+.mastheader h1 {
+    font-size: 34px;
+    font-weight: normal;
+}
+
+#wrapper {
+    width: 98%;
+}
+
+#aa_list {
+    background-color: #F4F4F4;
+}
+
+.container-fluid {
+    padding-left: 0px;
+    margin-left: -20px;
+    padding-right: 0px;
+}
+
+select {
+    width: auto;
+}
+
+#page {
+    background-color: #F4F4F4;
+}
+
+#header {
+    margin-top: 0px;
+}
+
+.page-header {
+    margin-bottom: 0px;
+}
+
+.control-bar {
+  background-color: #E9FAFE;
+  background-image: -webkit-linear-gradient(top, white, #E9FAFE);
+  border-bottom-color: #A2E1FF;
+  border-bottom-left-radius: 5px 5px;
+  border-bottom-right-radius: 5px 5px;
+  border-bottom-style: solid;
+  border-bottom-width: 1px;
+  border-left-color: #A2E1FF;
+  border-left-style: solid;
+  border-left-width: 1px;
+  border-right-color: #A2E1FF;
+  border-right-style: solid;
+  border-right-width: 1px;
+  border-top-color: #A2E1FF;
+  border-top-left-radius: 5px 5px;
+  border-top-right-radius: 5px 5px;
+  border-top-style: solid;
+  border-top-width: 1px;
+  height: auto;
+  margin-bottom: 10px;
+  padding-bottom: 5px;
+  padding-left: 5px;
+  padding-right: 5px;
+  padding-top: 5px;
+}
+
+.control-bar button {
+  margin-right:10px;
+}
+
+/*.ui-button {
+  line-height: 0;
+}*/
+
+.ui-button-text {
+  display: block;
+}
+
+/*.ui-autocomplete {
+  max-height: 100px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding-right: 20px;
+}*/
+
+.btn-group > .btn, .btn-group > .dropdown-menu {font-size:12px}
+
+/* Bootstrap style overrides */
+
+.details {
+  padding-top: 5px;
+  padding-bottom: 5px;
+  padding-right: 10px;
+}
+
+select, input {
+  height: auto;
+}
+
+/* bootstrap .bigModal variation */
+.bigModal {
+    width: 70%;
+    margin-left:-30%;
+}
+
+/* DataTable bootstrap pagination override */
+div.dataTables_paginate {
+    float: right;
+    margin: 0;
+    width:100%
+}
+
+table {
+    margin: 1em 0;
+    clear: both;
+}
+
+/* override justification for p */
+p {
+    text-align: left;
+}
+
+/* Widget Boxes */
+.nopadding {
+  padding: 0 !important;
+}
+
+.widget-box {
+  background: none repeat scroll 0 0 #F9F9F9;
+  border-top: 1px solid #CDCDCD;
+  border-left: 1px solid #CDCDCD;
+  border-right: 1px solid #CDCDCD;
+  clear: both;
+  margin-bottom: 16px;
+  position: relative;
+}
+
+.widget-title {
+  background-color: #efefef;
+  background-image: -webkit-gradient(linear, 0 0%, 0 100%, from(#fdfdfd), to(#eaeaea));
+  background-image: -webkit-linear-gradient(top, #fdfdfd 0%, #eaeaea 100%);
+  background-image: -moz-linear-gradient(top, #fdfdfd 0%, #eaeaea 100%);
+  background-image: -ms-linear-gradient(top, #fdfdfd 0%, #eaeaea 100%);
+  background-image: -o-linear-gradient(top, #fdfdfd 0%, #eaeaea 100%);
+  background-image: -linear-gradient(top, #fdfdfd 0%, #eaeaea 100%);
+  filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#fdfdfd', endColorstr='#eaeaea',GradientType=0 );
+  border-bottom: 1px solid #CDCDCD;
+  height: 36px;
+}
+
+.widget-title span.icon {
+  border-right: 1px solid #cdcdcd;
+  padding: 9px 10px 7px 11px;
+  float: left;
+  opacity: .7;
+}
+
+.widget-title h5 {
+  color: #666666;
+  text-shadow: 0 1px 0 #ffffff;
+  float: left;
+  font-size: 12px;
+  font-weight: bold;
+  padding: 12px;
+  line-height: 12px;
+  margin: 0;
+}
+
+.widget-content {
+  padding: 12px 15px;
+  border-bottom: 1px solid #cdcdcd;
+}
+
+/* Vuln Data Styles */
+.vulnDetails {
+  font-size: 18px;
+  padding: 9px 10px 7px 0;
+  text-align: center;
+  font-weight: bold;
+}
+
+.vulnDetails strong{
+  font-size: 12px;
+  margin-bottom: 3px;
+  margin-top: 6px;
+  display: block;
+}
+
+/* Host Modal */
+#host-modal {
+  max-height: 455px;
+}
+
+#loading {
+  position: fixed;
+  font-size: 28px;
+  text-align: center;
+  width: 100%;
+  margin-top: 50px;
+}
+
+/* Vulninfo By Vulnid */
+#vulninfo_title {
+    font-size: 25px;
+    font-family: 'Helvetica Neue', Arial, Helvetica, sans-serif;
+    font-style: italic;
+    text-indent: 20px;
+    margin: 15px;
+}
+
+/* error messages on form input */
+div.controls .error_wrapper{
+  display: block;
+  margin-bottom:0;
+  vertical-align:middle;
+}
+
+/* Index page */
+.navbar div.flash {
+  right: 40px;
+}
+
+#chart_host_sev, #chart_vuln_sev {
+  height: 350px;
+}
+
+.box-container .widget-box {
+  background: #fff;
+}
+
+.header h5 {
+  color: #aaa;
+  font-weight: 300;
+  font-size: 16px;
+  display: block;
+  margin: 5px;
+}
+
+/* Metasploit/Bruteforce */
+.lead p {
+  font-size: 14px;
+}
+
+.widget-content fieldset legend {
+  background: none;
+  width: 85%;
+}
+
+/* Breadcrumbs */
+#breadcrumb {
+  background-color: #e4e2e7;
+  box-shadow: 0 0 1px #ffffff;
+  border-top: 1px solid #d6d6d6;
+  border-bottom: 1px solid #d6d6d6;
+  padding-left: 15px;
+  margin-bottom: 10px;
+}
+
+#breadcrumb a {
+  padding: 8px 10px 8px 28px;
+  display: inline-block;
+  font-size: 12px;
+  color: #666;
+}
+
+#breadcrumb a i {
+  margin-right: 5px;
+  opacity: .6;
+  vertical-align: middle;
+}
+
+/* Widget-box Labels fix */
+.import .form-horizontal .control-label {
+  width: 245px;
+}
+
+/* Login Page */
+#signin {
+  text-align: center;
+  width: 500px;
+}
+
+#signin .form-actions {
+  padding-bottom: 0px;
+  margin-bottom: 0px;
+}
+
+.widget-box label{
+  display: inline-block;
+}
+
+#signin-logo {
+  float: right;
+}
+
+.navbar-inverse .brand b {
+  font-size: 32px;
+  display: block;
+  font-family: "Helvetica Neue",Helvetica,Arial,sans-serif;
+  font-weight: 100;
+}

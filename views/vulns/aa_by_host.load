@@ -1,0 +1,22 @@
+<!--<p align="right">
+Legend: <span class="host_detail_vulnerable-version">Vuln-version</span> |
+        <span class="host_detail_vulnerable-exploited">Vuln-exploited</span> |
+        <span class="host_detail_potential ">Potential</span>
+</p>-->
+
+{{=tree}}
+
+<script>
+$(document).ready(function() {
+
+	$("#aatree")
+		.jstree({
+	        //"core" : { "open_parents" : [ "root" ] },
+	        "plugins": [ "themes", "html_data" ]
+	    })
+	    .on("loaded.jstree", function () {
+	        $("#aatree").jstree("open_all");
+	    });;
+
+});
+</script>

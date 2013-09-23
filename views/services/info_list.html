@@ -1,0 +1,44 @@
+{{extend 'layout.html'}}
+
+<h2>-=( Service Information )=-</h2>
+
+<script type="text/javascript" language="javascript">
+
+var servceinf_table;
+
+jQuery(document).ready(function() {
+    servceinf_table = $('#datatable').dataTable( {
+        "sDom": 'T<"clear">lfrtip',
+        "oTableTools": {
+            "sSwfPath": "{{=URL('static','TableTools/swf/copy_csv_xls.swf')}}"
+        },
+        "aoColumns": [
+            /* ID */    { "bSearchable": false },
+            /* IP */    { "bSearchable": true },
+            /* Proto */ { "bSearchable": true },
+            /* Port */  { "bSearchable": true },
+            /* Type */  { "bSearchable": true },
+            /* Value */ { "bSearchable": true }
+        ],
+        "sAjaxSource": "{{=URL('info_list.json')}}",
+    } );
+
+    new FixedHeader( servceinf_table );
+
+} );
+
+</script>
+
+<div id="table">
+<table cellpadding="0" cellspacing="0" border="0" class="display" id="datatable">
+    <thead>
+        <tr>
+            <th>ID</th>
+            <th>IPv4</th>
+            <th>Protocol</th>
+            <th>Port</th>
+            <th>Type</th>
+            <th>Value</th>
+        </tr>
+    </thead>
+</table>

@@ -1,0 +1,29 @@
+{{extend 'layout.html'}}
+
+<div class="row-fluid">
+    <div class="span8">
+        <div class="widget-box">
+            <div class="widget-title">
+              <span class="icon">
+                <i class="icon-download-alt"></i>
+              </span>
+              <h5>{{=response.title or request.application}}</h5>
+            </div>
+            <div class="widget-content">
+                <div class="alert alert-info">
+                    <p>CSV database exports can be downloaded as a file or stored locally ({{=backup_dir}})</p>
+                    <p>This process can take a few minutes for large data. It can be manually performed using
+                    the script in private:</p>
+                    <pre>./web2py.py -R applications/{{=request.application}}/private/db_csv.py -S {{=request.application}} -M -A -e filename.csv.gz</pre>
+                    <p>Alternatively you may want to use your database engine's export/import features.</p>
+                </div>
+                <div id="form">
+                    {{=form}}
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+{{include 'loading.html'}}

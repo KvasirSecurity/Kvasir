@@ -1,0 +1,57 @@
+<h2>SNMP Strings for {{=host_title_maker(host)}}</h2>
+
+{{=XML(add.formModal())}}
+
+<div id="snmp_list">
+    <div id="snmp_buttons" class="navbar btn-toolbar">
+        {{=XML(add.btn_show())}}
+        <a id="delete_snmp" class="btn btn-small"><i class="icon-remove"></i> Delete</a>
+        <a id="reload_snmp" class="btn btn-small" onclick="javascript:snmptable.fnReloadAjax(); return false;"><i class="icon-refresh"></i> Reload</a>
+    </div>
+
+    {{=form}}
+</div>
+
+<script>
+var snmptable;
+
+jQuery(document).ready(function() {
+
+    snmptable = jQuery('#snmptable').dataTable( {
+        "sDom": 'T<"clear">lfrtip',
+        "oTableTools": {
+            "sRowSelect": "multi",
+            "sSelectedClass": "row_selected",
+            "sSwfPath": "{{=URL('static','TableTools/swf/copy_csv_xls.swf')}}",
+            "aButtons": [
+                "select_all",
+                "select_none",
+                "copy",
+                "csv",
+                "print"
+            ]
+        },
+        "aoColumnDefs": [
+            { "bSortable": false, "aTargets": [ 0 ] }
+        ],
+        "aaSorting": [[ 1, "asc" ]],
+        "sAjaxSource": "{{=URL('snmp', 'by_host.json', args=request.args(0))}}",
+    } );
+
+    $("#delete_snmp").click(function(e) {
+        e.preventDefault();
+
+        //bootbox.options.onEscape =
+        bootbox.confirm('These items will be permanently deleted and cannot be recovered. Are you sure?', "Cancel", "Delete", function(confirmed) {
+            if(confirmed) {
+                var checks = dt_checkboxer_select_DT_RowIds(snmptable);
+                if (checks == '') { alert('Nothing selected'); return false; }
+                var data = "ids=" + checks;
+                url = "{{=URL('snmp', 'delete.json', user_signature=True)}}"
+                $.web2py.ajax_page( 'POST', url, data, 'undefined' );
+            }
+        });
+    });
+
+} );
+</script>

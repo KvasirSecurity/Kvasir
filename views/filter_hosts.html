@@ -1,0 +1,77 @@
+<div class="modal hide fade" id="filterModal">
+  <div class="modal-header">
+    <button type="button" class="close" data-dismiss="modal" aria-hidden="true">×</button>
+    <h3 id="filterHeader">Filter Hosts</h3>
+  </div>
+  <div class="modal-body" id="filterBody">
+    {{=LOAD('hosts','filter.load',ajax=False)}}
+  </div>
+  <div class="modal-footer">
+    <button class="btn" data-dismiss="modal">Close</button>
+    <button id="btnFilterClear" class="btn btn-info">Clear Filter</button>
+    <button id="btnFilterSubmit" class="btn btn-primary">Submit</button>
+  </div>
+</div>
+
+<script>
+/*******************************************************
+ * Host filtering javascript support
+ *******************************************************/
+
+function do_hostfilter(wait) {
+    /* polls the hosts/host_filter function for its result
+       and stores the result into the hostfilter variable
+     */
+     jQuery.ajax({
+        url: "{{=URL('hosts', 'filter.json')}}",
+        datatype: 'json',
+        async: wait,
+        success: function(data) {
+            hostfilter = data['hostfilter'][0];
+            var replacetext;
+            if (hostfilter[0])
+                replacetext = hostfilter[0] + '/' + hostfilter[1];
+            else
+                replacetext = "OFF";
+
+            if (data['hostfilter'][1]) {
+                replacetext = "ON";
+                showall = "Unconfirmed";
+            } else
+                showall = "All";
+
+            replacetext = replacetext + "/["+showall+"]";
+            jQuery('#filter_hosts').text(' Filter: ' + replacetext);
+            return true;
+        },
+        error: function(data) {
+            return false;
+        },
+     });
+};
+
+jQuery(document).ready(function() {
+
+    var hostfilter;
+    do_hostfilter(false);
+    jQuery("#btnFilterClear").on("click", function() {
+        var url = '{{=URL("hosts", "filter.json", vars = {"function": "clear"})}}'
+        $.web2py.ajax_page( 'POST', url, data, 'undefined' );
+        do_hostfilter(true);
+        jQuery("#filterModal").modal('hide');
+    });
+
+    jQuery("#btnFilterSubmit").on("click", function() {
+        var data = jQuery('#host_filter_form').serialize();
+        var url = '{{=URL("hosts", "filter.json")}}';
+        $.web2py.ajax_page( 'POST', url, data, 'undefined' );
+        do_hostfilter(true);
+        jQuery("#filterModal").modal('hide');
+        if ($refreshpage) {
+            location.reload();
+        }
+    });
+
+} );
+
+</script>

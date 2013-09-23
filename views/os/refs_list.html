@@ -1,0 +1,79 @@
+{{extend 'layout.html'}}
+
+{{=XML(add_ref.formModal())}}
+{{=XML(add_os.formModal())}}
+
+<div id="os_list">
+    <div id="os_buttons" class="navbar btn-toolbar">
+        {{=XML(add_ref.btn_show())}}
+        <a id="delete_os" class="btn btn-small"><i class="icon-remove"></i> Delete OS</a>
+        <a id="reload_os" class="btn btn-small" onclick="javascript:ostable.fnReloadAjax(); return false;"><i class="icon-refresh"></i> Reload</a>
+        <div class="btn-group">
+            <a class="btn btn-small dropdown-toggle" data-toggle="dropdown" href="#">
+            <i class="icon-pencil"></i> CPE OS DB
+            <span class="caret"></span>
+            </a>
+            <ul class="dropdown-menu">
+                <li><a href="{{=URL('cpe', 'os_list.html')}}" target="_blank" id="add_cpe">Add CPE to OS DB</a></li>
+                <li>{{=XML(add_os.btn_show(btn_role="", btn_class="", icon=""))}}</li>
+            </ul>
+        </div>
+    </div>
+
+    {{=form}}
+</div>
+
+<script>
+jQuery(document).ready(function() {
+
+    $("#delete_os").click(function(e) {
+        e.preventDefault();
+
+        //bootbox.options.onEscape =
+        bootbox.confirm('These items will be permanently deleted and cannot be recovered. Are you sure?', "Cancel", "Delete", function(confirmed) {
+            if(confirmed) {
+                var checks = dt_checkboxer_select_DT_RowIds(ostable);
+                if (checks == '') { alert('Nothing selected'); return false; }
+                var data = "ids=" + checks;
+                url = "{{=URL('os', 'refs_delete.json', user_signature=True)}}";
+                $.web2py.ajax_page( 'POST', url, data, 'undefined' );
+            }
+        });
+    });
+
+    ostable = jQuery('#ostable').dataTable( {
+        "sDom": 'T<"clear">lfrtip',
+        "oTableTools": {
+            "sRowSelect": "multi",
+            "sSelectedClass": "row_selected",
+            "sSwfPath": "{{=URL('static', 'TableTools/swf/copy_csv_xls.swf')}}",
+            "aButtons": [
+                "select_all",
+                "select_none",
+                "copy",
+                "csv",
+                "print"
+            ]
+        },
+        "sAjaxSource": "{{=URL('refs_list.json')}}",
+        "fnServerData": function ( sSource, aoData, fnCallback ) {
+            jQuery.getJSON( sSource, aoData, function (json) {
+                fnCallback(json);
+                doColumnFilter();
+            } );
+        },
+    } );
+} );
+
+function doColumnFilter() {
+    jQuery('#ostable tfoot th').each( function( column ) {
+        if (column >= 1 && column <= 5) {
+            this.innerHTML = fnCreateSelect( ostable.fnGetColumnData(column) );
+            $('select', this).change( function () {
+                ostable.fnFilter( $(this).val(), column );
+            } );
+        }
+    } );
+}
+
+</script>

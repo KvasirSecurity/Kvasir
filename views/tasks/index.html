@@ -1,0 +1,89 @@
+{{extend 'layout.html'}}
+
+<div id="tasktable_div">
+    <table cellpadding="0" cellspacing="0" border="0" class="datatable" id="tasktable" width="100%">
+        <thead>
+            <th width="3%">Args</th>
+            <th>ID</th>
+            <th>Status</th>
+            <th>Task Name</th>
+            <th>Group Name</th>
+            <th>Arguments</th>
+            <th>Queued Time</th>
+            <th>Last Run Time</th>
+            <th>Timeout</th>
+            <th>Success / Failures</th>
+        </thead>
+        <tbody>
+        {{for r in rows:}}
+            <tr id="{{=r.id}}">
+                <td>{{=IMG(_src=URL('static','images/details_open.png'))}}</td>
+                <td>{{=A(r.id, _href=URL('tasks', 'status', args=r.id), _target="_blank")}}</a></td>
+                <td>{{=r.status}}
+                    {{if r.status in ["RUNNING", "QUEUED"]:}}
+                    <button id="stop_button" class="btn btn-mini btn-danger"><i class="icon-stop"></i></button>
+                    {{pass}}
+                </td>
+                <td>{{=r.task_name}}</td>
+                <td>{{=r.group_name}}</td>
+                <td>{{=r.args}} {{=r.vars}}</td>
+                <td>{{=r.start_time}}</td>
+                <td>{{=r.last_run_time}}</td>
+                <td>{{=r.timeout}}</td>
+                <td>{{=r.times_run}} / {{=r.times_failed}}</td>
+            </tr>
+        {{pass}}
+        </tbody>
+    </table>
+</div>
+
+<script>
+var tasktable;
+
+jQuery(document).ready(function() {
+
+    $("#stop_button").on('click', function( ) {
+        var tr_id = "id=" + $(this).parent().parent().attr('id');
+        var url = "{{=URL('tasks', 'stop.json', user_signature=True)}}";
+        $.web2py.ajax_page( 'POST', url, tr_id, 'undefined' );
+    });
+
+    function taskArguments ( nTr ) {
+        var aData = tasktable.fnGetData( nTr );
+        var sOut = "<dl><dt>Arguments / Variables</dt><dd>" + aData[5] + "</dd></dl>";
+        return sOut;
+    }
+
+    tasktable = jQuery('#tasktable').dataTable( {
+        "sDom": 'T<"clear">lfrtip',
+        "oTableTools": {
+            "sSelectedClass": "row_selected",
+            "sSwfPath": "{{=URL('static', 'TableTools/swf/copy_csv_xls.swf')}}",
+        },
+        "aoColumnDefs": [
+            { "bVisible": false, "aTargets": [5] }
+        ],
+        "aaSorting": [[ 6, "desc" ]],
+    } );
+
+    jQuery('#tasktable tbody td img').live( 'click', function () {
+        var nTr = this.parentNode.parentNode;
+        if ( this.src.match('details_close') ) {
+            /* This row is already open - close it */
+            this.src = "{{=URL('static','images/details_open.png')}}";
+            tasktable.fnClose( nTr );
+        } else {
+            /* Open this row */
+            this.src = "{{=URL('static','images/details_close.png')}}";
+            tasktable.fnOpen( nTr, taskArguments(nTr), 'details' );
+        }
+    } );
+
+/*
+    $.extend( $.fn.dataTableExt.oStdClasses, {
+        "sWrapper": "dataTables_wrapper form-inline",
+    } );
+*/
+
+});
+</script>

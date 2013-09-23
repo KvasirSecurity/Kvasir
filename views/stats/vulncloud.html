@@ -1,0 +1,15 @@
+{{extend 'layout.html'}}
+
+<div id="vulncloud" style="background: black;">
+   .... Loading ....
+</div>
+
+<script type="text/javascript">
+    jQuery(function() {
+      jQuery.getJSON("vulncloud.json", function(data) {
+        var d = data['vulncloud']
+        jQuery("#vulncloud").tagCloud(d, {'click': function(tag, event) { popup("{{=URL(request.application, 'vulns', 'vulninfo_by_vulnid')}}/" + tag); }
+        } );
+      } );
+    } );
+</script>

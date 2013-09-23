@@ -1,0 +1,227 @@
+{{extend 'popup.html'}}
+{{include 'hotkeys.html'}}
+{{include 'filter_hosts.html'}}
+
+    <div class="row-fluid">
+        <div id="vulninfo_title">{{=vulninfo.f_title}}</div>
+        <div class="row-fluid">
+            <div class="span9">
+                <div class="widget-box">
+                    <div class="widget-title">
+                        <h5>
+                            {{=vulninfo.f_title}} Information
+                            <!-- <a href="javascript:void();" id="button_vulndata_edit" class="btn"><i class="icon-edit"></i> Edit</a> -->
+                        </h5>
+                    </div>
+                    <div class="widget-content">
+                    <a href="javascript:void();" id="button_vulndata_edit" class="btn"><i class="icon-edit"></i> Edit</a>
+                        <table>
+                            <tr><td><b>Description: </b></td><td>{{=MARKMIN(vulninfo.f_description)}}</td></tr>
+                            <tr><td><b>Solution: </b></td><td>{{=MARKMIN(vulninfo.f_solution)}}</td></tr>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            <div class="span3">
+                <div class="widget-box">
+                    <div class="widget-title">
+                        <h5>{{=T('Vuln Details')}}</h5>
+                    </div>
+                    <div class="widget-content">
+                        <div class="vulnDetails">
+                            <strong>Risk Score:</strong>
+                            {{=vulninfo.f_riskscore}}
+                            <strong>Severity:</strong>
+                            {{=vulninfo.f_severity}}
+                            <strong>PCI Severity:</strong>
+                            {{=vulninfo.f_pci_sev}}
+                            <strong>CVSS Score:</strong>
+                            {{=vulninfo.f_cvss_score}}
+                            <strong>CVSS Metrics:</strong>
+                            {{=cvssmetrics}}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+<hr>
+
+<div class="tabheader" style="clear: both;">
+
+    <div id="tabs">
+        <ul id="tabs-ul" class="nav nav-tabs">
+            <li class="active"><a href="#hosts_list" data-toggle="tab"><u>V</u>ulnerable Hosts</a></li>
+            <li><a href="#exploits_list" data-toggle="tab"><u>E</u>xploits</a></li>
+            <li><a href="#references_list" data-toggle="tab"><u>R</u>eferences</a></li>
+        </ul>
+
+        <div id="TabContent" class="tab-content">
+
+            <div class="tab-pane active" id="hosts_list">
+            {{if hosts:}}
+                <div id="vuln_buttons" class="navbar btn-toolbar">
+                    <a id="delete_hosts" class="btn btn-small" onclick="javascript:del_selected();"><i class="icon-remove"></i> Delete Hosts</a>
+                    <a id="exploited" class="btn btn-small" onclick="javascript:exploit_selected();"><i class="icon-tag"></i> Tag pwned/exploitable</a>
+                    <a id="filter_hosts" class="btn btn-small" data-toggle="modal" href="#filterModal"><i class="icon-filter"></i> Filter</a>
+                </div>
+                {{=hosts}}
+            {{else:}}
+                {{=TAG.blockquote(T('No vulnerable hosts'))}}
+            {{pass}}
+            </div>
+
+            <div class="tab-pane" id="exploits_list">
+            {{=exploits}}
+            </div>
+
+            <div class="tab-pane" id="references_list">
+            {{=refs}}
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<!-- Edit Vulndata Modal -->
+<div id="edit_vulndata_modal" class="modal hide fade">
+    <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+        <h3>Edit Vuln Data</h3>
+    </div>
+    <div class="modal-body">
+    </div>
+    <div class="modal-footer">
+        <a href="#" class="btn" data-dismiss="modal">Close</a>
+        <a href="#" class="btn btn-primary saveBtn">Save</a>
+    </div>
+</div>
+<!-- End Edit Vulndata -->
+
+<script>
+var vulntable;
+var exploits_table;
+var del_selected;
+var exploit_selected;
+
+jQuery(document).ready(function() {
+    jQuery(".title").click(function() {
+      jQuery(this).next(".table").slideToggle(600);
+    } );
+
+    vulntable = jQuery("#vulntable").dataTable({
+        "sDom": 'T<"clear">lfrtip',
+        "oTableTools": {
+            "sRowSelect": "multi",
+            "sSelectedClass": "row_selected",
+            "sSwfPath": "{{=URL('static', 'TableTools/swf/copy_csv_xls.swf')}}",
+            "aButtons": [
+                "select_all",
+                "select_none",
+                "copy",
+                "csv",
+                "print"
+            ]
+        },
+        "aoColumnDefs": [
+            { "bSortable": false, "aTargets": [ 0 ] },
+            { "sType": "formatted-num", "aTargets": [1] },
+        ],
+        "aaSorting": [[ 1, "asc" ]],
+        "fnDrawCallback": function() {
+            hosts_delete_setup();
+        },
+    });
+
+    exploits_table = jQuery("#exploits_table").dataTable({
+        "oTableTools": {
+            "sSwfPath": "{{=URL('static','TableTools/swf/copy_csv_xls.swf')}}",
+        },
+        "sDom": 'T<"clear">lfrtip',
+    });
+
+    /* mouse trappings */
+    Mousetrap.bind(['v', '1'], function(e) { jQuery('#tabs-ul a[href="#hosts_list"]').tab('show'); })
+    Mousetrap.bind(['e', '2'], function(e) { jQuery('#tabs-ul a[href="#exploits_list"]').tab('show'); })
+    Mousetrap.bind(['r', '3'], function(e) { jQuery('#tabs-ul a[href="#references_list"]').tab('show'); })
+    Mousetrap.bind(['ctrl+d'], function(e) { del_selected(); })
+    Mousetrap.bind(['ctrl+e'], function(e) { exploit_selected(); })
+
+    function del_selected(e) {
+        //bootbox.options.onEscape =
+        e.preventDefault();
+        bootbox.confirm('These items will be permanently deleted and cannot be recovered. Are you sure?', "Cancel", "Delete", function(confirmed) {
+            if(confirmed) {
+                //var checks = dt_checkboxer_select_DT_RowIds(vulntable);
+                var checks = dt_checkboxer_select_DT_TRIds(vulntable);
+                if (checks == '') { alert('Nothing selected'); return false; }
+                var data = "ids=" + checks;
+                var url = "{{=URL('vulns', 'service_vulns_delete.json', user_signature=True)}}";
+                $.web2py.ajax_page( 'POST', url, data, 'undefined' );
+                /* Remove the entries from the displayed table. This doesn't
+                   check to see if the actual entries are deleted since the
+                   table is just static data on this page */
+                var selected = dt_checkboxer_fnGetSelected(vulntable);
+                selected.forEach( function(data) {
+                    var aPos = vulntable.fnGetPosition(data);
+                    vulntable.fnDeleteRow( aPos );
+                });
+            }
+        });
+        return false;
+    }
+
+    $("#delete_hosts").click(function(e) {
+        del_selected(e);
+    });
+
+    function exploit_selected(e) {
+        //bootbox.options.onEscape =
+        e.preventDefault();
+        bootbox.confirm('This will switch all selected vulns to exploited. If they are already exploited they will be switched to vulnerable-exploited.', "Cancel", "OK", function(confirmed) {
+            if(confirmed) {
+                var checks = dt_checkboxer_select_DT_RowIds(vulntable);
+                if (checks == '') { alert('Nothing selected'); return false; }
+                var data = "ids=" + checks;
+                url = "{{=URL('vulns', 'service_vuln_exploited.json', user_signature=True)}}";
+                $.web2py.ajax_page( 'POST', url, data, 'undefined' );
+            }
+        });
+        return false;
+    }
+
+    $("#exploited").click(function(e) {
+        exploit_selected(e);
+    });
+
+    /* Edit Modal */
+    $("#button_vulndata_edit").click(function(e) {
+        jQuery("#edit_vulndata_modal").modal({
+            "remote": "{{=URL('vulns', 'edit.load', args=[vuln.record.id])}}"
+        });
+    });
+
+    jQuery("#edit_vulndata_modal .saveBtn").click(function() {
+        ajax_form_submit('#vuln_edit_form');
+        jQuery('#edit_vulndata_modal').modal('hide');
+    });
+
+} );
+
+function hosts_delete_setup() {
+    /* The "X" is selected to delete this row */
+    $('span[name="host_del"]').unbind('click');
+    $('span[name="host_del"]').click( function() {
+      // delete the id
+      var id = $(this).attr('id');
+      //console.log('deleting id = ' + id);
+      var url = "{{=URL('vulns', 'service_vulns_delete.json', user_signature=True)}}";
+      $.web2py.ajax_page( 'POST', url, "ids=" + id, 'undefined' );
+      var row = $(this).parents()[1];
+      var aPos = vulntable.fnGetPosition(row);
+      vulntable.fnDeleteRow( aPos );
+      return false
+  } );
+}
+</script>

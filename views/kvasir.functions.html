@@ -1,0 +1,99 @@
+{{
+    #
+    # kvasir.functions.html
+    # (c) 2010-2013 Cisco Systems, Inc.
+    #
+    # A combination of html/javascript/web2py functions and commands
+    # that are to be loaded and consumed by each page.
+    #
+    #
+}}
+
+{{ if auth.is_logged_in(): }}
+    {{#------ DataTables JQuery Enhancement --------#}}
+    <link rel="stylesheet" type="text/css" href="{{=URL(request.application,'static','css/datatables.css')}}"/>
+    <script src="{{=URL(request.application,'static','js/jquery.dataTables-1.9.2-min.js')}}" type="text/javascript"></script>
+
+    <script src="{{=URL(request.application,'static','js/ColVis.js')}}" type="text/javascript"></script>
+    <link rel="stylesheet" type="text/css" href="{{=URL(request.application,'static','css/ColVis.css')}}"/>
+    <script src="{{=URL(request.application,'static','js/dataTables.checkboxer.js')}}" type="text/javascript"></script>
+    <script src="{{=URL(request.application,'static','js/dataTables.kvasir_funcs.js')}}" type="text/javascript"></script>
+    <script src="{{=URL(request.application,'static','js/dataTables.paging.js')}}" type="text/javascript"></script>
+
+    {{#------- jQuery Plugins -------------#}}
+    <script src="{{=URL(request.application,'static','js/jquery.form.js')}}" type="text/javascript"></script>
+    <link rel="stylesheet" type="text/css" href="{{=URL(request.application,'static','css/chosen.min.css')}}"/>
+    <script src="{{=URL(request.application,'static','js/chosen.jquery.min.js')}}" type="text/javascript"></script>
+
+    {{
+    # load the tabletools extension if the user wants it
+    if auth.user.f_tabletools:}}
+        <script src="{{=URL(request.application,'static','TableTools/js/TableTools.min.js')}}" type="text/javascript"></script>
+        <script src="{{=URL(request.application,'static','TableTools/js/ZeroClipboard.js')}}" type="text/javascript"></script>
+        <link rel="stylesheet" type="text/css" href="{{=URL(request.application,'static','TableTools/css/TableTools.css')}}"/>
+    {{else:
+        pass
+else:
+    pass
+}}
+
+<div id="delete-modal" class="modal hide fade" tabindex="-1">
+  <div class='modal-header'>
+    <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+    <h3 class="modal-title"></h3>
+  </div>
+  <div class='modal-body'>
+    <div class="modal-body-content"></div>
+  </div>
+  <div class='modal-footer'>
+    <button type="button" data-dismiss="modal" class="btn">Cancel</button>
+    <button type="button" data-dismiss="modal" class="btn btn-primary">Ok</button>
+  </div>
+</div>
+
+<script>
+    /* Javascript functions that require web2py markup go here */
+
+    // Build the launch function
+    function launchterm(record) {
+        url = '{{=URL('hosts', 'launch', user_signature=True)}}/';
+        $.web2py.ajax_page( 'POST', url, 'record='+record, 'undefined' );
+    }
+
+    $(document).ready(function() {
+        // DataTables defaults
+        $.extend( $.fn.dataTable.defaults, {
+            "bProcessing": true,
+            "bFilter": true,
+            "bAutoWidth": false,
+            "bDeferRender": true,
+            "sPaginationType": "bootstrap",
+            "sSortAsc": "header headerSortDown",
+            "sSortDesc": "header headerSortUp",
+            "sSortable": "header",
+            "aLengthMenu": [[10, 50, 100, 200, 500, -1], [10, 50, 100, 200, 500, "All"]],
+            {{ if auth.is_logged_in(): }}"iDisplayLength": {{=auth.user.f_show_size}},{{ pass }}
+            "fnServerData": function ( sSource, aoData, fnCallback ) {
+                $.ajax( {
+                    "dataType": 'json',
+                    "type": "POST",
+                    "url": sSource,
+                    "data": aoData,
+                    "success": fnCallback,
+                    /*"timeout": 15000,   // optional if you want to handle timeouts (which you should)*/
+                    /*"error": handleDTAjaxError // this sets up jQuery to give me errors*/
+                } );
+            },
+        } );
+        /* Modifiying all tables for bootstrap UI */
+        $('.datatable').addClass('table table-bordered table-hover');
+
+        /* Constrain bootstrap modals to window size */
+        /*$.fn.modal.defaults.maxHeight = function(){
+            // subtract the height of the modal header and footer
+            return $(window).height() - 165;
+        }*/
+
+    } );
+
+</script>
