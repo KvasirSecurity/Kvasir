@@ -130,7 +130,7 @@ class NessusHosts:
                 hostfields['f_netbios_name'] = v
 
         if not self.update_hosts and not host_id:
-            host_id = self.db.t_hosts.insert(**hostfields)
+            host_id = self.db.t_hosts.validate_and_insert(**hostfields)
             self.stats['added'] += 1
         elif self.update_hosts:
             if isv4:
@@ -160,6 +160,7 @@ class NessusVulns:
     def __init__(self):
         self.vulns = {}         # { 'pluginID': [db.t_vulndata.id, vulndata] }
         self.db = current.globalenv['db']
+        self.cache = current.globalenv['cache']
         self.stats = {
             'added': 0,
         }
@@ -198,39 +199,6 @@ class NessusVulns:
         else:
             vulnid = pluginID
 
-        if pluginID in self.vulns:
-            return self.vulns[pluginID][0], self.vulns[pluginID][1], extradata
-
-        #logging.info("New vulnerability added: %s" % vulnid)
-        # vulnerability-specific data
-        vulndata = {
-            'f_vulnid': vulnid,
-            'f_title': rpt_item.findtext('plugin_name', ''),
-            'f_severity': rpt_item.get('severity', 0),
-            'f_riskscore': rpt_item.get('risk_factor', ''),
-            'f_cvss_score': rpt_item.findtext('cvss_base_score', 0),
-            'f_cvss_i_score': rpt_item.findtext('cvss_temporal_score', 0),
-            'f_description': rpt_item.findtext('description'),
-            'f_solution': rpt_item.findtext('solution'),
-            'f_dt_published': rpt_item.findtext('plugin_publication_date'),
-            'f_dt_added': rpt_item.findtext('plugin_publication_date'),
-            'f_dt_modified': rpt_item.findtext('plugin_modification_date'),
-        }
-
-        cvss_vectors = rpt_item.findtext('cvss_vector') # CVSS2#AV:N/AC:M/Au:N/C:P/I:P/A:P
-        if cvss_vectors:
-            vulndata['f_cvss_av'] = cvss_vectors[9]
-            vulndata['f_cvss_ac'] = cvss_vectors[14]
-            vulndata['f_cvss_au'] = cvss_vectors[19]
-            vulndata['f_cvss_c'] = cvss_vectors[23]
-            vulndata['f_cvss_i'] = cvss_vectors[29]
-            vulndata['f_cvss_a'] = cvss_vectors[31]
-
-        vdid = self.db.t_vulndata.update_or_insert(**vulndata)
-        self.stats['added'] += 1
-        self.vulns[pluginID] = [vdid, vulndata]
-        self.db.commit()
-
         # more extra data: references, cpe, etc
         extradata['cve'] = []
         for i in rpt_item.findall('cve'):
@@ -258,7 +226,46 @@ class NessusVulns:
 
         extradata['msft'] = rpt_item.findtext('msft')
 
-        return vdid, vulndata, extradata
+        if pluginID in self.vulns:
+            return self.vulns[pluginID][0], self.vulns[pluginID][1], extradata
+        else:
+            vuln_row = self.db(self.db.t_vulndata.f_vulnid == vulnid).select(cache=(self.cache.ram, 180)).first()
+            if vuln_row:
+                vuln_id = vuln_row.id
+                vulndata = vuln_row.as_dict()
+                return vuln_id, vulndata, extradata
+
+        #logging.info("New vulnerability added: %s" % vulnid)
+        # vulnerability-specific data
+        vulndata = {
+            'f_vulnid': vulnid,
+            'f_title': rpt_item.findtext('plugin_name', ''),
+            'f_severity': rpt_item.get('severity', 0),
+            'f_riskscore': rpt_item.get('risk_factor', ''),
+            'f_cvss_score': rpt_item.findtext('cvss_base_score', 0),
+            'f_cvss_i_score': rpt_item.findtext('cvss_temporal_score', 0),
+            'f_description': rpt_item.findtext('description'),
+            'f_solution': rpt_item.findtext('solution'),
+            'f_dt_published': rpt_item.findtext('plugin_publication_date'),
+            'f_dt_added': rpt_item.findtext('plugin_publication_date'),
+            'f_dt_modified': rpt_item.findtext('plugin_modification_date'),
+        }
+
+        cvss_vectors = rpt_item.findtext('cvss_vector') # CVSS2#AV:N/AC:M/Au:N/C:P/I:P/A:P
+        if cvss_vectors:
+            vulndata['f_cvss_av'] = cvss_vectors[9]
+            vulndata['f_cvss_ac'] = cvss_vectors[14]
+            vulndata['f_cvss_au'] = cvss_vectors[19]
+            vulndata['f_cvss_c'] = cvss_vectors[23]
+            vulndata['f_cvss_i'] = cvss_vectors[29]
+            vulndata['f_cvss_a'] = cvss_vectors[31]
+
+        vuln_id = self.db.t_vulndata.update_or_insert(**vulndata)
+        self.stats['added'] += 1
+        self.vulns[pluginID] = [vuln_id, vulndata]
+        self.db.commit()
+
+        return vuln_id, vulndata, extradata
 
 ##-------------------------------------------------------------------------
 
@@ -410,7 +417,7 @@ def process_xml(
                         gid = '0'
 
                     # Windows users, local groups, and global groups
-                    d['f_username'] = uname
+                    d['f_username'] = user
                     d['f_gid'] = gid
                     d['f_services_id'] = svc_id
                     d['f_source'] = '10860'
@@ -469,10 +476,10 @@ def process_xml(
                 for cpe_os in re.findall('(cpe:/o:.*)', plugin_output):
                     os_id = lookup_cpe(cpe_os.lstrip('cpe:/o:'))
                     if os_id:
-                        db.t_host_os_refs.update_orinsert(
+                        db.t_host_os_refs.update_or_insert(
                             f_certainty='0.90',     # just a stab
                             f_family='Unknown',     # not given in Nessus
-                            f_class=hostdata['system-type'],
+                            f_class=hostdata.get('system-type'),
                             f_hosts_id=host_id,
                             f_os_id=os_id
                         )
