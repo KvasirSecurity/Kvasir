@@ -13,7 +13,7 @@ __version__ = "1.0"
 ##
 ## Run from a shell using web2py:
 ##
-##   ./web2py.py -R applications/kvasir_public/private/user.py -S $appname -M -A -u username -p password
+##   ./web2py.py -R applications/$appname/private/user.py -S $appname -M -A -u username -p password
 ##
 ## Author: Kurt Grutzmacher <kgrutzma@cisco.com>
 ##--------------------------------------#
@@ -55,6 +55,8 @@ if user_row:
 
 if not options.password or options.prompt:
     password = getpass.getpass("Password: ")
+else:
+    password = options.password
 
 if not password or password == '':
     sys.exit("Password cannot be blank\n")
