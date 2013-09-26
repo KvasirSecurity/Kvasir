@@ -111,8 +111,10 @@ s_app_fingerprints = db((db.t_services.id==db.t_services_apps_refs.f_services_id
 
 vuln_status_set = [
     'exploited',
+    'vulnerable',
     'vulnerable-exploited',
     'vulnerable-version',
+    'general',
     'potential',
     'exception-vulnerable-exploited',
     'exception-vulnerable-version',
