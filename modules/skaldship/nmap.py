@@ -90,7 +90,7 @@ def process_xml(
 
     #existing_vulnids = db(db.t_vulndata()).select(db.t_vulndata.id, db.t_vulndata.f_vulnid).as_dict(key='f_vulnid')
 
-    user_id = db.auth_user(engineer) or auth.user.id
+    user_id = db.auth_user(engineer)
 
     # parse the hosts, where all the goodies are
     log(" [-] Parsing %d hosts" % (len(nmap_parsed.hosts)))
@@ -115,7 +115,11 @@ def process_xml(
             log(" [!] No IPv4/IPv6 address, skipping")
             continue
 
-        nodefields['f_macaddr'] = node.mac
+        try:
+            nodefields['f_macaddr'] = node.mac['addr']
+        except TypeError:
+            nodefields['f_macaddr'] = None
+
         status = node.state
 
         log(" [-] Host %s status is: %s" % (ipaddr, status))
@@ -140,7 +144,7 @@ def process_xml(
 
         # we'lll just take the last hostname in the names list since it'll usually be the full dns name
         for name in node.hostnames:
-            nodefields['f_hostname'] = name
+            nodefields['f_hostname'] = name['hostname']
 
         nodefields['f_engineer'] = user_id
         nodefields['f_asset_group'] = asset_group
@@ -236,16 +240,17 @@ def process_xml(
                 db.commit()
 
             # Process <cpe> service entries
-            for port_cpe in port.get('service_cpe'):
-                cpe_id = port_cpe.text.lstrip('cpe:/')
+            port_cpe = port.get('service_cpe')
+            if port_cpe:
+                cpe_id = port_cpe.lstrip('cpe:/')
 
-                if cpe_id[0] == "a":
+                if cpe_id.startswith('a'):
                     # process CPE Applications
                     #log(" [-] Found Application CPE data: %s" % (cpe_id))
                     db.t_service_info.update_or_insert(f_services_id=svc_id, f_name='cpe.app', f_text="cpe:/%s" % (cpe_id))
                     db.commit()
 
-                elif cpe_id[0] == "o":
+                elif cpe_id.startswith('o'):
                     # process CPE Operating System
 
                     os_id = lookup_cpe(cpe_id[2:])
@@ -285,7 +290,6 @@ def process_xml(
     log(" [*] Connecting exploits to vulns and performing do_host_status")
     do_host_status(asset_group=asset_group)
 
-    log(" [*] Import complete: hosts: %s added, %s skipped, %s errors - vulns: %s added, %s skipped" % (hoststats['added'],
-                                                                                                        hoststats['skipped'],
-                                                                                                        hoststats['errored'],
-                                                                                                       ))
+    log(" [*] Import complete: hosts: %s added, %s skipped" % (hoststats['added'],
+                                                               hoststats['skipped'],
+                                                              ))
