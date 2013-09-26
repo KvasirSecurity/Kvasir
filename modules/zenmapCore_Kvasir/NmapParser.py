@@ -793,6 +793,7 @@ class NmapParserSAX(ParserBasics, ContentHandler):
         self.in_port = False
         self.in_port_service = False
         self.in_port_service_cpe = False
+        self.port_service_cpe = ""
         self.in_portscript = False
         self.in_os = False
         self.in_host_os_cpe = False
@@ -1085,6 +1086,7 @@ class NmapParserSAX(ParserBasics, ContentHandler):
             self.list_ports.append(self.dic_port)
             del(self.dic_port)
             del(self.port_scripts)
+            self.port_service_cpe = ""
         elif self.in_host and self.in_os and name == "cpe":
             self.list_osclass[-1].update({'cpe': self.host_os_cpe})
             self.in_host_os_cpe = False
