@@ -24,6 +24,7 @@ except ImportError:
 from MetasploitAPI import MetasploitAPI, MSFAPIError
 from skaldship.general import get_host_record, do_host_status
 from skaldship.exploits import connect_exploits
+from gluon.validators import IS_SLUG
 import logging
 logger = logging.getLogger("web2py.app.kvasir")
 
@@ -107,11 +108,9 @@ class NessusHosts:
         hostfields['f_confirmed'] = False
 
         # check ipv4/ipv6 and set hostfields accordingly
-        if IS_IPADDRESS(is_ipv4=True)(ipaddr)[1]:
+        if IS_IPADDRESS(is_ipv4=True)(ipaddr)[1] is None:
             hostfields['f_ipv4'] = ipaddr
-            isv4 = True
-            isv6 = False
-        elif IS_IPADDRESS(is_ipv6=True)(ipaddr)[1]:
+        elif IS_IPADDRESS(is_ipv6=True)(ipaddr)[1] is None:
             hostfields['f_ipv6'] = ipaddr
             isv4 = False
             isv6 = True
@@ -130,10 +129,14 @@ class NessusHosts:
                 hostfields['f_netbios_name'] = v
 
         if not self.update_hosts and not host_id:
-            host_id = self.db.t_hosts.validate_and_insert(**hostfields)
+            result = self.db.t_hosts.validate_and_insert(**hostfields)
+            if not result.id:
+                logger.error("Error adding host to DB: %s" % (result.errors))
+                return None, {}
             self.stats['added'] += 1
+            print " [-] Adding host: %s" % ipaddr
         elif self.update_hosts:
-            if isv4:
+            if hostfields['f_ipv4']:
                 host_id = self.db(localdb.t_hosts.f_ipv4 == hostfields['f_ipv4']).update(**hostfields)
                 self.db.commit()
                 host_id = get_host_record(hostfields['f_ipv4'])
@@ -163,7 +166,51 @@ class NessusVulns:
         self.cache = current.globalenv['cache']
         self.stats = {
             'added': 0,
+            'processed': 0
         }
+
+    @staticmethod
+    def db_vuln_refs(vuln_id=None, vulndata={}, extradata={}):
+        """
+        Add or update vulnerability references such as CPE, MSF Bulletins, OSVDB, Bugtraq, etc.
+
+        Args:
+            vuln_id: The db.t_vulndata reference id
+            vulndadta: A dictionary of vulnerability data from t_vulndata
+            extradata: A dictionary of extra vulndata
+
+        Returns:
+            None
+        """
+        if not vulndata:
+            logger.error(" [!] No vulndata sent!")
+            return
+
+        if not extradata:
+            logger.error(" [!] No extradata sent!")
+            return
+
+        if not vuln_id:
+            logger.error(" [!] No vulnerability record id sent!")
+            return
+
+        for refname in ['cpe', 'osvdb', 'bid', 'msft', 'url']:
+            for reftext in extrdata['refname'].values():
+                # add the vuln_ref
+                ref_id = db.t_vuln_refs.update_or_insert(
+                    f_text=reftext,
+                    f_source=refname.upper(),
+                )
+                if not ref_id:
+                    ref_id = db(db.t_vuln_refs.f_text == reftext).select(cache=(cache.ram, 180)).first().id
+
+                # link vuln_ref to vulndata
+                db.t_vuln_references.update_or_insert(
+                    f_vulndata_id=vuln_id,
+                    f_vuln_ref_id=ref_id
+                )
+
+        return
 
     def parse(self, rpt_item):
         """
@@ -176,7 +223,9 @@ class NessusVulns:
             rpt_item: A ReportItem field (etree._Element)
 
         Returns:
-            t_vulndata.id, vulndata, extradata
+            t_vulndata.id: integer field of db.t_vulndata[id]
+            vulndata: A dictionary of fields for t_vulndata
+            extradata: A dictionary of extra data fields such as references
         """
         if not etree.iselement(rpt_item):
             logging.error("Invalid plugin data received: %s" % type(rpt_item))
@@ -191,11 +240,11 @@ class NessusVulns:
         extradata['exploit_available'] = rpt_item.findtext('exploit_available', 'false')
 
         pluginID = rpt_item.get('pluginID')
-        pluginName = rpt_item.findtext('fname')
+        pluginName = rpt_item.findtext('fname', '')
         extradata['pluginID'] = pluginID
         if pluginName:
             pluginName = pluginName.rstrip('.nasl')
-            vulnid = "%s (%s)" % (pluginName, pluginID)
+            vulnid = IS_SLUG()("%s-%s" % (pluginName, pluginID))[0]     # slugify it
         else:
             vulnid = pluginID
 
@@ -261,9 +310,18 @@ class NessusVulns:
             vulndata['f_cvss_a'] = cvss_vectors[31]
 
         vuln_id = self.db.t_vulndata.update_or_insert(**vulndata)
-        self.stats['added'] += 1
-        self.vulns[pluginID] = [vuln_id, vulndata]
-        self.db.commit()
+        if not vuln_id:
+            vuln_id = db(db.t_vulndata.f_vulnid == vulnid).select(cache=(cache.ram, 180)).first().id
+
+        if vuln_id:
+            self.stats['processed'] += 1
+            self.vulns[pluginID] = [vuln_id, vulndata]
+            self.db.commit()
+            print " [-] Adding vulnerablity to vuln database: %s" % (vulnid)
+            # add/update vulnerability references
+            self.db_vuln_refs(vuln_id, vulndata, extradata)
+        else:
+            logger.error(" [!] Error inserting/finding vulnerability in database: %s" % (vulnid) )
 
         return vuln_id, vulndata, extradata
 
@@ -390,6 +448,7 @@ def process_xml(
             if pluginID in settings.ignored_nessus_plugins:
                 continue
 
+            nessus_vulns.stats['added'] += 1
             #### SNMP
             if pluginID == '10264':
                 # snmp community strings
@@ -502,9 +561,10 @@ def process_xml(
     connect_exploits()
     do_host_status(asset_group=asset_group)
 
-    msg = " [*] Import complete: hosts: %s added, %s updated, %s skipped - %s vulns added" % (nessus_hosts.stats['added'],
+    msg = " [*] Import complete: hosts: %s added, %s updated, %s skipped - %s vulns processed, %s added" % (nessus_hosts.stats['added'],
                                                                                              nessus_hosts.stats['updated'],
                                                                                              nessus_hosts.stats['skipped'],
+                                                                                             nessus_vulns.stats['processed'],
                                                                                              nessus_vulns.stats['added'])
     print(msg)
     #sys.stderr.write(msg)
