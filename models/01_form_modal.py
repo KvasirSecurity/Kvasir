@@ -67,16 +67,16 @@ def formstyle_bootstrap_modal(form, fields, **kwargs):
             parent.append(DIV(label, _controls, _class=_class, _id=id))
 
     # append tooltip and chosen field attributes
-    script_data = """$(document).ready(function() {
-    $("[rel=tooltip]").popover({
+    if 'id' not in form.attributes:
+        form.attributes['_id'] = "%s-id" % (str(form.table))
+    script_data = """$(document).ready(function() {{
+    $("[rel=tooltip]").popover({{
         placement: 'right',
         trigger: 'hover',
-    });
-});"""
-    if 'id' not in form.attributes:
-        form.attributes['id'] = "%s-id" % (str(form.table))
-    script_data += "$('%s select').chosen({%s});" % (form.attributes['id'], chosen_attributes)
-    script_data += kwargs.get('script', '')
+    }});
+    $('#{0:s} select').chosen({{{1:s}}});
+    {2:s}
+}});""".format(form.attributes['_id'], chosen_attributes, kwargs.get('script', ''))
     parent.append(SCRIPT(script_data))
     return parent
 SQLFORM.formstyles['bootstrap-modal'] = formstyle_bootstrap_modal
@@ -88,7 +88,7 @@ def formstyle_bootstrap_kvasir(form, fields, **kwargs):
     Bootstrap format form layout for Kvasir
     """
     span = kwargs.get('span') or 'span8'
-    chosen_attributes = kwargs.get('chosen_attributes') or "width:'99%', search_contains: true, enable_split_word_search: true"
+    chosen_attributes = kwargs.get('chosen_attributes') or "search_contains: true, enable_split_word_search: true"
     form.add_class('form-horizontal')
     parent = FIELDSET()
     for id, label, controls, help in fields:
@@ -131,15 +131,16 @@ def formstyle_bootstrap_kvasir(form, fields, **kwargs):
             parent.append(DIV(label, _controls, _class='control-group', _id=id))
 
     # append tooltip and chosen field attributes
-    script_data = """$(document).ready(function() {
-    $("[rel=tooltip]").popover({
+    if '_id' not in form.attributes:
+        form.attributes['_id'] = "%s-id" % (str(form.table))
+    script_data = """$(document).ready(function() {{
+    $("[rel=tooltip]").popover({{
         placement: 'right',
         trigger: 'hover',
-    });
-});"""
-    if 'id' not in form.attributes:
-        form.attributes['id'] = "%s-id" % (str(form.table))
-    script_data += "$('%s select').chosen({%s});" % (form.attributes['id'], chosen_attributes)
+    }});
+    $('#{0:s} select').chosen({{{1:s}}});
+    {2:s}
+}});""".format(form.attributes['_id'], chosen_attributes, kwargs.get('script', ''))
     parent.append(SCRIPT(script_data))
     return parent
 SQLFORM.formstyles['bootstrap_kvasir'] = formstyle_bootstrap_kvasir
