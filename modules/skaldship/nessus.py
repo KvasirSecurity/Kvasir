@@ -281,7 +281,6 @@ def process_xml(
     # Upload and process Nessus XML Scan file
 
     from skaldship.cpe import lookup_cpe
-    from skaldship.general import get_host_record
 
     db = current.globalenv['db']
     cache = current.globalenv['cache']
@@ -328,7 +327,7 @@ def process_xml(
     svc_info = db.t_service_info
 
     for host in hosts:
-        (host_id, hostdata) = nessus_hosts.parse(host)
+        (host_id, hostdata) = nessus_hosts.parse(host.find('HostProperties'))
 
         if not host_id:
             # no host_id returned, it was either skipped or errored out
@@ -347,11 +346,6 @@ def process_xml(
             svcname = extradata['svcname']
             plugin_output = extradata['plugin_output']
             pluginID = extradata['pluginID']
-
-            if port == 0 and proto == 'tcp':
-                # tcp/0 is actually info/0 for Kvasir
-                proto = 'info'
-                svcname = 'info'
 
             svc_id = svcs.update_or_insert(
                 f_proto=proto, f_number=port, f_status=svcname, f_hosts_id=host_id
@@ -499,7 +493,7 @@ def process_xml(
             print(" [*] Added file to MSF Pro: %s" % (res))
             #sys.stderr.write(msg)
         except MSFAPIError, e:
-            print("MSFAPI Error: %s" % (e))
+            logger.error("MSFAPI Error: %s" % (str(e)))
             pass
 
     # any new Nessus vulns need to be checked against exploits table and connected
