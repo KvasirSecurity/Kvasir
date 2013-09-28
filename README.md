@@ -28,6 +28,13 @@ SPA team may directly relate we hope that this tool is something that can
 be molded and adapted to fit almost any working scenario.
 
 
+DOCUMENTATION
+=============
+
+Current documentation will be maintained on the Kvasir Github wiki
+(https://github.com/KvasirSecurity/Kvasir/wiki)
+
+
 NOTES
 =====
 
