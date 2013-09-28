@@ -18,7 +18,7 @@ from skaldship.general import host_title_maker
 ########################################
 db.define_table('t_hosts',
     Field('id','id', represent=lambda i, row:SPAN(A(i,_id="host_detail_%s" % (i),_href=URL('hosts', 'detail',args=i)))),
-    Field('f_ipv4', type='string', unique=True, requires=IS_EMPTY_OR(IS_IPV4()), label=T('IPv4 Address')),
+    Field('f_ipv4', type='string', length=15, unique=True, requires=IS_EMPTY_OR(IS_IPV4()), label=T('IPv4 Address')),
     Field('f_ipv6', type='string', label=T('IPv6 Address'), requires=IS_EMPTY_OR(IS_IPV6())),
     Field('f_macaddr', type='string', label=T('MAC Address')),
     Field('f_hostname', type='string', label=T('Hostname')),
@@ -41,7 +41,7 @@ db.define_table('t_hosts',
 ## if not they'll be flagged as such.
 db.define_table('t_os',
     Field('id','id', represent=lambda id,row:SPAN(A(id,_href=URL('os', 'os_edit',args=id)))),
-    Field('f_cpename', type='string', label=T('CPE Name'), unique=True),
+    Field('f_cpename', length=255, type='string', label=T('CPE Name'), unique=True),
     Field('f_title', type='string', label=T('Title'), requires=IS_NOT_EMPTY()),
     Field('f_vendor', type='string', label=T('Vendor'), widget=autocomplete_bootstrap, requires=IS_NOT_EMPTY()),
     Field('f_product', type='string', label=T('Product'), widget=autocomplete_bootstrap, requires=IS_NOT_EMPTY()),
