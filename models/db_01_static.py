@@ -44,7 +44,7 @@ auth.settings.registration_requires_approval = False
 ## Vulnerabilities
 db.define_table('t_vulndata',
     Field('id','id', represent=lambda id,row:SPAN(A(id,_href=URL('vulns','vulndata_edit',args=id)))),
-    Field('f_vulnid', type='string', unique=True, label=T('Vulnerability ID'), requires=IS_NOT_EMPTY(),
+    Field('f_vulnid', type='string', length=255, unique=True, label=T('Vulnerability ID'), requires=IS_NOT_EMPTY(),
           represent=lambda id,row:SPAN(A(id,_href=URL('vulns','vulninfo_by_vulnid', args=id)))),
     Field('f_title', type='string', label=T('Title'), requires=IS_NOT_EMPTY()),
     Field('f_severity', type='integer', label=T('Severity'), requires=IS_IN_SET([x for x in range(1, 11)])),
