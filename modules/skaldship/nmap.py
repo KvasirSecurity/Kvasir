@@ -63,10 +63,16 @@ def process_xml(
     ):
     # Upload and process nMap XML Scan file
     import re
-    from MetasploitAPI import MetasploitAPI
     from skaldship.general import get_host_record, do_host_status
     from skaldship.cpe import lookup_cpe
     from zenmapCore_Kvasir.NmapParser import NmapParser
+    try:
+        # check to see if we have a Metasploit RPC instance configured and talking
+        from MetasploitAPI import MetasploitAPI
+        msf_api = MetasploitAPI(host=auth.user.f_msf_pro_url, apikey=auth.user.f_msf_pro_key)
+        working_msf_api = msf_api.login()
+    except:
+        working_msf_api = False
 
     # output regexes
     RE_NETBIOS_NAME = re.compile('NetBIOS computer name: (?P<d>.*),')
@@ -89,8 +95,6 @@ def process_xml(
     nmap_parsed.parse_file(filename)
 
     #existing_vulnids = db(db.t_vulndata()).select(db.t_vulndata.id, db.t_vulndata.f_vulnid).as_dict(key='f_vulnid')
-
-    user_id = db.auth_user(engineer)
 
     # parse the hosts, where all the goodies are
     log(" [-] Parsing %d hosts" % (len(nmap_parsed.hosts)))
@@ -146,7 +150,7 @@ def process_xml(
         for name in node.hostnames:
             nodefields['f_hostname'] = name['hostname']
 
-        nodefields['f_engineer'] = user_id
+        nodefields['f_engineer'] = engineer
         nodefields['f_asset_group'] = asset_group
         nodefields['f_confirmed'] = False
 
@@ -266,25 +270,16 @@ def process_xml(
                         # So no CPE or existing OS data, lets split up the CPE data and make our own
                         log(" [!] No os_id found, this is odd !!!")
 
-    if msf_workspace:
-        msf = MetasploitAPI(host=user_id.f_msf_pro_url, apikey=user_id.f_msf_pro_key)
-        if msf.login():
-            try:
-                res = msf.pro_import_file(
-                    msf_workspace,
-                    filename,
-                    {
-                        'DS_REMOVE_FILE': False,
-                        'tag': asset_group,
-                        },
-                )
-                log(" [*] Added file to MSF Pro: %s" % (res))
-            except MetasploitAPI.MSFAPIError, e:
-                logging.error("MSFAPI Error: %s" % (e))
-                pass
-        else:
-            log(" [!] Unable to login to Metasploit PRO, check your API key", logging.ERROR)
-            msf = None
+    if msf_workspace and working_msf_api:
+        msf_api.pro_import_file(
+            msf_workspace,
+            filename,
+            {
+                'DS_REMOVE_FILE': False,
+                'tag': asset_group,
+                },
+        )
+        log(" [*] Added file to MSF Pro: %s" % (res))
 
     # any new nexpose vulns need to be checked against exploits table and connected
     log(" [*] Connecting exploits to vulns and performing do_host_status")

@@ -20,7 +20,6 @@ import sys, os, time, re, HTMLParser
 from datetime import datetime
 from StringIO import StringIO
 from NexposeAPI import NexposeAPI, Sites, Report
-from MetasploitAPI import MetasploitAPI, MSFAPIError
 from skaldship.general import html_to_markmin, get_host_record, do_host_status
 from skaldship.exploits import connect_exploits
 from gluon.contrib import ipaddr
@@ -379,26 +378,20 @@ def process_xml(
     from skaldship.cpe import lookup_cpe
     from skaldship.general import get_host_record
 
+    try:
+        # check to see if we have a Metasploit RPC instance configured and talking
+        from MetasploitAPI import MetasploitAPI
+        msf_api = MetasploitAPI(host=auth.user.f_msf_pro_url, apikey=auth.user.f_msf_pro_key)
+        working_msf_api = msf_api.login()
+    except:
+        working_msf_api = False
+
     db = current.globalenv['db']
     cache = current.globalenv['cache']
 
     parser = HTMLParser.HTMLParser()
     localdb = current.globalenv['db']
     user_id = localdb.auth_user(engineer)
-
-    if msf_workspace:
-        msf = MetasploitAPI(host=user_id.f_msf_pro_url, apikey=user_id.f_msf_pro_key)
-        if msf.login():
-            print(" [-] Authenticated to Metasploit PRO")
-            #sys.stderr.write(" [-] Authenticated to Metasploit PRO\n")
-        else:
-            logger.error(" [!] Unable to login to Metasploit PRO, check your API key")
-            #sys.stderr.write(" [!] Unable to login to Metasploit PRO, check your API key\n")
-            msf = None
-    else:
-        print(" [-] No Metasploit workspace provided!")
-        #sys.stderr.write( " [-] No Metasploit workspace provided!\n")
-        msf = None
 
     # build the hosts only/exclude list
     ip_exclude = []
@@ -864,10 +857,10 @@ def process_xml(
 
         localdb.commit()
 
-    if msf is not None:
+    if working_msf_api:
         # send the downloaded nexpose file to MSF for importing
         try:
-            res = msf.pro_import_file(
+            res = msf_api.pro_import_file(
                 msf_workspace,
                 filename,
                 {

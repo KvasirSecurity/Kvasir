@@ -43,7 +43,9 @@ data/
 sessions/
 errors/
 uploads/
-databases/
+databases/*.table
+databases/sql.log
+databases/*.sqlite*
 cache/
 .idea/
 
