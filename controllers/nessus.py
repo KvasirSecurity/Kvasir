@@ -19,11 +19,31 @@ def index():
     return dict()
 
 @auth.requires_login()
+def list_reports():
+    import NessusAPI
+    nessus = NessusAPI.NessusConnection(auth.user.f_nessus_user, auth.user.f_nessus_pw, url=auth.user.f_nessus_host)
+    try:
+        reports = nessus.list_reports()
+        error = None
+    except Exception, e:
+        error = "Error listing reports: %s" % (str(e))
+        reports = None
+
+    return dict(reports=reports, error=error)
+
+@auth.requires_login()
 def import_xml_scan():
     """
     Upload/import Nexpose XML Scan file via scheduler task
     """
-    from MetasploitAPI import MetasploitAPI
+    try:
+        # check to see if we have a Metasploit RPC instance configured and talking
+        from MetasploitAPI import MetasploitAPI
+        msf_api = MetasploitAPI(host=auth.user.f_msf_pro_url, apikey=auth.user.f_msf_pro_key)
+        working_msf_api = msf_api.login()
+    except:
+        working_msf_api = False
+
     from skaldship.general import check_datadir
     import time
     import os
@@ -38,27 +58,21 @@ def import_xml_scan():
     for user in users:
         userlist.append( [ user.id, user.username ] )
 
-    """
-    # check to see if nexpose is configured/active and get site listing
-    nxsitelist = []
-    if auth.user.f_nexpose_host is not None and auth.user.f_nexpose_user is not None:
-        # see if the host is open/active first
-        if auth.user.f_nexpose_host is not None:
-            sites = Sites()
-            sites.host = auth.user.f_nexpose_host
-            sites.port = auth.user.f_nexpose_port
-            try:
-                if sites.login(user_id=auth.user.f_nexpose_user, password=auth.user.f_nexpose_pw):
-                    sites = sites.listings()
-                    nxsitelist.append( [ 0, None ] )
-                    for k,v in sites.iteritems():
-                        nxsitelist.append( [int(k), sites[k]['name']] )
-            except Exception, e:
-                pass
+    nessusreports = []
+    if auth.user.f_nessus_host is not None:
+        try:
+            # check to see if NessusAPI is working
+            import NessusAPI
+            n = NessusAPI.NessusConnection(auth.user.f_nessus_user, auth.user.f_nessus_pw, url=auth.user.f_nessus_host)
+            reports = n.list_reports()
+        except Exception, e:
+            logger.error("Error communicating with Nessus: %s" % str(e))
 
-    if nxsitelist:
-        fields.append(Field('f_nexpose_site', type='integer', label=T('Nexpose Site'), requires=IS_IN_SET(nxsitelist, zero=None)))
-    """
+        for report in reports:
+            nessusreports.append( [ report.name, report.readableName ])
+
+        if nessusreports:
+            fields.append(Field('f_nexpose_site', type='integer', label=T('Nessus Report'), requires=IS_IN_SET(nessusreports, zero=None)))
 
     fields.append(Field('f_filename', 'upload', uploadfolder=filedir, label=T('Nessus XML File')))
     fields.append(Field('f_engineer', type='integer', label=T('Engineer'), default=auth.user.id, requires=IS_IN_SET(userlist)))
