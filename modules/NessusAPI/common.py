@@ -83,7 +83,7 @@ class NessusConnection(object):
          self.upload_file(name, f)
 
          url = os.path.join(self._url, "file/policy/import")
-         
+
          # generate a sequence number we can rely on
          seq  = abs(hash(name)) % 10000000
          params = dict(seq=seq,file=name)
