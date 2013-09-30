@@ -28,7 +28,7 @@ auth.settings.extra_fields['auth_user']= [
     Field('f_nexpose_port', 'string', default='3780', label=T('Nexpose Port')),
     Field('f_nexpose_user', 'string', default='nxadmin', label=T('Nexpose Username')),
     Field('f_nexpose_pw', 'password', default='password', label=T('Nexpose Password')),
-    Field('f_nessus_host', 'string', default='localhost:8834', label=T('Nessus Host')),
+    Field('f_nessus_host', 'string', default='https://localhost:8834/', label=T('Nessus URL')),
     Field('f_nessus_user', 'string', default='admin', label=T('Nessus Username')),
     Field('f_nessus_pw', 'password', default='password', label=T('Nessus Password')),
 ]
