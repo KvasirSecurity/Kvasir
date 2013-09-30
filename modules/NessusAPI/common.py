@@ -5,6 +5,7 @@ from urllib import urlencode
 from xml.dom.minidom import parse as parse_xml
 from .utils import get_text_by_tag, PolicyParameters, NessusPolicy, \
         NessusReport, NessusScan
+import os.path
 
 try:
     from poster.encode import multipart_encode, MultipartParam
@@ -35,7 +36,7 @@ class NessusConnection(object):
         return reply
 
     def _authenticate(self):
-        url = self._url + "/login"
+        url = os.path.join(self._url, "login")
         params = dict(login=self._username, password=self._password)
         reply = self._get_reply(url, params)
         self._token = get_text_by_tag(reply, 'token')
@@ -47,7 +48,7 @@ class NessusConnection(object):
         if not self._authenticated:
             self._authenticate()
 
-        url = self._url + "/file/upload"
+        url = os.path.join(self._url, "file/upload")
 
 
         params = (MultipartParam(name='Filedata',
@@ -81,7 +82,7 @@ class NessusConnection(object):
          """
          self.upload_file(name, f)
 
-         url = self._url + "/file/policy/import"
+         url = os.path.join(self._url, "file/policy/import")
          
          # generate a sequence number we can rely on
          seq  = abs(hash(name)) % 10000000
@@ -102,7 +103,7 @@ class NessusConnection(object):
 
         policies = []
 
-        url = self._url + "/policy/list"
+        url = os.path.join(self._url, "policy/list")
         reply = self._get_reply(url)
         node_policies = reply.getElementsByTagName("policy")
         for node_policy in node_policies:
@@ -115,7 +116,7 @@ class NessusConnection(object):
         if not self._authenticated:
             self._authenticate()
 
-        url = self._url + "/policy/add"
+        url = os.path.join(self._url, "policy/add")
         params = dict(policy_id=0, policy_name=policy_name,
                       **policy_parameters)
         reply = self._get_reply(url, params)
@@ -128,7 +129,7 @@ class NessusConnection(object):
         if not self._authenticated:
             self._authenticate()
 
-        url = self._url + "/policy/delete"
+        url = os.path.join(self._url, "policy/delete")
         params = dict(policy_id=policy_id, policy_name=policy_name)
         self._get_reply(url, params)
 
@@ -136,7 +137,7 @@ class NessusConnection(object):
         if not self._authenticated:
             self._authenticate()
 
-        url = self._url + "/scan/new"
+        url = os.path.join(self._url, "scan/new")
         params = dict(policy_id=policy_id, scan_name=scan_name,
                       target=",".join(targets))
         reply = self._get_reply(url, params)
@@ -150,7 +151,7 @@ class NessusConnection(object):
 
         reports = []
 
-        url = self._url + "/report/list"
+        url = os.path.join(self._url, "report/list")
         reply = self._get_reply(url)
 
         node_reports = reply.getElementsByTagName("report")
@@ -163,7 +164,7 @@ class NessusConnection(object):
         if not self._authenticated:
             self._authenticate()
 
-        url = self._url + "/file/report/download"
+        url = os.path.join(self._url, "file/report/download")
         params = dict(token=self._token, report=report_name)
         f = urlopen(url, urlencode(params))
 

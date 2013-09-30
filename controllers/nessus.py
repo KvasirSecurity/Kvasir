@@ -19,19 +19,6 @@ def index():
     return dict()
 
 @auth.requires_login()
-def list_reports():
-    import NessusAPI
-    nessus = NessusAPI.NessusConnection(auth.user.f_nessus_user, auth.user.f_nessus_pw, url=auth.user.f_nessus_host)
-    try:
-        reports = nessus.list_reports()
-        error = None
-    except Exception, e:
-        error = "Error listing reports: %s" % (str(e))
-        reports = None
-
-    return dict(reports=reports, error=error)
-
-@auth.requires_login()
 def import_xml_scan():
     """
     Upload/import Nexpose XML Scan file via scheduler task
@@ -58,21 +45,21 @@ def import_xml_scan():
     for user in users:
         userlist.append( [ user.id, user.username ] )
 
-    nessusreports = []
+    nessusreports = [[0, None]]
     if auth.user.f_nessus_host is not None:
         try:
             # check to see if NessusAPI is working
             import NessusAPI
-            n = NessusAPI.NessusConnection(auth.user.f_nessus_user, auth.user.f_nessus_pw, url=auth.user.f_nessus_host)
-            reports = n.list_reports()
+            nessus = NessusAPI.NessusConnection(auth.user.f_nessus_user, auth.user.f_nessus_pw, url=auth.user.f_nessus_host)
+            reports = nessus.list_reports()
+            for report in reports:
+                ts = time.ctime(float(report.timestamp))
+                nessusreports.append([report.name, "%s - %s (%s)" % (report.readablename, ts, report.status)])
         except Exception, e:
             logger.error("Error communicating with Nessus: %s" % str(e))
 
-        for report in reports:
-            nessusreports.append( [ report.name, report.readableName ])
-
-        if nessusreports:
-            fields.append(Field('f_nexpose_site', type='integer', label=T('Nessus Report'), requires=IS_IN_SET(nessusreports, zero=None)))
+        if len(nessusreports) > 1:
+            fields.append(Field('f_nessus_report', type='integer', label=T('Nessus Report'), requires=IS_IN_SET(nessusreports, zero=None)))
 
     fields.append(Field('f_filename', 'upload', uploadfolder=filedir, label=T('Nessus XML File')))
     fields.append(Field('f_engineer', type='integer', label=T('Engineer'), default=auth.user.id, requires=IS_IN_SET(userlist)))
@@ -103,31 +90,25 @@ def import_xml_scan():
     if form.errors:
         response.flash = 'Error in form'
     elif form.accepts(request.vars, session):
-        """
-        if not nxsitelist:
-            nexpose_site = '0'
+        if not nessusreports:
+            report_name = '0'
         else:
-            nexpose_site = form.vars.f_nexpose_site
+            report_name = form.vars.f_nessus_report
 
-        if nexpose_site != '0':
-            report = Report()
-            report.host = auth.user.f_nexpose_host
-            report.port = auth.user.f_nexpose_port
-            nx_loggedin = report.login(user_id=auth.user.f_nexpose_user, password=auth.user.f_nexpose_pw)
-            if nx_loggedin:
-                # have nexpose generate the adhoc report
-                check_datadir(request.folder)
-                filename =  os.path.join(filedir, "%s-%s.xml" % (form.vars.f_asset_group, int(time.time())))
-                fout = open(filename, "w")
-                fout.write(report.adhoc_generate(filterid=nexpose_site))
+        if report_name != '0':
+            filename = os.path.join(filedir, "nessus-%s-%s.xml" % (form.vars.f_asset_group, int(time.time())))
+            check_datadir(request.folder)
+            fout = open(filename, "w")
+            try:
+                nessus.download_report(report_name, fout)
                 fout.close()
-            else:
-                response.flash = "Unable to login to Nexpose"
+            except Exception, e:
+                msg = ("Error download Nessus report: %s" % (e))
+                logger.error(msg)
+                response.flash = msg
                 return dict(form=form)
         else:
-        """
-        filename = form.vars.f_filename
-        filename = os.path.join(filedir, form.vars.f_filename)
+            filename = os.path.join(filedir, form.vars.f_filename)
 
         # build the hosts only/exclude list
         ip_exclude = []

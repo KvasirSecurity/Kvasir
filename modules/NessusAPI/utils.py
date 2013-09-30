@@ -82,10 +82,11 @@ class NessusReport(object):
     STATUS_COMPLETE = 'completed'
     STATUS_RUNNING = 'running'
 
-    def __init__(self, timestamp, status, name):
+    def __init__(self, timestamp, status, name, readablename):
         self._timestamp = timestamp
         self._status = status
         self._name = name
+        self._readablename = readablename
 
     @property
     def timestamp(self):
@@ -99,10 +100,15 @@ class NessusReport(object):
     def name(self):
         return self._name
 
+    @property
+    def readablename(self):
+        return self._readablename
+
     @staticmethod
     def from_node(node):
         timestamp = get_text_by_tag(node, 'timestamp')
         status = get_text_by_tag(node, 'status')
         name = get_text_by_tag(node, 'name')
+        readablename = get_text_by_tag(node, 'readableName')
 
-        return NessusReport(timestamp, status, name)
+        return NessusReport(timestamp, status, name, readablename)
