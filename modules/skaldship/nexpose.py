@@ -20,7 +20,6 @@ import sys, os, time, re, HTMLParser
 from datetime import datetime
 from StringIO import StringIO
 from NexposeAPI import NexposeAPI, Sites, Report
-from MetasploitAPI import MetasploitAPI, MSFAPIError
 from skaldship.general import html_to_markmin, get_host_record, do_host_status
 from skaldship.exploits import connect_exploits
 from gluon.contrib import ipaddr
@@ -378,27 +377,16 @@ def process_xml(
 
     from skaldship.cpe import lookup_cpe
     from skaldship.general import get_host_record
+    import os
 
     db = current.globalenv['db']
     cache = current.globalenv['cache']
+    session = current.globalenv['session']
+    auth = current.globalenv['auth']
 
     parser = HTMLParser.HTMLParser()
     localdb = current.globalenv['db']
     user_id = localdb.auth_user(engineer)
-
-    if msf_workspace:
-        msf = MetasploitAPI(host=user_id.f_msf_pro_url, apikey=user_id.f_msf_pro_key)
-        if msf.login():
-            print(" [-] Authenticated to Metasploit PRO")
-            #sys.stderr.write(" [-] Authenticated to Metasploit PRO\n")
-        else:
-            logger.error(" [!] Unable to login to Metasploit PRO, check your API key")
-            #sys.stderr.write(" [!] Unable to login to Metasploit PRO, check your API key\n")
-            msf = None
-    else:
-        print(" [-] No Metasploit workspace provided!")
-        #sys.stderr.write( " [-] No Metasploit workspace provided!\n")
-        msf = None
 
     # build the hosts only/exclude list
     ip_exclude = []
@@ -535,18 +523,13 @@ def process_xml(
             nodefields['f_hostname'] = node.find('names/name').text
 
         # check to see if IP exists in DB already
-        if isv4:
-            host_rec = localdb(localdb.t_hosts.f_ipv4 == nodefields['f_ipv4']).select().first()
-        else:
-            host_rec = localdb(localdb.t_hosts.f_ipv6 == nodefields['f_ipv6']).select().first()
+        query = (db.t_hosts.f_ipv4 == ip) | (db.t_hosts.f_ipv6 == ip)
+        host_rec = localdb(query).select().first()
         if host_rec is None:
             host_id = localdb.t_hosts.insert(**nodefields)
             localdb.commit()
             hoststats['added'] += 1
-            if isv4:
-                print(" [-] Adding IP: %s" % (nodefields['f_ipv4']))
-            else:
-                print(" [-] Adding IP: %s" % (nodefields['f_ipv6']))
+            print(" [-] Adding IP: %s" % (ip))
             #sys.stderr.write(msg)
         elif host_rec is not None and update_hosts:
             localdb.commit()
@@ -864,22 +847,33 @@ def process_xml(
 
         localdb.commit()
 
-    if msf is not None:
-        # send the downloaded nexpose file to MSF for importing
+    if msf_workspace:
         try:
-            res = msf.pro_import_file(
+            # check to see if we have a Metasploit RPC instance configured and talking
+            from MetasploitAPI import MetasploitAPI
+            msf_api = MetasploitAPI(host=auth.user.f_msf_pro_url, apikey=auth.user.f_msf_pro_key)
+        except:
+            print(" [!] MSF Workspace sent but unable to authenticate to MSF API", logger.ERROR)
+            msf_api = None
+
+        try:
+            scan_data = open(filename, "r+").readlines()
+        except Exception, error:
+            print(" [!] Error loading scan data to send to Metasploit: %s" % str(error))
+
+        if scan_data and msf_api:
+            task = msf_api.pro_import_data(
                 msf_workspace,
-                filename,
+                "".join(scan_data),
                 {
-                    'DS_REMOVE_FILE': False,
-                    'tag': asset_group,
-                    },
+                    #'preserve_hosts': form.vars.preserve_hosts,
+                    'blacklist_hosts': "\n".join(ip_ignore_list)
+                },
             )
-            print(" [*] Added file to MSF Pro: %s" % (res))
-            #sys.stderr.write(msg)
-        except MSFAPIError, e:
-            print("MSFAPI Error: %s" % (e))
-            pass
+
+            msf_workspace_num = session.msf_workspace_num or 'unknown'
+            msfurl = os.path.join(auth.user.f_msf_pro_url, 'workspaces', msf_workspace_num, 'tasks', task['task_id'])
+            print(" [*] Added file to MSF Pro: %s" % (msfurl))
 
     # any new nexpose vulns need to be checked against exploits table and connected
     print(" [*] Connecting exploits to vulns and performing do_host_status")

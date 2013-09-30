@@ -38,8 +38,14 @@ def import_xml_scan():
     """
     Upload/import Nmap XML Scan file via scheduler task
     """
-    from MetasploitAPI import MetasploitAPI
     import time
+    try:
+        # check to see if we have a Metasploit RPC instance configured and talking
+        from MetasploitAPI import MetasploitAPI
+        msf_api = MetasploitAPI(host=auth.user.f_msf_pro_url, apikey=auth.user.f_msf_pro_key)
+        working_msf_api = msf_api.login()
+    except:
+        working_msf_api = False
 
     filedir = os.path.join(request.folder,'data','scanfiles')
     response.title = "%s :: Import Nmap XML Scan Results" % (settings.title)
@@ -56,18 +62,11 @@ def import_xml_scan():
     fields.append(Field('f_engineer', type='integer', label=T('Engineer'), default=auth.user.id, requires=IS_IN_SET(userlist)))
     fields.append(Field('f_asset_group', type='string', label=T('Asset Group'), requires=IS_NOT_EMPTY()))
 
-    # check to see if we have a Metasploit Pro instance configured and talking
-    # if so pull a list of the workspaces and present them
-    msf = MetasploitAPI(host=auth.user.f_msf_pro_url, apikey=auth.user.f_msf_pro_key)
-    try:
-        res = msf.login()
-    except:
-        res = False
-
-    if res:
+    # If Metasploit available, pull a list of the workspaces and present them
+    if working_msf_api:
         msf_workspaces = []
         msf_workspaces.append( "None" )
-        for w in msf.pro_workspaces().keys():
+        for w in msf_api.pro_workspaces().keys():
             msf_workspaces.append(w)
         fields.append(Field('f_msf_workspace', type='string', label=T('MSF Pro Workspace'), requires=IS_EMPTY_OR(IS_IN_SET(msf_workspaces, zero=None))))
 
