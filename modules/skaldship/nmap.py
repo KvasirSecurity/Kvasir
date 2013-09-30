@@ -21,6 +21,7 @@ db = current.globalenv['db']
 cache = current.globalenv['cache']
 auth = current.globalenv['auth']
 settings = current.globalenv['settings']
+session = current.globalenv['session']
 
 ##-------------------------------------------------------------------------
 
@@ -63,16 +64,10 @@ def process_xml(
     ):
     # Upload and process nMap XML Scan file
     import re
+    import os
     from skaldship.general import get_host_record, do_host_status
     from skaldship.cpe import lookup_cpe
     from zenmapCore_Kvasir.NmapParser import NmapParser
-    try:
-        # check to see if we have a Metasploit RPC instance configured and talking
-        from MetasploitAPI import MetasploitAPI
-        msf_api = MetasploitAPI(host=auth.user.f_msf_pro_url, apikey=auth.user.f_msf_pro_key)
-        working_msf_api = msf_api.login()
-    except:
-        working_msf_api = False
 
     # output regexes
     RE_NETBIOS_NAME = re.compile('NetBIOS computer name: (?P<d>.*),')
@@ -154,14 +149,9 @@ def process_xml(
         nodefields['f_asset_group'] = asset_group
         nodefields['f_confirmed'] = False
 
-        # check to see if IPv4/IPv6 exists in DB already
-        if 'f_ipv4' in nodefields:
-            host_rec = db(db.t_hosts.f_ipv4 == nodefields['f_ipv4']).select().first()
-        elif 'f_ipv6' in nodefields:
-            host_rec = db(db.t_hosts.f_ipv6 == nodefields['f_ipv6']).select().first()
-        else:
-            log("No IP Address found in record. Skipping", logging.ERROR)
-            continue
+        # see if host exists, if so update. if not, insert!
+        query = (db.t_hosts.f_ipv4 == ipaddr) | (db.t_hosts.f_ipv6 == ipaddr)
+        host_rec = db(query).select().first()
 
         if host_rec is None:
             host_id = db.t_hosts.insert(**nodefields)
@@ -270,16 +260,33 @@ def process_xml(
                         # So no CPE or existing OS data, lets split up the CPE data and make our own
                         log(" [!] No os_id found, this is odd !!!")
 
-    if msf_workspace and working_msf_api:
-        msf_api.pro_import_file(
-            msf_workspace,
-            filename,
-            {
-                'DS_REMOVE_FILE': False,
-                'tag': asset_group,
+    if msf_workspace:
+        try:
+            # check to see if we have a Metasploit RPC instance configured and talking
+            from MetasploitAPI import MetasploitAPI
+            msf_api = MetasploitAPI(host=auth.user.f_msf_pro_url, apikey=auth.user.f_msf_pro_key)
+        except:
+            log(" [!] MSF Workspace sent but unable to authenticate to MSF API", logger.ERROR)
+            msf_api = None
+
+        try:
+            scan_data = open(filename, "r+").readlines()
+        except Exception, error:
+            log(" [!] Error loading scan data to send to Metasploit: %s" % str(error), logger.ERROR)
+
+        if scan_data and msf_api:
+            task = msf_api.pro_import_data(
+                msf_workspace,
+                "".join(scan_data),
+                {
+                    #'preserve_hosts': form.vars.preserve_hosts,
+                    'blacklist_hosts': "\n".join(ip_ignore_list)
                 },
-        )
-        log(" [*] Added file to MSF Pro: %s" % (res))
+            )
+
+            msf_workspace_num = session.msf_workspace_num or 'unknown'
+            msfurl = os.path.join(auth.user.f_msf_pro_url, 'workspaces', msf_workspace_num, 'tasks', task['task_id'])
+            print(" [*] Added file to MSF Pro: %s" % (msfurl))
 
     # any new nexpose vulns need to be checked against exploits table and connected
     log(" [*] Connecting exploits to vulns and performing do_host_status")
