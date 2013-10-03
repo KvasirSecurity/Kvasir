@@ -175,6 +175,7 @@ def vuln_update():
 
     from lxml import etree
     from StringIO import StringIO
+    import NexposeAPI as nexpose_api
 
     response.title = "%s :: Nexpose Vulnerability Update" % (settings.title)
     form = SQLFORM.factory(
