@@ -326,8 +326,8 @@ class NessusVulns:
 
         return vuln_id, vulndata, extradata
 
-##-------------------------------------------------------------------------
 
+##-------------------------------------------------------------------------
 def process_xml(
     filename=None,
     asset_group=None,
@@ -337,8 +337,21 @@ def process_xml(
     ip_include_list=None,
     update_hosts=False,
     ):
-    # Upload and process Nessus XML Scan file
+    """
+    Process a Nessus XML Report file
 
+    Args:
+        filename: A local filename to process
+        asset_group: Asset group to assign hosts to
+        engineer: Engineer record number to assign hosts to
+        msf_workspace: If set a Metasploit workspace to send the scanfile to via the API
+        ip_ignore_list: List of IP addresses to ignore
+        ip_include_list: List of IP addresses to ONLY import (skip all others)
+        update_hosts: Boolean to update/append to hosts, otherwise hosts are skipped
+
+    Returns:
+        msg: A string status message
+    """
     from skaldship.cpe import lookup_cpe
 
     db = current.globalenv['db']
@@ -487,7 +500,9 @@ def process_xml(
                 d['f_hosts_id'] = host_id
                 try:
                     d['f_lockout_duration'] = re.findall('Locked account time \(s\): (\d+)', plugin_output)[0]
-                    d['f_lockout_limit'] = re.findall('Number of invalid logon before locked out \(s\): (\d+)', plugin_output)[0]
+                    d['f_lockout_limit'] = re.findall(
+                        'Number of invalid logon before locked out \(s\): (\d+)', plugin_output
+                    )[0]
                 except IndexError:
                     d['f_lockout_duration'] = 1800
                     d['f_lockout_limit'] = 0
@@ -565,11 +580,21 @@ def process_xml(
     connect_exploits()
     do_host_status(asset_group=asset_group)
 
-    msg = " [*] Import complete: hosts: %s added, %s updated, %s skipped - %s vulns processed, %s added" % (nessus_hosts.stats['added'],
-                                                                                             nessus_hosts.stats['updated'],
-                                                                                             nessus_hosts.stats['skipped'],
-                                                                                             nessus_vulns.stats['processed'],
-                                                                                             nessus_vulns.stats['added'])
+    msg = (' [*] Import complete: hosts: %s added, %s updated, %s skipped '
+           '- %s vulns processed, %s added' % (
+            nessus_hosts.stats['added'],
+            nessus_hosts.stats['updated'],
+            nessus_hosts.stats['skipped'],
+            nessus_vulns.stats['processed'],
+            nessus_vulns.stats['added']
+            ))
     log(msg)
-    #sys.stderr.write(msg)
     return msg
+
+
+##-------------------------------------------------------------------------
+def main():
+    pass
+
+if __name__ == '__main__':
+    main()

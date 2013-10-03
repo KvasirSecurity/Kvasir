@@ -43,7 +43,7 @@ def import_xml_scan():
     users = db(db.auth_user).select()
     userlist = []
     for user in users:
-        userlist.append( [ user.id, user.username ] )
+        userlist.append([user.id, user.username])
 
     nessusreports = [[0, None]]
     if auth.user.f_nessus_host is not None:
@@ -67,16 +67,9 @@ def import_xml_scan():
 
     # check to see if we have a Metasploit Pro instance configured and talking
     # if so pull a list of the workspaces and present them
-    msf = MetasploitAPI(host=auth.user.f_msf_pro_url, apikey=auth.user.f_msf_pro_key)
-    try:
-        res = msf.login()
-    except:
-        res = False
-
-    if res:
-        msf_workspaces = []
-        msf_workspaces.append( "None" )
-        for w in msf.pro_workspaces().keys():
+    if working_msf_api:
+        msf_workspaces = ["None"]
+        for w in msf_api.pro_workspaces().keys():
             msf_workspaces.append(w)
         fields.append(Field('f_msf_workspace', type='string', label=T('MSF Pro Workspace'), requires=IS_EMPTY_OR(IS_IN_SET(msf_workspaces, zero=None))))
 
