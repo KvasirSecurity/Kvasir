@@ -156,7 +156,8 @@ def adv_db_statistics():
     #Netbios stats
     domains = []
     for rec in db(db.t_netbios).select(db.t_netbios.f_domain,distinct=True):
-        domains.append(rec.f_domain)
+        if rec.f_domain:
+            domains.append(rec.f_domain)
     statistics['domains'] = domains
 
     #Account stats
