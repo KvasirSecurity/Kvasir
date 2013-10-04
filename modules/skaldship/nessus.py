@@ -250,11 +250,11 @@ class NessusVulns:
         extradata['exploit_available'] = rpt_item.findtext('exploit_available', 'false')
 
         pluginID = rpt_item.get('pluginID')
-        pluginName = rpt_item.findtext('fname', '')
+        fname = rpt_item.findtext('fname', '')
         extradata['pluginID'] = pluginID
-        if pluginName:
-            pluginName = pluginName.rstrip('.nasl')
-            vulnid = IS_SLUG()("%s-%s" % (pluginName, pluginID))[0]     # slugify it
+        if fname:
+            fname = fname.rstrip('.nasl')
+            vulnid = IS_SLUG()("%s-%s" % (fname, pluginID))[0]     # slugify it
         else:
             vulnid = pluginID
 
@@ -283,7 +283,6 @@ class NessusVulns:
         vulndata = {
             'f_vulnid': vulnid,
             'f_title': rpt_item.findtext('plugin_name', ''),
-            'f_severity': rpt_item.get('severity', 0),
             'f_riskscore': rpt_item.get('risk_factor', ''),
             'f_cvss_score': rpt_item.findtext('cvss_base_score', 0.0),
             'f_cvss_i_score': rpt_item.findtext('cvss_temporal_score', 0.0),
@@ -292,7 +291,13 @@ class NessusVulns:
             'f_dt_published': rpt_item.findtext('plugin_publication_date'),
             'f_dt_added': rpt_item.findtext('plugin_publication_date'),
             'f_dt_modified': rpt_item.findtext('plugin_modification_date'),
+            'f_source': 'Nessus',
         }
+
+        # Nessus only has 5 severity levels: 0, 1, 2, 3 and 4 .. We go to 11. Assign 0:0, 1:3, 2:5, 3:8, 4:10
+        sevmap = {'0': 0, '1': 3 , '2': 5, '3': 8, '4': 10}
+        severity = rpt_item.get('severity', 0)
+        vulndata['f_severity'] = sevmap[severity]
 
         cvss_vectors = rpt_item.findtext('cvss_vector') # CVSS2#AV:N/AC:M/Au:N/C:P/I:P/A:P
         if cvss_vectors:

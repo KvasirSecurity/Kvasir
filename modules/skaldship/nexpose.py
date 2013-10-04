@@ -434,6 +434,7 @@ def process_xml(
             # TODO: Handle updates! Compare date modified...
             (vulnfields, references) = vuln_parse(vuln, fromapi=False)
             try:
+                vulnfields['f_source'] = 'Nexpose'
                 vulnid = localdb.t_vulndata.insert(**vulnfields)
                 vulns_added += 1
                 localdb.commit()
