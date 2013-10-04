@@ -34,11 +34,20 @@ settings.email_login = ''
 settings.login_method = 'local'
 settings.login_config = ''
 settings.scheduler_group_name = socket.gethostname()
+
+# I hate putting globals like this in but this seems to be the best user-serviceable area without having to check
+# database entries in t_errata each time.
+
 settings.shodanhq_apikey = ''                 # obtain @ http://www.shodanhq.com/api_doc
 settings.password_upload_dir = 'data/passwords/misc'
 settings.nmap_sharedir = '/usr/local/share/nmap'
 settings.nmap_scriptdir = os.path.join(settings.nmap_sharedir, 'scripts')
 settings.nmap_nselibdir = os.path.join(settings.nmap_sharedir, 'nselib')
+settings.ignored_nessus_plugins = [
+    '19506',        # Nessus Scan Information
+    '11219',        # Nessus SYN Scanner
+    '34277',        # Nessus UDP Scanner
+]
 
 if request.env.web2py_runtime_gae:            # if running on Google App Engine
     db = DAL('gae')                           # connect to Google BigTable

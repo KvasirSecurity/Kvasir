@@ -83,7 +83,7 @@ def import_xml_scan():
     if form.errors:
         response.flash = 'Error in form'
     elif form.accepts(request.vars, session):
-        if not nessusreports:
+        if nessusreports == [[0, None]]:
             report_name = '0'
         else:
             report_name = form.vars.f_nessus_report
