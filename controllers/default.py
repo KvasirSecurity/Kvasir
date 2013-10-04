@@ -169,7 +169,7 @@ def update_dynamic_fields():
                     resp_text = "Error submitting job: %s" % (task.errors)
             else:
                 do_host_status(asset_group=form.vars.f_asset_group)
-                response.flash = "Task completed!"
+        response.flash = "Task completed!"
 
     elif form.errors:
         response.flash = 'Error in form'
