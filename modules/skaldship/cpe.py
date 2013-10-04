@@ -105,6 +105,10 @@ def lookup_cpe(cpe_name=None):
     if not cpe_name:
         return None
 
+    if cpe_name.startswith('cpe:/o:'):
+        # cpe:/o: is stripped in the database
+        cpe_name = cpe_name.lstrip('cpe:/o:')
+
     db = current.globalenv['db']
     cache = current.globalenv['cache']
 

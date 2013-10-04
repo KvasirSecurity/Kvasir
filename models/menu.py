@@ -94,6 +94,7 @@ response.menu = [
      [
          (T('Nexpose XML'), False, URL(_a,'nexpose','import_xml_scan'), []),
          (T('nMap XML'), False, URL(_a,'nmap','import_xml_scan'), []),
+         (T('Nessus XML'), False, URL(_a,'nessus','import_xml_scan'), []),
          (T('Metasploit XML'), False, URL(_a, 'metasploit', 'import_report_xml'), []),
          (T('ShodanHQ'), False, URL(_a, 'shodanhq', 'import_report'), []),
      ]),

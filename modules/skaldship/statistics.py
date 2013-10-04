@@ -156,7 +156,8 @@ def adv_db_statistics():
     #Netbios stats
     domains = []
     for rec in db(db.t_netbios).select(db.t_netbios.f_domain,distinct=True):
-        domains.append(rec.f_domain)
+        if rec.f_domain:
+            domains.append(rec.f_domain)
     statistics['domains'] = domains
 
     #Account stats
@@ -186,30 +187,31 @@ def graphs_index():
 
     graph = {}
 
-    host_by_sev = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+    host_by_sev = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
     maxhostsev = db.t_vulndata.f_severity.max()
 
     q = (db.t_service_vulns.f_services_id == db.t_services.id) & (db.t_vulndata.id == db.t_service_vulns.f_vulndata_id)
     for rec in db(q).select(maxhostsev, db.t_services.f_hosts_id, orderby=db.t_services.f_hosts_id, groupby=db.t_services.f_hosts_id):
-        host_by_sev[rec[maxhostsev] - 1] += 1
+        host_by_sev[rec[maxhostsev]] += 1
 
     graph['top_host_sev_count'] = ''
-    cnt = 1
+    cnt = 0
     for h_rec in host_by_sev:
         graph['top_host_sev_count'] = graph['top_host_sev_count'] + "{ name: 'Sev %s', color: '%s', y: %d},\n" % (cnt, severity_mapping(cnt)[2], h_rec)
         cnt += 1
     graph['top_host_sev_count_raw'] = host_by_sev
 
-    vuln_by_sev = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+    vuln_by_sev = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
     count = db.t_vulndata.id.count()
     for rec in db(db.t_vulndata.id == db.t_service_vulns.f_vulndata_id).select(db.t_vulndata.f_severity,count, orderby=db.t_vulndata.f_severity, groupby=db.t_vulndata.f_severity):
-        vuln_by_sev[rec.t_vulndata.f_severity - 1] = rec[count]
+        vuln_by_sev[rec.t_vulndata.f_severity] = rec[count]
 
     graph['vuln_by_sev_count'] = ''
     graph['vuln_by_sev_count_raw'] = vuln_by_sev
-    cnt = 1
+    cnt = 0
     for h_rec in vuln_by_sev:
-        graph['vuln_by_sev_count'] = graph['vuln_by_sev_count'] + "{ name: 'Sev %s', color: '%s', y: %d},\n" % (cnt, severity_mapping(cnt)[2], h_rec)
+        graph['vuln_by_sev_count'] += "{ name: 'Sev %s', color: '%s', y: %d},\n" % (
+        cnt, severity_mapping(cnt)[2], h_rec)
         cnt += 1
 
     return graph
