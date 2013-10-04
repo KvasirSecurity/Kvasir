@@ -143,9 +143,9 @@ def update_dynamic_fields():
     asset_groups = map((lambda x: x['f_asset_group']), ag)
 
     form = SQLFORM.factory(
-        Field('f_exploit_link', type='boolean', label=T('Exploit linking')),
-        Field('f_host_status', type='boolean', label=T('Host Service/Vuln counts')),
-        Field('f_asset_group', type='list:string', label=T('Asset Group'), requires=IS_IN_SET(asset_groups, multiple=False)),
+        Field('f_exploit_link', type='boolean', default=True, label=T('Exploit linking')),
+        Field('f_host_status', type='boolean', default=True, label=T('Host Service/Vuln counts')),
+        Field('f_asset_group', type='list:string', label=T('Asset Group'), requires=IS_EMPTY_OR(IS_IN_SET(asset_groups, multiple=False))),
         Field('f_taskit', type='boolean', default=auth.user.f_scheduler_tasks, label=T('Run in background task')),
     )
 
@@ -169,6 +169,7 @@ def update_dynamic_fields():
                     resp_text = "Error submitting job: %s" % (task.errors)
             else:
                 do_host_status(asset_group=form.vars.f_asset_group)
+                response.flash = "Task completed!"
 
     elif form.errors:
         response.flash = 'Error in form'
