@@ -39,6 +39,10 @@ Terminal, iTerm, etc. Here are some ideas:
 
 xterm -sb -sl 1500 -vb -T 'manual hacking: _IP_' -n 'manual hacking: _IP_' -e script _LOGFILE_
 
+### Gnome Terminal
+
+gnome-terminal --window -t 'manual hacking: _IP_' -e script _LOGFILE_
+
 ### OS X Terminal script
 
 osascript ../private/terminal.scpt _IP_ _DATADIR_ _LOGFILE_
