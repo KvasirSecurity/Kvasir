@@ -266,13 +266,13 @@ def process_xml(
             from MetasploitAPI import MetasploitAPI
             msf_api = MetasploitAPI(host=auth.user.f_msf_pro_url, apikey=auth.user.f_msf_pro_key)
         except:
-            log(" [!] MSF Workspace sent but unable to authenticate to MSF API", logger.ERROR)
+            log(" [!] MSF Workspace sent but unable to authenticate to MSF API", logging.ERROR)
             msf_api = None
 
         try:
             scan_data = open(filename, "r+").readlines()
         except Exception, error:
-            log(" [!] Error loading scan data to send to Metasploit: %s" % str(error), logger.ERROR)
+            log(" [!] Error loading scan data to send to Metasploit: %s" % str(error), logging.ERROR)
 
         if scan_data and msf_api:
             task = msf_api.pro_import_data(
