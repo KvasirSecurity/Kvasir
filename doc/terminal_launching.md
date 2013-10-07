@@ -41,7 +41,7 @@ xterm -sb -sl 1500 -vb -T 'manual hacking: _IP_' -n 'manual hacking: _IP_' -e sc
 
 ### Gnome Terminal
 
-gnome-terminal --window -t 'manual hacking: _IP_' -e script _LOGFILE_
+gnome-terminal --window -t 'manual hacking: _IP_' -e 'script _LOGFILE_'
 
 ### OS X Terminal script
 
