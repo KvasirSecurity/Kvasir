@@ -289,7 +289,11 @@ def database_restore():
 
 @auth.requires_login()
 def wiki():
-    return auth.wiki(migrate=settings.migrate)
+    # web2py wiki is a bit of a beast in a multi-user environment
+    # The db.auth_user.id == 1 has implicit auth_editor permission. The databases for the wiki are
+    # not created until the person who installed the database visits the wiki.
+    # Any user id > 1 must manually be added to the auth_editor group unless manage_permission is False
+    return auth.wiki(migrate=settings.migrate, manage_permissions=False)
 
 @auth.requires_login()
 def data_dir():
