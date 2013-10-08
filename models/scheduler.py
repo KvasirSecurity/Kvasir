@@ -13,7 +13,6 @@
 import os
 from skaldship.general import get_host_record
 from gluon.scheduler import Scheduler
-import gluon.contrib.simplejson
 
 import logging
 logger = logging.getLogger("web2py.app.kvasir")
@@ -177,12 +176,11 @@ def scanner_import(
         )
     elif scanner == 'METASPLOIT':
         from skaldship.metasploit import process_report_xml
-        logger.info("Processing Metasploit Pro file: %s" % (filename))
+        logger.info("Processing Metasploit Pro file: %s" % filename)
         process_report_xml(
             filename=filename,
             asset_group=asset_group,
             engineer=engineer,
-            msf_workspace=msf_workspace,
             ip_ignore_list=ip_ignore_list,
             ip_include_list=ip_include_list,
             update_hosts=update_hosts,
