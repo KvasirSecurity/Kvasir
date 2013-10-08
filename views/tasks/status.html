@@ -59,7 +59,7 @@
             $log = $('#task_logs');
             task = $log.attr('task');
             $log.bind('scrollToBottom', function() {
-              return $(this).scrollTop($(this).attr('scrollHeight'));
+              return $(this).scrollTop($(this)[0].scrollHeight);
             });
 
             $log.bind('addLine', function(event, html) {
@@ -94,6 +94,7 @@
                     }
                     return clearTimeout(updateLog);
                   }
+                  $log.trigger('scrollToBottom');
                   return window.setTimeout(updateLog, 3000);
                 });
               }
