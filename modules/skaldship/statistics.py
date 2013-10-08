@@ -106,7 +106,6 @@ def db_statistics():
     )
     vulnhosts = []
     for service in service_vulns:
-        vulnsev = vd[service.t_service_vulns.f_vulndata_id].f_severity
         hostid = [service.t_services.f_hosts_id]
         if hostid not in vulnhosts:
             vulnhosts.append(hostid)

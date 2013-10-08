@@ -104,6 +104,7 @@ response.menu = [
           [
               (T('Install/Update VulnData'),URL(_a,'nexpose','vuln_update')==URL(),URL(_a,'nexpose','vuln_update'),[]),
               #(T('Import Scan Template '),URL(_a,'nexpose','scan_template')==URL(),URL(_a,'nexpose','scan_template'),[]),
+              (T('Import VulnID'), False, URL(_a, 'nexpose', 'import_vulnid'), []),
               (T('Import Exploit XML'),URL(_a,'exploits','import_nexpose_xml')==URL(),URL(_a,'exploits','import_nexpose_xml'),[]),
               (T('Purge Nexpose Data'),URL(_a,'nexpose','purge')==URL(),URL(_a,'nexpose','purge'),[]),
           ]),
