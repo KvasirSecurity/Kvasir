@@ -23,7 +23,7 @@ try:
     from cStringIO import StringIO
 except ImportError:
     from StringIO import StringIO
-from skaldship.general import html_to_markmin, get_host_record, do_host_status
+from skaldship.general import html_to_markmin, do_host_status
 from skaldship.exploits import connect_exploits
 import logging
 from skaldship.log import log
@@ -313,6 +313,112 @@ def vuln_parse(vuln, fromapi=False):
 
     vulnfields['f_source'] = 'Nexpose'
     return vulnfields, references
+
+
+##-------------------------------------------------------------------------
+
+def import_all_vulndata(overwrite=False, nexpose_server={}):
+    """
+    Uses the NexposeAPI and imports each and every vulnerability to Kvasir. Can take a looooong time.
+
+    Args:
+        overwrite: Whether or not to overwrite an existing t_vulndata record
+
+    Returns:
+        msg: A string message of status.
+    """
+    from NexposeAPI import VulnData
+    db = current.globalenv['db']
+
+    vuln_class = VulnData()
+    vuln_class.host = nexpose_server.get('host', 'localhost')
+    vuln_class.port = nexpose_server.get('port', '3780')
+    if vuln_class.login(user_id=nexpose_server.get('user'), password=nexpose_server.get('pw')):
+        log(" [*] Populating list of Nexpose vulnerability ID summaries")
+        try:
+            vuln_class.populate_summary()
+        except Exception, e:
+            log(" [!] Error populating summaries: %s" % str(e), logging.ERROR)
+            return False
+
+        try:
+            vulnxml = etree.parse(StringIO(vuln_class.vulnxml))
+        except Exception, e:
+            log(" [!] Error parsing summary XML: %s" % str(e), logging.ERROR)
+            return False
+
+        vulns = vulnxml.findall('VulnerabilitySummary')
+        log(" [*] %s vulnerabilities to parse" % len(vulns))
+
+        if vuln_class.vulnerabilities > 0:
+            existing_vulnids = []
+            [existing_vulnids.extend([x['f_vulnid']]) for x in
+             db(db.t_vulndata.f_source == "Nexpose").select(db.t_vulndata.f_vulnid).as_list()]
+
+            log(" [*] Found %d vulnerabilities in the database already." % (len(existing_vulnids)))
+
+            stats = {'added': 0, 'updated': 0, 'skipped': 0, 'errors': 0}
+            for vuln in vulns:
+
+                if vuln.attrib['id'] in existing_vulnids and not overwrite:
+                    # skip over existing entries if we're not overwriting
+                    stats['skipped'] += 1
+                    continue
+
+                try:
+                    vulndetails = vuln_class.detail(vuln.attrib['id'])
+                except Exception, e:
+                    log(" [!] Error retrieving details for %s: %s" % (vuln.attrib['id'], str(e)), logging.ERROR)
+                    stats['errors'] += 1
+                    if stats['errors'] == 50:
+                        log(" [!] Too many errors, aborting!", logging.ERROR)
+                        return False
+                    else:
+                        continue
+
+                if vulndetails is not None:
+                    (vulnfields, references) = vuln_parse(vulndetails.find('Vulnerability'), fromapi=True)
+                else:
+                    log(" [!] Unable to find %s in Nexpose" % vuln.attrib['id'], logging.WARN)
+                    continue
+
+                # add the vulnerability to t_vulndata
+                vulnid = db.t_vulndata.update_or_insert(**vulnfields)
+                if not vulnid:
+                    vulnid = db(db.t_vulndata.f_vulnid == vulnfields['f_vulnid']).select().first().id
+                    stats['updated'] += 1
+                    log(" [-] Updated %s" % vulnfields['f_vulnid'])
+                else:
+                    stats['added'] += 1
+                    log(" [-] Added %s" % vulnfields['f_vulnid'])
+                db.commit()
+
+                # add the references
+                if vulnid is not None and references:
+                    for reference in references:
+                        # check to see if reference exists first
+                        query = (db.t_vuln_refs.f_source == reference[0]) & (db.t_vuln_refs.f_text == reference[1])
+                        ref_id = db.t_vuln_refs.update_or_insert(query, f_source=reference[0], f_text=reference[1])
+                        if not ref_id:
+                            ref_id = db(query).select().first().id
+
+                        # make many-to-many relationship with t_vuln_data
+                        db.t_vuln_references.update_or_insert(f_vuln_ref_id=ref_id, f_vulndata_id=vulnid)
+                        db.commit()
+
+            from skaldship.exploits import connect_exploits
+            connect_exploits()
+            msg = "%s added, %s updated, %s skipped" % (stats['added'], stats['updated'], stats['skipped'])
+            log(" [*] %s" % msg)
+        else:
+            msg = "No vulndata populated from Nexpose"
+            log(" [!] Error: %s" % msg, logging.ERROR)
+
+    else:
+        msg = "Unable to communicate with Nexpose"
+        log(" [!] Error: %s" % msg, logging.ERROR)
+
+    return msg
 
 
 ##-------------------------------------------------------------------------

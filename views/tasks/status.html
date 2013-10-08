@@ -84,11 +84,11 @@
                   $('#task_worker_start').html(data['start']);
                   $('#task_worker_end').html(data['ended']);
 
-                  if (!(data['status'] == 'QUEUED') || (data['status'] == 'RUNNING')) {
-                    //(data['status'] == 'COMPLETED') || (data['status'] == 'FAILED') || (data['status'] == 'TIMEOUT')) {
+                  var status = data['status'];
+                  if ((status != 'QUEUED') && (status != 'RUNNING') && (status != 'ASSIGNED')) {
                     $('#stop_button').addClass('disabled');
-                    $('#task_worker_end').html("{{=task.stop_time}}");
-                    if ((data['status'] == 'FAILED') || (data['status'] == 'TIMEOUT') ){
+                    $('#task_worker_end').html(data['ended']);
+                    if ((status == 'FAILED') || (status == 'TIMEOUT') ){
                         $('#task_status').addClass('text-error');
                         $('#traceback').show();
                     }

@@ -614,7 +614,7 @@ class VulnData(NexposeAPI):
         else:
             self.log.warn("VulnerabilityDetailsRequest failed: %s" % (data.find('Failure/message').text))
 
-        return {}
+        return None
 
 
 ########################################################################

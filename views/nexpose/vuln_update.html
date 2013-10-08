@@ -15,6 +15,16 @@
         </div>
     </div>
     <div class="span4 alert alert-info">
-        <p><b>Warning!</b> -- This queries the Nexpose API nearly 15,000 times for each vulnerability. It can take 15 to 30 minutes to perform!</p>
+        <p class="text-warning"><strong>Warning!</strong></p>
+        <p>This queries Nexpose for every vulnerability in its database and can take hours to complete. A long-running
+        scheduler task is required as a web server will timeout the connection.</p>
+        <dl>
+            <dt>Server</dt>
+            <dd>{{=auth.user.f_nexpose_host}}</dd>
+            <dt>Port</dt>
+            <dd>{{=auth.user.f_nexpose_port}}</dd>
+            <dt>Username</dt>
+            <dd>{{=auth.user.f_nexpose_user}}</dd>
+        </dl>
     </div>
 </div>
