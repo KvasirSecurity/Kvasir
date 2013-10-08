@@ -15,21 +15,24 @@ __version__ = "1.0"
 """
 
 from gluon import current
-import gluon.contrib.simplejson
-import sys, os, time, re, HTMLParser
+import time
+import re
+import HTMLParser
 from datetime import datetime
-from StringIO import StringIO
-from NexposeAPI import NexposeAPI, Sites, Report
-from skaldship.general import html_to_markmin, get_host_record, do_host_status
+try:
+    from cStringIO import StringIO
+except ImportError:
+    from StringIO import StringIO
+from skaldship.general import html_to_markmin, do_host_status
 from skaldship.exploits import connect_exploits
-from gluon.contrib import ipaddr
 import logging
-logger = logging.getLogger("web2py.app.kvasir")
+from skaldship.log import log
 
 # lxml is now a required library for processing nexpose xml files. This is
 # due to the stdlib not supporting XSLT. Oh well! We'll let web2py handle
 # the error.
 from lxml import etree
+
 
 ##-------------------------------------------------------------------------
 
@@ -46,6 +49,7 @@ def nx_xml_to_html(vulnxml):
     vulnhtml = etree.tostring(result, xml_declaration=False)
     return clean_html(vulnhtml)
 
+
 ##-------------------------------------------------------------------------
 
 def clean_html(htmldata):
@@ -54,7 +58,7 @@ def clean_html(htmldata):
     try:
         from lxml.html.clean import clean_html
     except ImportError:
-        logger.debug("You don't have lxml installed");
+        log("You don't have lxml installed", logging.ERROR)
         return htmldata
 
     if htmldata is None:
@@ -66,6 +70,7 @@ def clean_html(htmldata):
     #newdata = re.compile('\s*\n\s*').sub('\n', newdata)
 
     return newdata
+
 
 ##-------------------------------------------------------------------------
 
@@ -155,6 +160,7 @@ then a new one is added."""
 
     return result
 
+
 ##-------------------------------------------------------------------------
 
 def guess_cpe_os(os_rec):
@@ -177,15 +183,15 @@ def guess_cpe_os(os_rec):
     os_row = db(query).select(cache=(cache.ram, 180)).first()
 
     if not os_row:
-        query = db.t_os.f_vendor   == osinfo['f_vendor']
+        query = db.t_os.f_vendor == osinfo['f_vendor']
         if osinfo['f_product'] is not '':
-            query &= db.t_os.f_product  == osinfo['f_product']
+            query &= db.t_os.f_product == osinfo['f_product']
         if osinfo['f_version'] is not '':
-            query &= db.t_os.f_version  == osinfo['f_version']
+            query &= db.t_os.f_version == osinfo['f_version']
         if osinfo['f_update'] is not '':
-            query &= db.t_os.f_update   == osinfo['f_update']
+            query &= db.t_os.f_update  == osinfo['f_update']
         if osinfo['f_edition'] is not '':
-            query &= db.t_os.f_edition  == osinfo['f_edition']
+            query &= db.t_os.f_edition == osinfo['f_edition']
         if osinfo['f_language'] is not '':
             query &= db.t_os.f_language == osinfo['f_language']
         os_row = db(query).select().first()
@@ -196,33 +202,31 @@ def guess_cpe_os(os_rec):
 
     else:
         # lookup in CPE OS database
-        query = (db.t_cpe_os.f_vendor   == osinfo['f_vendor'])
+        query = (db.t_cpe_os.f_vendor == osinfo['f_vendor'])
         if osinfo['f_product'] is not '':
-            query &= (db.t_cpe_os.f_product  == osinfo['f_product'])
+            query &= (db.t_cpe_os.f_product == osinfo['f_product'])
         if osinfo['f_version'] is not '':
-            query &= db.t_cpe_os.f_version  == osinfo['f_version']
+            query &= db.t_cpe_os.f_version == osinfo['f_version']
         if osinfo['f_update'] is not '':
-            query &= db.t_cpe_os.f_update   == osinfo['f_update']
+            query &= db.t_cpe_os.f_update == osinfo['f_update']
         if osinfo['f_edition'] is not '':
-            query &= db.t_cpe_os.f_edition  == osinfo['f_edition']
+            query &= db.t_cpe_os.f_edition == osinfo['f_edition']
         if osinfo['f_language'] is not '':
             query &= db.t_cpe_os.f_language == osinfo['f_language']
 
         os_row = db(query).select().first()
 
         if os_row:
-            #msg = "Found (%d) OS IDs. First one: %s" % (len(os_rows), os_rows[0].f_title)
             osinfo['f_isincpe'] = True
             osinfo['f_cpename'] = os_row.f_cpename
             os_id = db.t_os.insert(**osinfo)
             db.commit()
         else:
-            #msg = "OS not in CPE or lookup failed. Adding to customer tables: %s\n" % (osinfo)
-            #msg += db._lastsql
             osinfo['f_isincpe'] = False
             os_id = db.t_os.insert(**osinfo)
             db.commit()
     return os_id
+
 
 ##-------------------------------------------------------------------------
 
@@ -236,26 +240,30 @@ def vuln_time_convert(vtime=''):
                 tstr = "%%Y%%m%%dT%%H%%M%%S%s" % vtime[15:]
                 tval = time.strptime(vtime, tstr)
             else:
-                logger.error("Unknown datetime value: %s" % (vtime))
+                log("Unknown datetime value: %s" % vtime, logging.ERROR)
         else:
-            logger.error("Invalid datetime value provided: %s" % (vtime))
+            log("Invalid datetime value provided: %s" % vtime, logging.ERROR)
             tval = datetime(1970, 1, 1)
     return datetime.fromtimestamp(time.mktime(tval))
+
 
 ##-------------------------------------------------------------------------
 
 def vuln_parse(vuln, fromapi=False):
     """Parses Nexpose vulnerability XML"""
 
-    if vuln is None: return (False, False)
+    if vuln is None: return False, False
 
-    vulnfields = {}
-    vulnfields['f_vulnid'] = vuln.attrib['id'].lower()
-    vulnfields['f_title'] = vuln.attrib['title']
-    vulnfields['f_severity'] = vuln.attrib['severity']
-    vulnfields['f_pci_sev'] = vuln.attrib['pciSeverity']
+    vulnfields = {
+        'f_vulnid': vuln.attrib['id'].lower(),
+        'f_title': vuln.attrib['title'],
+        'f_severity': vuln.attrib['severity'],
+        'f_pci_sev': vuln.attrib['pciSeverity']
+    }
+
     if 'published' in vuln.keys():
         vulnfields['f_dt_published'] = vuln_time_convert(vuln.attrib['published'])
+
     vulnfields['f_dt_added'] = vuln_time_convert(vuln.attrib['added'])
     vulnfields['f_dt_modified'] = vuln_time_convert(vuln.attrib['modified'])
 
@@ -270,8 +278,6 @@ def vuln_parse(vuln, fromapi=False):
         vulnfields['f_cvss_i'] = cvss_vectors[22]
         vulnfields['f_cvss_a'] = cvss_vectors[26]
 
-    #print("Processing %s :: %s" % (vulnfields['f_vulnid'], vulnfields['f_title']))
-
     # parse the first description field, since there can only be one
     d = vuln.find("description")
     if d is not None:
@@ -279,7 +285,7 @@ def vuln_parse(vuln, fromapi=False):
             result = etree.tostring(d)
             result = result.replace("<description>", "")
             result = result.replace("</description>", "")
-            vulnfields['f_description'] = result
+            vulnfields['f_description'] = html_to_markmin(result)
         else:
             d = StringIO(etree.tostring(d))
             vulnfields['f_description'] = html_to_markmin(nx_xml_to_html(d))
@@ -300,12 +306,120 @@ def vuln_parse(vuln, fromapi=False):
             result = etree.tostring(d)
             result = result.replace("<solution>", "")
             result = result.replace("</solution>", "")
-            vulnfields['f_solution'] = result
+            vulnfields['f_solution'] = html_to_markmin(result)
         else:
             d = StringIO(etree.tostring(d))
             vulnfields['f_solution'] = html_to_markmin(nx_xml_to_html(d))
 
-    return (vulnfields, references)
+    vulnfields['f_source'] = 'Nexpose'
+    return vulnfields, references
+
+
+##-------------------------------------------------------------------------
+
+def import_all_vulndata(overwrite=False, nexpose_server={}):
+    """
+    Uses the NexposeAPI and imports each and every vulnerability to Kvasir. Can take a looooong time.
+
+    Args:
+        overwrite: Whether or not to overwrite an existing t_vulndata record
+
+    Returns:
+        msg: A string message of status.
+    """
+    from NexposeAPI import VulnData
+    db = current.globalenv['db']
+
+    vuln_class = VulnData()
+    vuln_class.host = nexpose_server.get('host', 'localhost')
+    vuln_class.port = nexpose_server.get('port', '3780')
+    if vuln_class.login(user_id=nexpose_server.get('user'), password=nexpose_server.get('pw')):
+        log(" [*] Populating list of Nexpose vulnerability ID summaries")
+        try:
+            vuln_class.populate_summary()
+        except Exception, e:
+            log(" [!] Error populating summaries: %s" % str(e), logging.ERROR)
+            return False
+
+        try:
+            vulnxml = etree.parse(StringIO(vuln_class.vulnxml))
+        except Exception, e:
+            log(" [!] Error parsing summary XML: %s" % str(e), logging.ERROR)
+            return False
+
+        vulns = vulnxml.findall('VulnerabilitySummary')
+        log(" [*] %s vulnerabilities to parse" % len(vulns))
+
+        if vuln_class.vulnerabilities > 0:
+            existing_vulnids = []
+            [existing_vulnids.extend([x['f_vulnid']]) for x in
+             db(db.t_vulndata.f_source == "Nexpose").select(db.t_vulndata.f_vulnid).as_list()]
+
+            log(" [*] Found %d vulnerabilities in the database already." % (len(existing_vulnids)))
+
+            stats = {'added': 0, 'updated': 0, 'skipped': 0, 'errors': 0}
+            for vuln in vulns:
+
+                if vuln.attrib['id'] in existing_vulnids and not overwrite:
+                    # skip over existing entries if we're not overwriting
+                    stats['skipped'] += 1
+                    continue
+
+                try:
+                    vulndetails = vuln_class.detail(vuln.attrib['id'])
+                except Exception, e:
+                    log(" [!] Error retrieving details for %s: %s" % (vuln.attrib['id'], str(e)), logging.ERROR)
+                    stats['errors'] += 1
+                    if stats['errors'] == 50:
+                        log(" [!] Too many errors, aborting!", logging.ERROR)
+                        return False
+                    else:
+                        continue
+
+                if vulndetails is not None:
+                    (vulnfields, references) = vuln_parse(vulndetails.find('Vulnerability'), fromapi=True)
+                else:
+                    log(" [!] Unable to find %s in Nexpose" % vuln.attrib['id'], logging.WARN)
+                    continue
+
+                # add the vulnerability to t_vulndata
+                vulnid = db.t_vulndata.update_or_insert(**vulnfields)
+                if not vulnid:
+                    vulnid = db(db.t_vulndata.f_vulnid == vulnfields['f_vulnid']).select().first().id
+                    stats['updated'] += 1
+                    log(" [-] Updated %s" % vulnfields['f_vulnid'])
+                else:
+                    stats['added'] += 1
+                    log(" [-] Added %s" % vulnfields['f_vulnid'])
+                db.commit()
+
+                # add the references
+                if vulnid is not None and references:
+                    for reference in references:
+                        # check to see if reference exists first
+                        query = (db.t_vuln_refs.f_source == reference[0]) & (db.t_vuln_refs.f_text == reference[1])
+                        ref_id = db.t_vuln_refs.update_or_insert(query, f_source=reference[0], f_text=reference[1])
+                        if not ref_id:
+                            ref_id = db(query).select().first().id
+
+                        # make many-to-many relationship with t_vuln_data
+                        db.t_vuln_references.update_or_insert(f_vuln_ref_id=ref_id, f_vulndata_id=vulnid)
+                        db.commit()
+
+            from skaldship.exploits import connect_exploits
+            connect_exploits()
+            msg = "%s added, %s updated, %s skipped" % (stats['added'], stats['updated'], stats['skipped'])
+            log(" [*] %s" % msg)
+        else:
+            msg = "No vulndata populated from Nexpose"
+            log(" [!] Error: %s" % msg, logging.ERROR)
+
+    else:
+        msg = "Unable to communicate with Nexpose"
+        log(" [!] Error: %s" % msg, logging.ERROR)
+
+    return msg
+
 
 ##-------------------------------------------------------------------------
 
@@ -314,9 +428,7 @@ def process_exploits(filename=None):
     Process Nexpose exploits.xml file into the database
     """
 
-    db = current.globalenv['db']
-
-    logging.info("Processing %s ..." % (filename))
+    log("Processing Nexpose exploits file: %s ..." % filename)
 
     try:
         exploits = etree.parse(filename)
@@ -356,11 +468,12 @@ def process_exploits(filename=None):
         if res > 0:
             counter += 1
         else:
-            logger.error("Error importing exploit: %s" % (f_name))
+            log("Error importing exploit: %s" % f_name, logging.ERROR)
 
     connect_exploits()
-    logging.info("%d exploits added/updated" % (counter))
+    log("%d exploits added/updated" % counter)
     return True
+
 
 ##----------------------------------------------------------------------------
 
@@ -377,16 +490,15 @@ def process_xml(
 
     from skaldship.cpe import lookup_cpe
     from skaldship.general import get_host_record
+    from gluon.validators import IS_IPADDRESS
     import os
 
     db = current.globalenv['db']
-    cache = current.globalenv['cache']
     session = current.globalenv['session']
     auth = current.globalenv['auth']
 
     parser = HTMLParser.HTMLParser()
-    localdb = current.globalenv['db']
-    user_id = localdb.auth_user(engineer)
+    user_id = db.auth_user(engineer)
 
     # build the hosts only/exclude list
     ip_exclude = []
@@ -398,104 +510,89 @@ def process_xml(
         ip_only = ip_include_list.split('\r\n')
         # TODO: check for ip subnet/range and break it out to individuals
 
-    print(" [*] Processing Nexpose scan file %s" % (filename))
-    #sys.stderr.write(msg)
+    log(" [*] Processing Nexpose scan file %s" % filename)
 
     try:
         nexpose_xml = etree.parse(filename)
     except etree.ParseError, e:
         msg = " [!] Invalid Nexpose XML file (%s): %s " % (filename, e)
-        logger.error(msg)
+        log(msg, logging.ERROR)
         return msg
 
     root = nexpose_xml.getroot()
 
-    existing_vulnids = localdb(localdb.t_vulndata()).select(localdb.t_vulndata.id, localdb.t_vulndata.f_vulnid).as_dict(key='f_vulnid')
-    print(" [*] Found %d vulnerabilities in the database already." % (len(existing_vulnids)))
+    existing_vulnids = db(db.t_vulndata()).select(db.t_vulndata.id, db.t_vulndata.f_vulnid).as_dict(key='f_vulnid')
+    log(" [*] Found %d vulnerabilities in the database already." % len(existing_vulnids))
 
-    #sys.stderr.write(msg)
-
-    # start with the vulnerabilitydetails
+    # start with the vulnerability details
     vulns_added = 0
     vulns_skipped = 0
     vulns = root.findall("VulnerabilityDefinitions/vulnerability")
-    print(" [*] Parsing %d vulnerabilities" % (len(vulns)))
-    #sys.stderr.write(msg)
+    log(" [*] Parsing %d vulnerabilities" % len(vulns))
     for vuln in vulns:
 
         # nexpose identifiers are always lower case in kvasir. UPPER CASE IS FOR SHOUTING!!!
         vulnid = vuln.attrib['id'].lower()
         if existing_vulnids.has_key(vulnid):
-            print(" [-] Skipping %s - It's in the db already" % (vulnid))
-            #sys.stderr.write(msg)
+            log(" [-] Skipping %s - It's in the db already" % vulnid)
             vulns_skipped += 1
         else:
             # add the vulnerability to t_vulndata - any duplicates are errored out
             # TODO: Handle updates! Compare date modified...
             (vulnfields, references) = vuln_parse(vuln, fromapi=False)
             try:
-                vulnfields['f_source'] = 'Nexpose'
-                vulnid = localdb.t_vulndata.insert(**vulnfields)
+                vulnid = db.t_vulndata.insert(**vulnfields)
                 vulns_added += 1
-                localdb.commit()
+                db.commit()
             except Exception, e:
-                logger.error(" [!] Error inserting %s to vulndata: %s" % (vulnfields['f_vulnid'], e))
-                #sys.stderr.write(msg)
+                log(" [!] Error inserting %s to vulndata: %s" % (vulnfields['f_vulnid'], e), logging.ERROR)
                 vulnid = None
-                localdb.commit()
+                db.commit()
                 continue
 
             # add the references
             if vulnid is not None:
                 for reference in references:
                     # check to see if reference exists first
-                    ref_id = localdb(localdb.t_vuln_refs.f_text == reference[1])
+                    ref_id = db(db.t_vuln_refs.f_text == reference[1])
                     if ref_id.count() == 0:
                         # add because it doesn't
-                        ref_id = localdb.t_vuln_refs.insert(f_source=reference[0], f_text=reference[1])
-                        localdb.commit()
+                        ref_id = db.t_vuln_refs.insert(f_source=reference[0], f_text=reference[1])
+                        db.commit()
                     else:
                         # pick the first reference as the ID
                         ref_id = ref_id.select()[0].id
 
                     # make many-to-many relationship with t_vuln_data
-                    res = localdb.t_vuln_references.insert(f_vuln_ref_id=ref_id, f_vulndata_id=vulnid)
-                    localdb.commit()
+                    res = db.t_vuln_references.insert(f_vuln_ref_id=ref_id, f_vulndata_id=vulnid)
+                    db.commit()
 
-    print(" [*] %d Vulnerabilities added, %d skipped" % (vulns_added, vulns_skipped))
-    #sys.stderr.write(msg)
+    log(" [*] %d Vulnerabilities added, %d skipped" % (vulns_added, vulns_skipped))
 
     # re-make the existing_vulnids dict() since we've updated the system
-    existing_vulnids = localdb(localdb.t_vulndata()).select(localdb.t_vulndata.id, localdb.t_vulndata.f_vulnid).as_dict(key='f_vulnid')
+    existing_vulnids = db(db.t_vulndata()).select(db.t_vulndata.id, db.t_vulndata.f_vulnid).as_dict(key='f_vulnid')
 
     # parse the nodes now
     nodes = root.findall("nodes/node")
-    print(" [-] Parsing %d nodes" % (len(nodes)))
-    #sys.stderr.write(msg)
-    hoststats = {}
-    hoststats['added'] = 0
-    hoststats['skipped'] = 0
-    hoststats['updated'] = 0
-    hoststats['errored'] = 0
+    log(" [-] Parsing %d nodes" % len(nodes))
+    hoststats = {'added': 0, 'skipped': 0, 'updated': 0, 'errored': 0}
     hosts = []   # array of host_id fields
     for node in nodes:
-        print(" [-] Node %s status is: %s" % (node.attrib['address'], node.attrib['status']))
+        log(" [-] Node %s status is: %s" % (node.attrib['address'], node.attrib['status']))
         #sys.stderr.write(msg)
         if node.attrib['status'] != "alive":
             hoststats['skipped'] += 1
             continue
 
         if node.attrib['address'] in ip_exclude:
-            print(" [-] Node is in exclude list... skipping")
-            #sys.stderr.write(msg)
+            log(" [-] Node is in exclude list... skipping")
             hoststats['skipped'] += 1
             continue
 
         nodefields = {}
 
         if len(ip_only) > 0 and node.attrib['address'] not in ip_only:
-            print(" [-] Node is not in the only list... skipping")
-            #sys.stderr.write(msg)
+            log(" [-] Node is not in the only list... skipping")
             hoststats['skipped'] += 1
             continue
 
@@ -506,18 +603,18 @@ def process_xml(
 
         ip = node.attrib['address']
 
-        try:
-            isv4 = ipaddr.IPv4Address(ip)
+        if IS_IPADDRESS(is_ipv4=True)(ip):
             nodefields['f_ipv4'] = ip
-        except ipaddr.AddressValueError:
+        elif IS_IPADDRESS(is_ipv6=True)(ip):
             nodefields['f_ipv6'] = ip
-            isv4 = False
+        else:
+            log(" [!] Invalid IP Address: %s" % ip, logging.ERROR)
 
         nodefields['f_engineer'] = user_id
         nodefields['f_asset_group'] = asset_group
         nodefields['f_confirmed'] = False
 
-        if node.attrib.has_key('hardware-address'):
+        if 'hardware-address' in node.attrib:
             nodefields['f_macaddr'] = node.attrib['hardware-address']
         if node.find('names/name') is not None:
             # XXX: for now just take the first hostname
@@ -525,37 +622,32 @@ def process_xml(
 
         # check to see if IP exists in DB already
         query = (db.t_hosts.f_ipv4 == ip) | (db.t_hosts.f_ipv6 == ip)
-        host_rec = localdb(query).select().first()
+        host_rec = db(query).select().first()
         if host_rec is None:
-            host_id = localdb.t_hosts.insert(**nodefields)
-            localdb.commit()
+            host_id = db.t_hosts.insert(**nodefields)
+            db.commit()
             hoststats['added'] += 1
-            print(" [-] Adding IP: %s" % (ip))
-            #sys.stderr.write(msg)
-        elif host_rec is not None and update_hosts:
-            localdb.commit()
-            if isv4:
-                host_id = localdb(localdb.t_hosts.f_ipv4 == nodefields['f_ipv4']).update(**nodefields)
-                localdb.commit()
+            log(" [-] Adding IP: %s" % ip)
+        elif update_hosts:
+            db.commit()
+            if 'f_ipv4' in nodefields:
+                db(db.t_hosts.f_ipv4 == nodefields['f_ipv4']).update(**nodefields)
+                db.commit()
                 host_id = get_host_record(nodefields['f_ipv4'])
                 host_id = host_id.id
                 hoststats['updated'] += 1
-                print(" [-] Updating IP: %s" % (nodefields['f_ipv4']))
+                log(" [-] Updating IP: %s" % ip)
             else:
-                host_id = localdb(localdb.t_hosts.f_ipv6 == nodefields['f_ipv6']).update(**nodefields)
-                localdb.commit()
+                db(db.t_hosts.f_ipv6 == nodefields['f_ipv6']).update(**nodefields)
+                db.commit()
                 host_id = get_host_record(nodefields['f_ipv6'])
                 host_id = host_id.id
                 hoststats['updated'] += 1
-                print(" [-] Updating IP: %s" % (nodefields['f_ipv6']))
+                log(" [-] Updating IP: %s" % ip)
         else:
             hoststats['skipped'] += 1
-            localdb.commit()
-            if isv4:
-                print(" [-] Skipped IP: %s" % (nodefields['f_ipv4']))
-            else:
-                print(" [-] Skipped IP: %s" % (nodefields['f_ipv6']))
-            #sys.stderr.write(msg)
+            db.commit()
+            log(" [-] Skipped IP: %s" % ip)
             continue
         hosts.append(host_id)
 
@@ -563,8 +655,8 @@ def process_xml(
         # called "INFO"
         tests = node.findall("tests/test")
         if len(tests) > 0:
-            svc_id = localdb.t_services.update_or_insert(f_proto="info", f_number="0", f_status="info", f_hosts_id=host_id)
-            localdb.commit()
+            svc_id = db.t_services.update_or_insert(f_proto="info", f_number="0", f_status="info", f_hosts_id=host_id)
+            db.commit()
 
         for test in tests:
             d = {}
@@ -574,14 +666,14 @@ def process_xml(
             if "cifs-acct-" in vulnid:
                 username = test.get('key')
                 if username is not None:
-                    d['f_services_id']=svc_id
-                    d['f_username']=username
-                    d['f_active']=True
+                    d['f_services_id'] = svc_id
+                    d['f_username'] = username
+                    d['f_active'] = True
                     d['f_source'] = vulnid
-                    #row = localdb(localdb.t_accounts.f_services_id==svc_id).select().first()
-                    acctquery = (localdb.t_accounts.f_services_id==d['f_services_id']) & (localdb.t_accounts.f_username==d['f_username'])
-                    localdb.t_accounts.update_or_insert(acctquery, **d)
-                    localdb.commit()
+                    query = (db.t_accounts.f_services_id == d['f_services_id']) &\
+                            (db.t_accounts.f_username == d['f_username'])
+                    db.t_accounts.update_or_insert(query, **d)
+                    db.commit()
 
             if test.attrib['status'] == 'vulnerable-exploited' or \
                test.attrib['status'] == 'potential' or \
@@ -589,15 +681,9 @@ def process_xml(
                test.attrib['status'] == 'exception-vulnerable-version' or \
                test.attrib['status'] == 'exception-vulnerable-potential' or \
                test.attrib['status'] == 'vulnerable-version':
-                ##sys.stderr.write("Adding vuln: (info/0) %s" % (vulnid))
-                #vulnid = localdb(localdb.t_vulndata.f_vulnid==vulnid)
-                #if vulnid.count() > 0:
-                #    vuln_id = vulnid.select()[0].id
-                if existing_vulnids.has_key(vulnid):
+                if vulnid in existing_vulnids:
                     vuln_id = existing_vulnids[vulnid]['id']
                 else:
-                    #print("Unknown vulnid, Skipping! (h: %s, id: %s)" % (nodefields['f_ipv4'], vulnid))
-                    #sys.stderr.write("Unknown vulnid, Skipping! (h: %s, id: %s)" % (nodefields['f_ipv4'], vulnid))
                     continue
 
                 if vulnid == 'cifs-nt-0001':
@@ -606,20 +692,15 @@ def process_xml(
                     try:
                         unames = re.search("Found user\(s\): (?P<unames>.+?) </li>", infotext).group('unames')
                     except AttributeError, e:
-                        logger.error(" [!] Error with regex for usernames: %s" % (infotext))
-                        #sys.stderr.write(msg)
+                        log(" [!] Error with regex for usernames: %s" % infotext, logging.ERROR)
                         continue
                     for uname in unames.split():
                         # add account
                         d['f_username'] = uname
                         d['f_services_id'] = svc_id
                         d['f_source'] = 'cifs-nt-0001'
-                        try:
-                            # TODO: This should be update_or_insert
-                            localdb.t_accounts.update(**d) or localdb.t_accounts.insert(**d)
-                        except:
-                            pass
-                        localdb.commit()
+                        db.t_accounts.update_or_insert(**d)
+                        db.commit()
 
                 proof = nx_xml_to_html(StringIO(etree.tostring(test, xml_declaration=False, encoding=unicode)))
                 proof = html_to_markmin(proof)
@@ -630,9 +711,9 @@ def process_xml(
                         d['f_lockout_limit'] = re.search("contains: (?P<l>\d+)", proof).group('l')
                     except AttributeError:
                         d['f_lockout_limit'] = 0
-                    # TODO: This should be update_or_insert
-                    localdb(localdb.t_netbios.f_hosts_id==host_id).update(**d) or localdb.t_netbios.insert(**d)
-                    localdb.commit()
+                    query = (db.t_netbios.f_hosts_id == host_id)
+                    db.t_netbios.update_or_insert(query, **d)
+                    db.commit()
 
                 # Check for CIFS uid/pw
                 if "cifs-" in vulnid:
@@ -640,23 +721,23 @@ def process_xml(
                         uid = re.search("uid\[(?P<u>.*?)\]", proof).group('u')
                         pw = re.search("pw\[(?P<p>.*?)\]", proof).group('p')
                         realm = re.search("realm\[(?P<r>.*?)\]", proof).group('r')
-                        d = {}
-                        d['f_services_id']=svc_id
-                        d['f_username']=uid
-                        d['f_password']=pw
-                        d['f_description']=realm
-                        d['f_active']=True
-                        d['f_compromised']=True
-                        d['f_source'] = vulnid
-                        cifsquery = (localdb.t_accounts.f_services_id==svc_id) & (localdb.t_accounts.f_username==uid)
-                        #row = localdb(cifsquery).select().first()
-                        localdb.t_accounts.update_or_insert(cifsquery, **d)
-                        localdb.commit()
+                        d = {
+                            'f_services_id': svc_id,
+                            'f_username': uid,
+                            'f_password': pw,
+                            'f_description': realm,
+                            'f_active': True,
+                            'f_compromised': True,
+                            'f_source': vulnid
+                        }
+                        query = (db.t_accounts.f_services_id == svc_id) & (db.t_accounts.f_username == uid)
+                        db.t_accounts.update_or_insert(query, **d)
+                        db.commit()
                     except AttributeError:
-                        localdb.commit()
+                        db.commit()
                     except Exception, e:
-                        logger.error("Error inserting account (%s): %s" % (uid, e))
-                    localdb.commit()
+                        log("Error inserting account (%s): %s" % (uid, e), logging.ERROR)
+                    db.commit()
 
                 # solaris-kcms-readfile shadow file
                 if vulnid.lower() == "rpc-solaris-kcms-readfile":
@@ -665,30 +746,33 @@ def process_xml(
                     shadow = parser.unescape(proof)
                     for line in shadow.split("<br />")[1:-1]:
                         user, pw, uid = line.split(':')[0:3]
-                        d['f_services_id']=svc_id
-                        d['f_username']=user
-                        d['f_hash1']=pw
-                        d['f_hash1_type']="crypt"
-                        d['f_uid']=uid
-                        d['f_source']="shadow"
-                        d['f_active']=True
-                        d['f_source']="rpc-solaris-kcms-readfile"
-                        query = (localdb.t_accounts.f_services_id==svc_id) & (localdb.t_accounts.f_username==user)
-                        # TODO: This should be update_or_insert
-                        localdb(query).update(**d) or localdb.t_accounts.insert(**d)
-                        localdb.commit()
+                        d['f_services_id'] = svc_id
+                        d['f_username'] = user
+                        d['f_hash1'] = pw
+                        d['f_hash1_type'] = "crypt"
+                        d['f_uid'] = uid
+                        d['f_source'] = "shadow"
+                        d['f_active'] = True
+                        d['f_source'] = "rpc-solaris-kcms-readfile"
+                        query = (db.t_accounts.f_services_id == svc_id) & (db.t_accounts.f_username == user)
+                        db(query).update_or_insert(query, **d)
+                        db.commit()
 
-                # TODO: This should be update_or_insert
-                res_id = localdb.t_service_vulns.insert(f_services_id=svc_id, f_status=test.attrib['status'], f_proof=proof, f_vulndata_id=vuln_id)
+                db.t_service_vulns.update_or_insert(
+                    f_services_id=svc_id,
+                    f_status=test.attrib['status'],
+                    f_proof=proof,
+                    f_vulndata_id=vuln_id
+                )
 
                 if "cisco-default-http-account" in vulnid.lower():
-                    d['f_services_id']=svc_id
-                    d['f_username']=vulnid.split('-')[4]
-                    d['f_password']=vulnid.split('-')[6]
-                    d['f_source']="cisco-default-http-account"
-                    query = (localdb.t_accounts.f_services_id==svc_id) & (localdb.t_accounts.f_username==d['f_username'])
-                    localdb.t_accounts.update_or_insert(query, **d)
-                    localdb.commit()
+                    d['f_services_id'] = svc_id
+                    d['f_username'] = vulnid.split('-')[4]
+                    d['f_password'] = vulnid.split('-')[6]
+                    d['f_source'] = "cisco-default-http-account"
+                    query = (db.t_accounts.f_services_id == svc_id) & (db.t_accounts.f_username == d['f_username'])
+                    db.t_accounts.update_or_insert(query, **d)
+                    db.commit()
 
         # add services (ports) and resulting vulndata
         for endpoint in node.findall("endpoints/endpoint"):
@@ -696,11 +780,23 @@ def process_xml(
             f_number = endpoint.attrib['port']
             f_status = endpoint.attrib['status']
 
-            svc_id = localdb.t_services.update_or_insert(f_proto=f_proto, f_number=f_number, f_status=f_status, f_hosts_id=host_id)
+            query = (db.t_services.f_hosts_id == host_id) \
+                    & (db.t_services.f_proto == f_proto) \
+                    & (db.t_services.f_number == f_number)
+            svc_id = db.t_services.update_or_insert(
+                query,
+                f_proto=f_proto,
+                f_number=f_number,
+                f_status=f_status,
+                f_hosts_id=host_id
+            )
+            if not svc_id:
+                svc_id = db(query).select().first().id
+
             for service in endpoint.findall("services/service"):
                 d = {}
-                if service.attrib.has_key('name'):
-                    localdb.t_services[svc_id] = dict(f_name=service.attrib['name'])
+                if 'name' in service.attrib:
+                    db.t_services[svc_id] = dict(f_name=service.attrib['name'])
 
                 for test in service.findall("tests/test"):
                     vulnid = test.get('id').lower()
@@ -711,12 +807,10 @@ def process_xml(
                        test.attrib['status'] == 'exception-vulnerable-version' or \
                        test.attrib['status'] == 'exception-vulnerable-potential' or \
                        test.attrib['status'] == 'vulnerable-version':
-                        ##sys.stderr.write("Adding vuln: (%s/%s) %s" % (f_proto, f_number, vulnid))
-                        if existing_vulnids.has_key(vulnid):
+                        if vulnid in existing_vulnids:
                             vuln_id = existing_vulnids[vulnid]['id']
                         else:
-                            logger.error(" [!] Unknown vulnid, Skipping! (id: %s)" % (vulnid))
-                            #sys.stderr.write(msg)
+                            log(" [!] Unknown vulnid, Skipping! (id: %s)" % vulnid, logging.ERROR)
                             continue
 
                         proof = nx_xml_to_html(StringIO(etree.tostring(test, xml_declaration=False, encoding=unicode)))
@@ -725,28 +819,37 @@ def process_xml(
                         # Check for SNMP strings
                         if "snmp-read-" in vulnid:
                             snmpstring = re.search("pw\[(?P<pw>.*?)\]", proof).group('pw')
-                            snmpid = localdb.t_snmp.update_or_insert(f_hosts_id=host_id, f_community=snmpstring, f_access="READ", f_version="v1")
-                            localdb.commit()
+                            db.t_snmp.update_or_insert(
+                                f_hosts_id=host_id,
+                                f_community=snmpstring,
+                                f_access="READ",
+                                f_version="v1"
+                            )
+                            db.commit()
 
                         if "snmp-write" in vulnid:
                             snmpstring = re.search("pw\[(?P<pw>.*?)\]", proof).group('pw')
-                            snmpid = localdb.t_snmp.update_or_insert(f_hosts_id=host_id, f_community=snmpstring, f_access="WRITE", f_version="v1")
-                            localdb.commit()
+                            db.t_snmp.update_or_insert(
+                                f_hosts_id=host_id,
+                                f_community=snmpstring,
+                                f_access="WRITE",
+                                f_version="v1"
+                            )
+                            db.commit()
 
                         # TODO: account names
 
                         # Dell DRAC root/calvin
                         if vulnid == "http-drac-default-login":
-                            d['f_services_id']=svc_id
-                            d['f_username']='root'
-                            d['f_password']='calvin'
-                            d['f_description']=realm
-                            d['f_active']=True
-                            d['f_compromised']=True
+                            d['f_services_id'] = svc_id
+                            d['f_username'] = 'root'
+                            d['f_password'] = 'calvin'
+                            d['f_description'] = realm
+                            d['f_active'] = True
+                            d['f_compromised'] = True
                             d['f_source'] = vulnid
-                            query = (db.t_accounts.f_services_id==svc_id) & (db.t_accounts.f_username==uid)
-                            row = db(query).select().first()
-                            db.t_accounts.update_or_insert(row, **d)
+                            query = (db.t_accounts.f_services_id == svc_id) & (db.t_accounts.f_username == uid)
+                            db.t_accounts.update_or_insert(query, **d)
                             db.commit()
 
                         # Check for uid/pw
@@ -761,60 +864,69 @@ def process_xml(
                                 uid = re.search("uid\[(?P<u>.*?)\]", proof).group('u')
                                 pw = re.search("pw\[(?P<p>.*?)\]", proof).group('p')
                                 realm = re.search("realm\[(?P<r>.*?)\]", proof).group('r')
-                                d['f_services_id']=svc_id
-                                d['f_username']=uid
-                                d['f_password']=pw
-                                d['f_description']=realm
-                                d['f_active']=True
-                                d['f_compromised']=True
+                                d['f_services_id'] = svc_id
+                                d['f_username'] = uid
+                                d['f_password'] = pw
+                                d['f_description'] = realm
+                                d['f_active'] = True
+                                d['f_compromised'] = True
                                 d['f_source'] = vulnid
-                                ftpquery = (localdb.t_accounts.f_services_id==svc_id) & (localdb.t_accounts.f_username==uid)
-                                #row = localdb(ftpquery).select().first()
-                                localdb.t_accounts.update_or_insert(ftpquery, **d)
-                                localdb.commit()
+                                query = (db.t_accounts.f_services_id == svc_id) & (db.t_accounts.f_username == uid)
+                                db.t_accounts.update_or_insert(query, **d)
+                                db.commit()
                             except AttributeError:
-                                localdb.commit()
+                                db.commit()
                             except Exception, e:
-                                logger.error("Error inserting account (%s): %s" % (uid, e))
-                            localdb.commit()
+                                log("Error inserting account (%s): %s" % (uid, e), logging.ERROR)
+                            db.commit()
 
                         # cisco default http login accounts
                         if "cisco-default-http-account" in vulnid.lower():
-                            d['f_services_id']=svc_id
-                            d['f_username']=vulnid.split('-')[4]
-                            d['f_password']=vulnid.split('-')[6]
-                            d['f_source']="cisco-default-http-account"
-                            query = (localdb.t_accounts.f_services_id==svc_id) & (localdb.t_accounts.f_username==d['f_username'])
-                            localdb.t_accounts.update_or_insert(query, **d)
-                            localdb.commit()
+                            d['f_services_id'] = svc_id
+                            d['f_username'] = vulnid.split('-')[4]
+                            d['f_password'] = vulnid.split('-')[6]
+                            d['f_source'] = "cisco-default-http-account"
+                            query = (db.t_accounts.f_services_id == svc_id) \
+                                    & (db.t_accounts.f_username == d['f_username'])
+                            db.t_accounts.update_or_insert(query, **d)
+                            db.commit()
 
-                        res_id = localdb.t_service_vulns.update_or_insert(f_services_id=svc_id, f_status=test.attrib['status'], f_proof=proof, f_vulndata_id=vuln_id)
-                        localdb.commit()
+                        db.t_service_vulns.update_or_insert(
+                            f_services_id=svc_id,
+                            f_status=test.attrib['status'],
+                            f_proof=proof,
+                            f_vulndata_id=vuln_id
+                        )
+                        db.commit()
 
                 for config in service.findall("configuration/config"):
-                    cfg_id = localdb.t_service_info.update_or_insert(f_services_id=svc_id, f_name=config.attrib['name'], f_text=config.text)
-                    localdb.commit()
+                    db.t_service_info.update_or_insert(
+                        f_services_id=svc_id,
+                        f_name=config.attrib['name'],
+                        f_text=config.text
+                    )
+                    db.commit()
                     if re.match('\w+.banner$', config.attrib['name']):
-                        localdb.t_services[svc_id] = dict(f_banner=config.text)
-                        localdb.commit()
+                        db.t_services[svc_id] = dict(f_banner=config.text)
+                        db.commit()
                     if config.attrib['name'] == 'mac-address':
                         # update the mac address of the host
-                        localdb.t_hosts[host_id] = dict(f_macaddr = config.text)
-                        localdb.commit()
+                        db.t_hosts[host_id] = dict(f_macaddr=config.text)
+                        db.commit()
                     if "advertised-name" in config.attrib['name']:
                         # netbios computer name
                         d = config.text.split(" ")[0]
                         if "Computer Name" in config.text:
-                            data = {}
-                            data['f_netbios_name'] = d
+                            data = {'f_netbios_name': d}
                             # if hostname isn't defined then lowercase netbios name and put it in
-                            if localdb.t_hosts[host_id].f_hostname is None:
+                            if db.t_hosts[host_id].f_hostname is None:
                                 data['f_hostname'] = d.lower()
-                            localdb(localdb.t_hosts.id == host_id).update(**data)
+                            db(db.t_hosts.id == host_id).update(**data)
+                            db.commit()
                         elif "Domain Name" in config.text:
-                            # TODO: This should be update_or_insert
-                            localdb(localdb.t_netbios.f_hosts_id == host_id).update(f_domain=d) or localdb.t_netbios.insert(f_hosts_id=host_id, f_domain=d)
-                        localdb.commit()
+                            query = (db.t_netbios.f_hosts_id == host_id)
+                            db.t_netbios.update_or_insert(query, f_hosts_id=host_id, f_domain=d)
+                        db.commit()
 
         for os_rec in node.findall('fingerprints/os'):
             """
@@ -824,29 +936,28 @@ def process_xml(
 
             <os  certainty="0.66" device-class="General" vendor="Microsoft" family="Windows" product="Windows XP" arch="x86" cpe="cpe:/o:microsoft:windows_xp::sp3"/>
             """
-            #print(" [-] OS value: %s" % (etree.tostring(os_rec).strip('\r\n')))
-            #sys.stderr.write(msg)
 
             if os_rec.attrib.has_key('cpe'):
                 # we have a cpe entry from xml! hooray!
                 cpe_name = os_rec.attrib['cpe'].lstrip('cpe:/o:')
                 os_id = lookup_cpe(cpe_name)
             else:
-                # no cpe attribute in xml, go through our messsy lookup
+                # no cpe attribute in xml, go through our messy lookup
                 os_id = guess_cpe_os(os_rec)
 
             if os_id is not None:
-                # TODO: This should be update_or_insert() to not duplicate entries
-                localdb.t_host_os_refs.insert(f_certainty=os_rec.attrib['certainty'],
-                                              f_family=os_rec.get('family', 'Unknown'),
-                                              f_class=os_rec.get('device-class', 'Other'),
-                                              f_hosts_id=host_id,
-                                              f_os_id=os_id)
-                localdb.commit()
+                db.t_host_os_refs.update_or_insert(
+                    f_certainty=os_rec.attrib['certainty'],
+                    f_family=os_rec.get('family', 'Unknown'),
+                    f_class=os_rec.get('device-class', 'Other'),
+                    f_hosts_id=host_id,
+                    f_os_id=os_id
+                )
+                db.commit()
             else:
-                logger.error(" [!] os_rec could not be parsed: %s" % etree.tostring(os_rec))
+                log(" [!] os_rec could not be parsed: %s" % etree.tostring(os_rec), logging.ERROR)
 
-        localdb.commit()
+        db.commit()
 
     if msf_workspace:
         try:
@@ -854,13 +965,14 @@ def process_xml(
             from MetasploitAPI import MetasploitAPI
             msf_api = MetasploitAPI(host=auth.user.f_msf_pro_url, apikey=auth.user.f_msf_pro_key)
         except:
-            print(" [!] MSF Workspace sent but unable to authenticate to MSF API", logging.ERROR)
+            log(" [!] MSF Workspace sent but unable to authenticate to MSF API", logging.ERROR)
             msf_api = None
 
         try:
             scan_data = open(filename, "r+").readlines()
         except Exception, error:
-            print(" [!] Error loading scan data to send to Metasploit: %s" % str(error))
+            log(" [!] Error loading scan data to send to Metasploit: %s" % str(error), logging.ERROR)
+            scan_data = None
 
         if scan_data and msf_api:
             task = msf_api.pro_import_data(
@@ -874,18 +986,18 @@ def process_xml(
 
             msf_workspace_num = session.msf_workspace_num or 'unknown'
             msfurl = os.path.join(auth.user.f_msf_pro_url, 'workspaces', msf_workspace_num, 'tasks', task['task_id'])
-            print(" [*] Added file to MSF Pro: %s" % (msfurl))
+            log(" [*] Added file to MSF Pro: %s" % msfurl)
 
     # any new nexpose vulns need to be checked against exploits table and connected
-    print(" [*] Connecting exploits to vulns and performing do_host_status")
-    #sys.stderr.write(msg)
+    log(" [*] Connecting exploits to vulns and performing do_host_status")
     connect_exploits()
     do_host_status(asset_group=asset_group)
 
-    msg = " [*] Import complete: hosts: %s added, %s skipped, %s errors - vulns: %s added, %s skipped" % (hoststats['added'],
-                                                                                                          hoststats['skipped'],
-                                                                                                          hoststats['errored'],
-                                                                                                          vulns_added, vulns_skipped)
-    print(msg)
-    #sys.stderr.write(msg)
+    msg = " [*] Import complete: hosts: %s added, %s skipped, %s errors - vulns: %s added, %s skipped" % (
+        hoststats['added'],
+        hoststats['skipped'],
+        hoststats['errored'],
+        vulns_added, vulns_skipped
+    )
+    log(msg)
     return msg

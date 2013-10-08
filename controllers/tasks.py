@@ -88,7 +88,7 @@ def output():
     task_id is the scheduler_task identifier, not the record id.
     """
     task_id = request.args(0) or redirect(URL('index'))
-    task = db(db.scheduler_run.task_id == task_id).select().first()
+    task = db(db.scheduler_run.task_id == task_id).select().last()
     response.title = "%s :: Task #%s :: Output" % (settings.title, task_id)
     if task:
         return dict(

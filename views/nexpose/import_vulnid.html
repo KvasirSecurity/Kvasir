@@ -15,9 +15,8 @@
         </div>
     </div>
     <div class="span4 alert alert-info">
-        <p class="text-warning"><strong>Warning!</strong></p>
-        <p>This queries Nexpose for every vulnerability in its database and can take hours to complete. A long-running
-        scheduler task is required as a web server will timeout the connection.</p>
+        <p>This will import a vulnerability from the configured Nexpose server based upon the vulnerability id field
+        provided.</p>
         <dl>
             <dt>Server</dt>
             <dd>{{=auth.user.f_nexpose_host}}</dd>

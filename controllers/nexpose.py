@@ -10,9 +10,8 @@
 ##--------------------------------------#
 
 from nxajax import NXAJAX, ScanTemplates
-from skaldship.nexpose import vuln_parse
 import logging
-logger = logging.getLogger("web2py.app.kvasir")
+from skaldship.log import log
 crud.settings.formstyle = formstyle_bootstrap_kvasir
 
 
@@ -20,54 +19,27 @@ crud.settings.formstyle = formstyle_bootstrap_kvasir
 def index():
     return dict()
 
-##-------------------------------------------------------------------------
-## Purge Nexpose data from database
-##-------------------------------------------------------------------------
-@auth.requires_login()
-def purge():
-    """
-    Cleans out the nexpose static tables such as:
-      t_vulndata
-      t_vuln_refs,
-      t_vuln_references,
-      t_exploits,
-      t_exploit_references,
-    """
-    response.title = "%s :: Nexpose Database Purge" % (settings.title)
-    form = SQLFORM.factory(
-        Field('vulndata', type='boolean', label=T('Purge ∏Vulnerability Data')),
-        Field('exploits', type='boolean', label=T('Purge Exploit Data')),
-        Field('are_you_sure', type='boolean', label=T('Are you sure?')),
-    )
-
-    if form.accepts(request.vars,session):
-        if not form.vars.are_you_sure:
-            form.errors.are_you_sure = 'ARE YOU SURE?'
-        if form.vars.vulndata:
-            response.flash = 'Deleted Nexpose Vulnerability Data (and Exploit References)'
-            db.t_vulndata.truncate(mode="CASCADE")
-            db.t_exploit_references.truncate()
-        if form.vars.exploits:
-            db.t_exploits.truncate(mode="CASCADE")
-            response.flash = 'Deleted Nexpose Exploit Data'
-    elif form.errors:
-        response.flash = 'Error in form'
-
-    return dict(form=form)
-
 @auth.requires_login()
 def vulnlist():
-    """Produces a list of Nexpose vulnids for a select/search box"""
-    from lxml import etree
-    from StringIO import StringIO
+    """
+    Produces a list of Nexpose vulnids for a select/search box
+    """
+    try:
+        from lxml import etree
+    except ImportError:
+        try:
+            from xml.etree import cElementTree as etree
+        except ImportError:
+            from xml.etree import ElementTree as etree
+
     from NexposeAPI import VulnData
-    import os, time
+    import os
+    import time
 
     vuln_class = VulnData()
-    vuln_class.user_id = auth.user.f_nexpose_user or 'nxadmin'
-    vuln_class.password = auth.user.f_nexpose_pw or 'password'
     vuln_class.host = auth.user.f_nexpose_host or 'localhost'
     vuln_class.port = auth.user.f_nexpose_port or '3780'
+
     nx_vuln_fname = os.path.join(request.folder, 'data', 'nexpose_vuln_summary.xml')
     if os.path.exists(nx_vuln_fname):
         # check to see if we should refresh the nexpose_vuln_summary.xml file
@@ -80,7 +52,7 @@ def vulnlist():
         update_summary = True
 
     if update_summary:
-        if vuln_class.login():
+        if vuln_class.login(user_id=auth.user.f_nexpose_user, password=auth.user.f_nexpose_pw):
             # pull the list out
             vuln_class.populate_summary()
             fout = open(nx_vuln_fname, "wb+")
@@ -96,69 +68,76 @@ def vulnlist():
     return dict(data=vdata)
 
 @auth.requires_login()
-def get_nexpose_vulndata():
-    """Downloads the detailed vulnerability data from Nexpose based on
-    a vulnid passed to it"""
+def import_vulnid():
+    """
+    Downloads the detailed vulnerability data from Nexpose based on
+    a vuln id passed to it
+    """
     form = SQLFORM.factory(
         Field('nexid', 'string', label=T('Nexpose ID')),
-        Field('update', 'boolean', label=T('Update existing')),
+        Field('nexid_list', 'text', label=T('Nexpose ID List'))
     )
 
-    if form.accepts(request, session):
+    response.title = "%s :: Import Nexpose VulnID" % settings.title
+
+    if form.process().accepted:
+        from NexposeAPI import VulnData
+        from skaldship.nexpose import vuln_parse
+
         nxvulns = VulnData()
-        nxvulns.user_id = auth.user.f_nexpose_user or 'nxadmin'
-        nxvulns.password = auth.user.f_nexpose_pw or 'password'
-        nxvulns.host = auth.user.f_nexpose_host or 'localhost'
-        nxvulns.port = auth.user.f_nexpose_port or '3780'
-        if nxvulns.login():
-            vulndetails = nxvulns.detail(form.vars.nexid)
-            (vulnfields, references) = vuln_parse(vulndetails.find('Vulnerability'), fromapi=True)
+        nxvulns.host = auth.user.f_nexpose_host
+        nxvulns.port = auth.user.f_nexpose_port
 
-            if not vulnfields:
-                response.flash = "Invalid Nexpose ID"
-                return dict(form=form)
+        nexpose_ids = []
+        if form.vars.nexid:
+            nexpose_ids.extend([form.vars.nexid])
+        if form.vars.nexid_list:
+            nexpose_ids.extend(form.vars.nexid_list.split('\r\n'))
 
-            # add the vulnerability to t_vulndata
-            try:
-                vulnid = db.t_vulndata.insert(**vulnfields)
-                response.flash("%s added to vulndb" % (form.vars.nexid))
-                db.commit()
-            except Exception, e:
-                if form.vars.update:
-                    try:
-                        row = db(db.t_vulndata.f_vulnid == vulnfields['f_vulnid']).select().first()
-                        row.update_record(**vulnfields)
-                        vuln_id = row.id
-                        response.flash("%s updated in vulndb" % (form.vars.nexid))
-                        db.commit()
-                    except Exception, e:
-                        msg = "Error inserting %s to vulndata: %s" % (form.vars.nexid, e)
-                        response.flash(msg)
-                        logger.info(msg)
-                        vulnid = None
-                        db.commit()
+        res = nxvulns.login(user_id=auth.user.f_nexpose_user, password=auth.user.f_nexpose_pw)
+        if res:
+            stats = {'added': 0, 'invalid':  0}
+            for nexid in nexpose_ids:
+                vulndetails = nxvulns.detail(nexid)
+                if vulndetails is not None:
+                    (vulnfields, references) = vuln_parse(vulndetails.find('Vulnerability'), fromapi=True)
                 else:
-                    msg = "Error inserting %s to vulndata: %s" % (form.vars.nexid, e)
-                    response.flash(msg)
-                    logger.info(msg)
-                    vulnid = None
+                    stats['invalid'] += 1
+                    continue
 
-            # add the references
-            if vulnid is not None and references:
-                for reference in references:
-                    # check to see if reference exists first
-                    ref_id = db(db.t_vuln_refs.f_text == reference[1])
-                    if ref_id.count() == 0:
-                        # add because it doesn't
-                        ref_id = db.t_vuln_refs.insert(f_source=reference[0], f_text=reference[1])
+                # add the vulnerability to t_vulndata
+                query = (db.t_vulndata.f_vulnid == nexid)
+                vulnid = db.t_vulndata.update_or_insert(query, **vulnfields)
+                if not vulnid:
+                    row = db(query).select().first()
+                    if row:
+                        vulnid = row.id
                     else:
-                        # pick the first reference as the ID
-                        ref_id = ref_id.select().first().id
+                        log(" [!] Could not find %s in database.." % nexid, logging.WARN)
+                        stats['invalid'] += 1
+                        continue
 
-                    # make many-to-many relationship with t_vuln_data
-                    res = db.t_vuln_references.insert(f_vuln_ref_id=ref_id, f_vulndata_id=vulnid)
-                    db.commit()
+                db.commit()
 
+                # add the references
+                if vulnid is not None and references:
+                    for reference in references:
+                        # check to see if reference exists first
+                        query = (db.t_vuln_refs.f_source == reference[0]) & (db.t_vuln_refs.f_text == reference[1])
+                        ref_id = db.t_vuln_refs.update_or_insert(query, f_source=reference[0], f_text=reference[1])
+                        if not ref_id:
+                            ref_id = db(query).select().first().id
+
+                        # make many-to-many relationship with t_vuln_data
+                        db.t_vuln_references.update_or_insert(f_vuln_ref_id=ref_id, f_vulndata_id=vulnid)
+                        db.commit()
+
+                from skaldship.exploits import connect_exploits
+                connect_exploits()
+                log(" [-] Added Nexpose vulnerability: %s" % nexid)
+                stats['added'] += 1
+            response.flash = "%s added, %s skipped" % (stats['added'], stats['invalid'])
+            return dict(form=form)
         else:
             response.flash = "Unable to login to Nexpose"
     elif form.errors:
@@ -173,98 +152,40 @@ def vuln_update():
     # https instance. User can permit overwrite (updating)
     # the data if a Vulnerability ID exists in the db.
 
-    from lxml import etree
-    from StringIO import StringIO
-    import NexposeAPI as nexpose_api
-
-    response.title = "%s :: Nexpose Vulnerability Update" % (settings.title)
+    response.title = "%s :: Nexpose Vulnerability Update" % settings.title
     form = SQLFORM.factory(
-        Field('hostname', default=auth.user.f_nexpose_host or 'localhost', requires=IS_NOT_EMPTY()),
-        Field('port', default=auth.user.f_nexpose_port or '3780', requires=IS_NOT_EMPTY()),
-        Field('username', default=auth.user.f_nexpose_user or 'nxadmin', requires=IS_NOT_EMPTY()),
-        Field('password', 'password', default=auth.user.f_nexpose_pw, requires=IS_NOT_EMPTY()),
-        Field('overwrite', 'boolean', default=False, label=T('Overwrite existing entries')),
+        Field('overwrite', 'boolean', default=False, label=T('Update existing')),
+        Field('background', 'boolean', default=False, label=T('Run in background task'),
+              requires=IS_NOT_EMPTY(error_message='Can only be run in background')
+        ),
+        Field('timeout', 'integer', default=144000, label=T('Timeout (in seconds)')),
+        Field('do_import', 'boolean', default=False, label=T('Start the import'),
+              requires=IS_NOT_EMPTY(error_message='Are you ready?')
+        ),
     )
 
-    if form.accepts(request.vars):
-        napi = nexpose_api.NexposeAPI()
-        napi.user_id = form.vars.username
-        napi.password = form.vars.password
-        napi.host = form.vars.hostname
-        napi.port = form.vars.port
-        if napi.login():
-            # print("Logged in to Nexpose API")
-            vuln_class = nexpose_api.VulnData()
-            vuln_class.populate_summary(napi)
-            if (vuln_class.vulnerabilities) > 0:
-                existing_vulnids = []
-                for r in db(db.t_vulndata()).select(db.t_vulndata.f_vulnid):
-                    existing_vulnids.append(r.f_vulnid)
-
-                logger.info("Found %d vulnerabilities in the database already." % (len(existing_vulnids)))
-
-                vulnxml = etree.parse(StringIO(vuln_class.vulnxml))
-                vulns_added = 0
-                vulns_updated = 0
-                vulns_skipped = 0
-                for vuln in vulnxml.findall('VulnerabilitySummary'):
-
-                    if vuln.attrib['id'] in existing_vulnids and not request.vars.overwrite:
-                        # skip over existing entries if we're not overwriting
-                        continue
-
-                    vulndetails = vuln_class.detail(napi, vuln.attrib['id'])
-
-                    (vulnfields, references) = vuln_parse(vulndetails.find('Vulnerability'), fromapi=True)
-
-                    if not vulnfields: continue
-
-                    # add the vulnerability to t_vulndata
-                    try:
-                        vulnid = db.t_vulndata.insert(**vulnfields)
-                        vulns_added += 1
-                        db.commit()
-                    except Exception, e:
-                        if request.vars.overwrite:
-                            try:
-                                row = db(db.t_vulndata.f_vulnid == vulnfields['f_vulnid']).select().first()
-                                row.update_record(**vulnfields)
-                                vulnid = row.id
-                                vulns_updated += 1
-                                db.commit()
-                            except Exception, e:
-                                logger.info("Error inserting %s to vulndata: %s" % (vulnfields['f_vulnid'], e))
-                                vulnid = None
-                                vulns_skipped += 1
-                                db.commit()
-                                continue
-                        else:
-                            logger.info("Error inserting %s to vulndata: %s" % (vulnfields['f_vulnid'], e))
-                            vulnid = None
-                            vulns_skipped += 1
-                            db.commit()
-                            continue
-
-                    # add the references
-                    if vulnid is not None and references:
-                        for reference in references:
-                            # check to see if reference exists first
-                            ref_id = db(db.t_vuln_refs.f_text == reference[1])
-                            if ref_id.count() == 0:
-                                # add because it doesn't
-                                ref_id = db.t_vuln_refs.insert(f_source=reference[0], f_text=reference[1])
-                            else:
-                                # pick the first reference as the ID
-                                ref_id = ref_id.select().first().id
-
-                            # make many-to-many relationship with t_vuln_data
-                            res = db.t_vuln_references.insert(f_vuln_ref_id=ref_id, f_vulndata_id=vulnid)
-                            db.commit()
-
-                logger.info("%d vulns added, %d updated, %d skipped" % (vulns_added, vulns_updated, vulns_skipped))
-                response.flash = "Completed - (A:%s/U:%s/S:%s)" % (vulns_added, vulns_updated, vulns_skipped)
+    if form.process().accepted:
+        nexpose_server = {
+            'host': auth.user.f_nexpose_host,
+            'port': auth.user.f_nexpose_port,
+            'user': auth.user.f_nexpose_user,
+            'pw': auth.user.f_nexpose_pw,
+        }
+        task = scheduler.queue_task(
+            import_all_nexpose_vulndata,
+            pvars=dict(
+                overwrite=form.vars.overwrite,
+                nexpose_server=nexpose_server,
+            ),
+            group_name=settings.scheduler_group_name,
+            sync_output=5,
+            repeats=1,
+            timeout=form.vars.timeout,
+        )
+        if task.id:
+            redirect(URL('tasks', 'status', args=task.id))
         else:
-            response.flash = "Unable to login to Nexpose"
+            response.flash = "Error submitting job: %s" % (task.errors)
 
     elif form.errors:
         response.flash = 'Error in form data'
@@ -295,10 +216,8 @@ def scan_template():
     najax = NXAJAX(session.najaxsession)
     najax.host = auth.user.f_nexpose_host
     najax.port = auth.user.f_nexpose_port
-    najax.user_id = auth.user.f_nexpose_user
-    najax.password = auth.user.f_nexpose_pw
-    if najax.login():
-        logger.info("Logged in to Nexpose API. Session cached.")
+    if najax.login(user_id=auth.user.f_nexpose_user, password=auth.user.f_nexpose_pw):
+        log("Logged in to Nexpose API. Session cached.")
         session.najaxsession = najax.getsession()
         template_class = ScanTemplates()
         templates = template_class.listscantemps(True, najax)
@@ -451,7 +370,7 @@ def import_xml_scan():
                 response.flash = "Error submitting job: %s" % (task.errors)
         else:
             from skaldship.nexpose import process_xml
-            logger.info("Starting Nexpose XML Import")
+            log("Starting Nexpose XML Import")
             process_xml(
                 filename=filename,
                 asset_group=form.vars.f_asset_group,

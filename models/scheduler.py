@@ -250,6 +250,16 @@ def webshot(service=None):
 
 ##-------------------------------------------------------
 
+def import_all_nexpose_vulndata(overwrite=False, nexpose_server={}):
+    """
+    Import all vulnerability data from Nexpose
+    """
+    from skaldship.nexpose import import_all_vulndata
+    import_all_vulndata(overwrite=overwrite, nexpose_server=nexpose_server)
+    return True
+
+##-------------------------------------------------------
+
 scheduler = Scheduler(
     db=db,
     migrate=settings.migrate,
