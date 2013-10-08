@@ -155,13 +155,13 @@ def list():
                                   _href=URL('download', args=[r.t_evidence.f_evidence]),
                                   _target="evidence_image_%s" % (r.t_evidence.id), _id="evidence_image").xml()
                     cnt += 1
-                    atxt[cnt] = "%db" % (r._extra['(LENGTH(t_evidence.f_data) + 1)'])
+                    atxt[cnt] = "%sb" % (r._extra['(LENGTH(t_evidence.f_data) + 1)'])
                     cnt += 1
                 else:
                     atxt[cnt] = A(r.t_evidence.f_filename, _target="evidence_other_%s" % (r.t_evidence.id), _id="evidence_other",
                                   _href=URL('download', args=[r.t_evidence.f_evidence])).xml()
                     cnt += 1
-                    atxt[cnt] = "%db" % (r._extra['(LENGTH(t_evidence.f_data) + 1)'])
+                    atxt[cnt] = "%sb" % (r._extra['(LENGTH(t_evidence.f_data) + 1)'])
                     cnt += 1
             else:
                 atxt[cnt] = r.t_evidence.f_filename
