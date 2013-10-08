@@ -702,7 +702,12 @@ def process_xml(
                         db.t_accounts.update_or_insert(**d)
                         db.commit()
 
-                proof = nx_xml_to_html(StringIO(etree.tostring(test, xml_declaration=False, encoding=unicode)))
+                try:
+                    proof = nx_xml_to_html(StringIO(etree.tostring(test, xml_declaration=False, encoding=unicode)))
+                except Exception, e:
+                    log(" [!] Error parsing test data: %s" % str(e), logging.ERROR)
+                    continue
+
                 proof = html_to_markmin(proof)
 
                 if vulnid == 'cifs-insecure-acct-lockout-limit':
