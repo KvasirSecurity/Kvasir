@@ -62,7 +62,7 @@ def grab_screenshot(url=None, outfile=None, phantomjs="/usr/bin/phantomjs"):
         timeout = ["%sprivate/timeout3" % folder, "-t" "5"]
     else:
         timeout = []
-    phantom = timeout + [phantomjs, "--ignore-ssl-errors=true", "%/smodules/skaldship/valkyries/webimaging.js" % (folder), url, outfile]
+    phantom = timeout + [phantomjs, "--ignore-ssl-errors=true", "%s/modules/skaldship/valkyries/webimaging.js" % (folder), url, outfile]
     logging.debug("calling: %s" % str(phantom))
     call(phantom)
     try:
