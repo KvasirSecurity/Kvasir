@@ -653,6 +653,11 @@ def aa_by_host():
     services = db(db_svcs.f_hosts_id==record.id).select(db_svcs.f_number, db_svcs.id,
                                                         db_svcs.f_proto, db_svcs.f_name,orderby=db_svcs.id)
 
+    if settings.use_cvss:
+        db_vsevs = db_vulns.f_cvss_score
+    else:
+        db_vsevs = db_vulns.f_severity
+
     tree = DIV(_id="aatree")
     for svc in services:
 
@@ -667,7 +672,7 @@ def aa_by_host():
         vulnclass = ''
         for vulninfo in db(
                 (db_svulns.f_services_id == svc.id) & (db_vulns.id == db_svulns.f_vulndata_id)
-                ).select(orderby=~db_svulns.f_status|~db_vulns.f_severity, cache=(cache.ram, 120)):
+                ).select(orderby=~db_svulns.f_status|~db_vsevs, cache=(cache.ram, 120)):
 
             #init variables
             vulndetails = vulninfo.t_vulndata
@@ -711,8 +716,15 @@ def aa_by_host():
                 textdecoration="text-decoration: none;"
 
             #generation vuln link
-            style = textdecoration + "color:" + severity_mapping(vulndetails.f_severity - 1)[2]
-            vuln_title_link = A(vulndetails.f_vulnid, _title = vulninfo.f_status+ ' Severity: ' + str(vulndetails.f_severity),_style=style, _target="vulndata_%s" % (vulndetails.id), _href=URL(request.application, 'vulns', 'vulninfo_by_vulnid', args=vulndetails.f_vulnid, extension='html'))
+            if settings.use_cvss:
+                severity = vulndetails.f_cvss_score
+            else:
+                severity = vulndetails.f_severity
+            style = textdecoration + "color:" + severity_mapping(severity - 1)[2]
+            vuln_title_link = A(vulndetails.f_vulnid, _title = vulninfo.f_status+ ' Severity: ' + str(severity),
+                                _style=style, _target="vulndata_%s" % (vulndetails.id),
+                                _href=URL(request.application,'vulns', 'vulninfo_by_vulnid',
+                                          args=vulndetails.f_vulnid, extension='html'))
 
             if cur_f_status != prev_f_status and prev_f_status != '':
                 nexlist.append(SPAN(nexlist_single, _class=vulnclass)) #for a line in the bottom

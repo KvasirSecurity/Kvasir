@@ -92,6 +92,11 @@ def vuln_data(vuln, html=True, full=True):
     if vuln is None:
         return "NO RECORD SUBMITTED"
 
+    if current.globalenv['settings'].use_cvss:
+        severity = vuln.f_cvss_score
+    else:
+        severity = vuln.f_severity
+
     if full:
         # full == True means all information including references and exploits
         refdata = []
@@ -114,7 +119,7 @@ def vuln_data(vuln, html=True, full=True):
         return (vuln.id,
                 vuln.f_vulnid,
                 vuln.f_title,
-                severity_mapping(vuln.f_severity),
+                severity_mapping(severity),
                 vuln.f_cvss_score,
                 cvss_metrics(vuln),
                 markmin2html(vuln.f_description),
@@ -129,7 +134,7 @@ def vuln_data(vuln, html=True, full=True):
         return (vuln.id,
                 vuln.f_vulnid,
                 vuln.f_title,
-                severity_mapping(vuln.f_severity),
+                severity_mapping(severity),
                 vuln.f_cvss_score,
                 cvss_metrics(vuln),
                 vuln.f_pci_sev,

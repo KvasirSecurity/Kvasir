@@ -75,9 +75,13 @@ def read():
     for k in q:
         vulninfo = db.t_vulndata(k.f_vulndata_id)
         if vulninfo:
+            if settings.use_cvss:
+                severity = vulninfo.f_cvss_score
+            else:
+                severity = vulninfo.f_severity
             vulntr.append(TR(TD("%s/%s" % (record.f_proto, record.f_number)),
                              TD(A(vulninfo.f_vulnid, _href=URL('vulns', 'vulninfo_by_vulnid', args=vulninfo.f_vulnid), _target="vulndata_%s" % (k.f_vulndata_id), extension='html').xml()),
-                             TD(vulninfo.f_severity),
+                             TD(severity),
                              TD(k.f_status),
                              TD(XML(k.f_proof, sanitize=False).xml()),
                              ) )
@@ -296,7 +300,10 @@ def list():
             for vuln in vulns:
                 vuln_rec = db.t_vulndata[vuln.f_vulndata_id]
                 if vuln_rec.f_vulnid not in vulnlist:
-                    vulnlist.append((vuln_rec.f_vulnid, vuln_rec.f_severity))
+                    if settings.use_cvss:
+                        vulnlist.append((vuln_rec.f_vulnid, vuln_rec.f_cvss_score))
+                    else:
+                        vulnlist.append((vuln_rec.f_vulnid, vuln_rec.f_severity))
                 exploits = db(db.t_exploit_references.f_vulndata_id == vuln.f_vulndata_id).select(cache=(cache.ram, 60))
                 if len(exploits) > 0:
                     for expinfo in exploits:
