@@ -181,6 +181,9 @@ def process_medusa(line):
             # we have an ntlm hash cap'n
             retval['hash'] = ":".join(retval['pass'].split(':')[:2])
             retval['pass'] = lookup_hash(retval['hash'])
+            retval['type'] = 'smb'
+        else:
+            retval['type'] = 'cleartext'
 
         if retval['msg'].startswith("[SUCCESS"):
             retval['error'] = False
@@ -234,7 +237,9 @@ def process_hydra(line):
             # we have an ntlm hash cap'n
             retval['hash'] = ":".join(retval['pass'].split(':')[:2])
             retval['pass'] = lookup_hash(retval['hash'])
+            retval['type'] = 'smb'
         else:
+            retval['type'] = 'cleartext'
             retval['hash'] = None
 
     retval['error'] = False
@@ -723,7 +728,7 @@ def process_mass_password(pw_file=None, pw_type=None, message=None, proto=None, 
                 # return { 'ip': ip, 'port': port, 'user': user, 'pass': pw, 'hash': ntlm, 'msg': msg }
                 ip = mass_pw_data.get('ip')
                 ip_accts = ip_dict.setdefault(ip, list())
-                if mass_pw_data['type'] == 'smb':
+                if mass_pw_data.get('type') == 'smb':
                     # we have an ntlm hash, split that instead of updating the password
                     (lm, nt) = mass_pw_data['hash'].split(':')[0:2]
                     ip_accts.append({
