@@ -359,6 +359,7 @@ def import_xml_scan():
                     ip_ignore_list=ip_exclude,
                     ip_include_list=ip_include,
                     update_hosts=form.vars.f_update_hosts,
+                    auth_user=auth.user,
                 ),
                 group_name=settings.scheduler_group_name,
                 sync_output=5,
@@ -379,6 +380,7 @@ def import_xml_scan():
                 ip_ignore_list=ip_exclude,
                 ip_include_list=ip_include,
                 update_hosts=form.vars.f_update_hosts,
+                auth_user=auth.user,
             )
             response.flash = "Nexpose XML upload complete"
             redirect(URL('default', 'index'))

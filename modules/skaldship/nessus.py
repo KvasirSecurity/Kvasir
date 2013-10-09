@@ -21,7 +21,6 @@ try:
     from cStringIO import StringIO
 except ImportError:
     from StringIO import StringIO
-from MetasploitAPI import MetasploitAPI, MSFAPIError
 from skaldship.general import get_host_record, do_host_status
 from skaldship.exploits import connect_exploits
 from gluon.validators import IS_SLUG
@@ -341,6 +340,7 @@ def process_xml(
     ip_ignore_list=None,
     ip_include_list=None,
     update_hosts=False,
+    auth_user=None,
     ):
     """
     Process a Nessus XML Report file
@@ -362,16 +362,6 @@ def process_xml(
     db = current.globalenv['db']
     cache = current.globalenv['cache']
     settings = current.globalenv['settings']
-
-    user_id = db.auth_user(engineer)
-
-    if msf_workspace:
-        msf = MetasploitAPI(host=user_id.f_msf_pro_url, apikey=user_id.f_msf_pro_key)
-        if not msf.login():
-            log(" [!] Unable to login to Metasploit PRO, check your API key", logging.ERROR)
-            msf = None
-    else:
-        msf = None
 
     # build the hosts only/exclude list
     ip_exclude = []
@@ -563,22 +553,35 @@ def process_xml(
                         )
                         db.commit()
 
-    if msf is not None:
-        # send the downloaded Nessus file to MSF for importing
+    if msf_workspace:
         try:
-            res = msf.pro_import_file(
+            # check to see if we have a Metasploit RPC instance configured and talking
+            from MetasploitAPI import MetasploitAPI
+            msf_api = MetasploitAPI(host=auth_user.f_msf_pro_url, apikey=auth_user.f_msf_pro_key)
+            working_msf_api = msf_api.login()
+        except Exception, error:
+            log(" [!] Unable to authenticate to MSF API: %s" % str(error), logging.ERROR)
+            working_msf_api = False
+
+        try:
+            scan_data = open(filename, "r+").readlines()
+        except Exception, error:
+            log(" [!] Error loading scan data to send to Metasploit: %s" % str(error), logging.ERROR)
+            scan_data = None
+
+        if scan_data and working_msf_api:
+            task = msf_api.pro_import_data(
                 msf_workspace,
-                filename,
+                "".join(scan_data),
                 {
-                    'DS_REMOVE_FILE': False,
-                    'tag': asset_group,
-                    },
+                    #'preserve_hosts': form.vars.preserve_hosts,
+                    'blacklist_hosts': "\n".join(ip_ignore_list)
+                },
             )
-            log(" [*] Added file to MSF Pro: %s" % (res))
-            #sys.stderr.write(msg)
-        except MSFAPIError, e:
-            log("MSFAPI Error: %s" % str(e), logging.ERROR)
-            pass
+
+            msf_workspace_num = session.msf_workspace_num or 'unknown'
+            msfurl = os.path.join(auth_user.f_msf_pro_url, 'workspaces', msf_workspace_num, 'tasks', task['task_id'])
+            log(" [*] Added file to MSF Pro: %s" % msfurl)
 
     # any new Nessus vulns need to be checked against exploits table and connected
     log(" [*] Connecting exploits to vulns and performing do_host_status")
