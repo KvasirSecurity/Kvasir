@@ -653,10 +653,10 @@ def import_report_xml():
                     filename=filename,
                     asset_group=form.vars.f_asset_group,
                     engineer=form.vars.f_engineer,
-                    #msf_workspace=msf_workspace,
                     ip_ignore_list=ip_exclude,
                     ip_include_list=ip_include,
                     update_hosts=form.vars.f_update_hosts,
+                    auth_user=auth.user,
                 ),
                 group_name=settings.scheduler_group_name,
                 sync_output=5,
@@ -673,10 +673,10 @@ def import_report_xml():
                 filename=filename,
                 asset_group=form.vars.f_asset_group,
                 engineer=form.vars.f_engineer,
-                #msf_workspace=msf_workspace,
                 ip_ignore_list=ip_exclude,
                 ip_include_list=ip_include,
                 update_hosts=form.vars.f_update_hosts,
+                auth_user=auth.user,
             )
             response.flash = result
 

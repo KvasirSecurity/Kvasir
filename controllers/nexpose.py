@@ -343,9 +343,11 @@ def import_xml_scan():
 
         if form.vars.f_msf_workspace:
             msf_workspace = form.vars.f_msf_workspace
-            if msf_workspace == "None": msf_workspace = None
+            if msf_workspace == "None":
+                msf_workspace = None
         else:
             msf_workspace = None
+        msf_settings = {'workspace': msf_workspace, 'url': auth.user.f_msf_pro_url, 'key': auth.user.f_msf_pro_key}
 
         if form.vars.f_taskit:
             task = scheduler.queue_task(
@@ -355,7 +357,7 @@ def import_xml_scan():
                     filename=filename,
                     asset_group=form.vars.f_asset_group,
                     engineer=form.vars.f_engineer,
-                    msf_workspace=msf_workspace,
+                    msf_settings=msf_settings,
                     ip_ignore_list=ip_exclude,
                     ip_include_list=ip_include,
                     update_hosts=form.vars.f_update_hosts,
@@ -375,7 +377,7 @@ def import_xml_scan():
                 filename=filename,
                 asset_group=form.vars.f_asset_group,
                 engineer=form.vars.f_engineer,
-                msf_workspace=msf_workspace,
+                msf_settings=msf_settings,
                 ip_ignore_list=ip_exclude,
                 ip_include_list=ip_include,
                 update_hosts=form.vars.f_update_hosts,

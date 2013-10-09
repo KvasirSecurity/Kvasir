@@ -481,7 +481,7 @@ def process_xml(
     filename=None,
     asset_group=None,
     engineer=None,
-    msf_workspace=False,
+    msf_settings={},
     ip_ignore_list=None,
     ip_include_list=None,
     update_hosts=False,
@@ -495,7 +495,6 @@ def process_xml(
 
     db = current.globalenv['db']
     session = current.globalenv['session']
-    auth = current.globalenv['auth']
 
     parser = HTMLParser.HTMLParser()
     user_id = db.auth_user(engineer)
@@ -534,14 +533,15 @@ def process_xml(
         # nexpose identifiers are always lower case in kvasir. UPPER CASE IS FOR SHOUTING!!!
         vulnid = vuln.attrib['id'].lower()
         if existing_vulnids.has_key(vulnid):
-            log(" [-] Skipping %s - It's in the db already" % vulnid)
+            #log(" [-] Skipping %s - It's in the db already" % vulnid)
             vulns_skipped += 1
         else:
             # add the vulnerability to t_vulndata - any duplicates are errored out
-            # TODO: Handle updates! Compare date modified...
             (vulnfields, references) = vuln_parse(vuln, fromapi=False)
             try:
-                vulnid = db.t_vulndata.insert(**vulnfields)
+                vulnid = db.t_vulndata.update_or_insert(**vulnfields)
+                if not vulnid:
+                    vulnid = db(db.t_vulndata.f_vulnid == vulnfields['f_vulnid']).select().first().id
                 vulns_added += 1
                 db.commit()
             except Exception, e:
@@ -596,7 +596,7 @@ def process_xml(
             hoststats['skipped'] += 1
             continue
 
-        # we'lll just take the last hostname in the names list since it'll usually be the full dns name
+        # we'll just take the last hostname in the names list since it'll usually be the full dns name
         names = node.findall("names/name")
         for name in names:
             nodefields['f_hostname'] = name.text
@@ -760,7 +760,7 @@ def process_xml(
                         d['f_active'] = True
                         d['f_source'] = "rpc-solaris-kcms-readfile"
                         query = (db.t_accounts.f_services_id == svc_id) & (db.t_accounts.f_username == user)
-                        db(query).update_or_insert(query, **d)
+                        db.t_accounts.update_or_insert(query, **d)
                         db.commit()
 
                 db.t_service_vulns.update_or_insert(
@@ -964,14 +964,15 @@ def process_xml(
 
         db.commit()
 
-    if msf_workspace:
+    if msf_settings.get('workspace'):
         try:
             # check to see if we have a Metasploit RPC instance configured and talking
             from MetasploitAPI import MetasploitAPI
-            msf_api = MetasploitAPI(host=auth.user.f_msf_pro_url, apikey=auth.user.f_msf_pro_key)
-        except:
-            log(" [!] MSF Workspace sent but unable to authenticate to MSF API", logging.ERROR)
-            msf_api = None
+            msf_api = MetasploitAPI(host=msf_settings.get('url'), apikey=msf_settings.get('key'))
+            working_msf_api = msf_api.login()
+        except Exception, error:
+            log(" [!] Unable to authenticate to MSF API: %s" % str(error), logging.ERROR)
+            working_msf_api = False
 
         try:
             scan_data = open(filename, "r+").readlines()
@@ -979,9 +980,9 @@ def process_xml(
             log(" [!] Error loading scan data to send to Metasploit: %s" % str(error), logging.ERROR)
             scan_data = None
 
-        if scan_data and msf_api:
+        if scan_data and working_msf_api:
             task = msf_api.pro_import_data(
-                msf_workspace,
+                msf_settings.get('workspace'),
                 "".join(scan_data),
                 {
                     #'preserve_hosts': form.vars.preserve_hosts,
@@ -990,7 +991,7 @@ def process_xml(
             )
 
             msf_workspace_num = session.msf_workspace_num or 'unknown'
-            msfurl = os.path.join(auth.user.f_msf_pro_url, 'workspaces', msf_workspace_num, 'tasks', task['task_id'])
+            msfurl = os.path.join(msf_settings.get('url'), 'workspaces', msf_workspace_num, 'tasks', task['task_id'])
             log(" [*] Added file to MSF Pro: %s" % msfurl)
 
     # any new nexpose vulns need to be checked against exploits table and connected
