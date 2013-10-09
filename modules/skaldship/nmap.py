@@ -56,11 +56,10 @@ def process_xml(
     addnoports=False,
     asset_group=None,
     engineer=None,
-    msf_workspace=False,
+    msf_settings={},
     ip_ignore_list=None,
     ip_include_list=None,
     update_hosts=False,
-    auth_user=None,
     ):
     # Upload and process nMap XML Scan file
     import re
@@ -260,11 +259,11 @@ def process_xml(
                         # So no CPE or existing OS data, lets split up the CPE data and make our own
                         log(" [!] No os_id found, this is odd !!!")
 
-    if msf_workspace:
+    if msf_settings.get('workspace'):
         try:
             # check to see if we have a Metasploit RPC instance configured and talking
             from MetasploitAPI import MetasploitAPI
-            msf_api = MetasploitAPI(host=auth_user.f_msf_pro_url, apikey=auth_user.f_msf_pro_key)
+            msf_api = MetasploitAPI(host=msf_settings.get('url'), apikey=msf_settings.get('key'))
             working_msf_api = msf_api.login()
         except Exception, error:
             log(" [!] Unable to authenticate to MSF API: %s" % str(error), logging.ERROR)
@@ -278,7 +277,7 @@ def process_xml(
 
         if scan_data and working_msf_api:
             task = msf_api.pro_import_data(
-                msf_workspace,
+                msf_settings.get('workspace'),
                 "".join(scan_data),
                 {
                     #'preserve_hosts': form.vars.preserve_hosts,
@@ -287,7 +286,7 @@ def process_xml(
             )
 
             msf_workspace_num = session.msf_workspace_num or 'unknown'
-            msfurl = os.path.join(auth_user.f_msf_pro_url, 'workspaces', msf_workspace_num, 'tasks', task['task_id'])
+            msfurl = os.path.join(msf_settings.get('url'), 'workspaces', msf_workspace_num, 'tasks', task['task_id'])
             log(" [*] Added file to MSF Pro: %s" % msfurl)
 
     # any new nexpose vulns need to be checked against exploits table and connected
