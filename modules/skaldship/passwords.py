@@ -255,17 +255,20 @@ def process_msfcsv(line):
     """
     # host,port,user,pass,type,active?
     retval = {}
+    hash_types = ['smb', 'rakp_hmac_sha1_hash', 'smb_challenge']
     import csv
     for data in csv.reader([line]):
         retval['ip'] = data[0]
         retval['port'] = data[1]
         retval['user'] = data[2]
         retval['pass'] = data[3]
+        retval['type'] = data[4]
         retval['msg'] = 'from metasploit'
         # isactive = data[5] # unused
 
-    if len(retval['pass']) == 65 and retval['pass'].find(':') == 32:
-        # we have an ntlm hash cap'n
+    #if len(retval['pass']) == 65 and retval['pass'].find(':') == 32:
+    if retval['type'] in hash_types:
+        # we have a hash cap'n
         retval['hash'] = retval['pass']
         retval['pass'] = lookup_hash(retval['hash'])
     else:
@@ -603,15 +606,22 @@ def process_password_file(pw_file=None, pw_data=None, file_type=None, source=Non
             line = line.replace('\n', '')   # remove any and all carriage returns!
             try:
                 pw_data = process_msfcsv(line)
-                if pw_data.has_key('hash'):
+                if pw_data['type'] == 'smb':
                     # we have an ntlm hash, split that instead of updating the password
                     (lm, nt) = pw_data['hash'].split(':')[0:2]
-                    accounts[pw_data['user']] = { 'f_hash1': lm, 'f_hash1_type': 'LM',
-                                                   'f_hash2': nt, 'f_hash2_type': 'NT',
-                                                   'f_description': pw_data['msg'], 'f_source': source, 'f_compromised': True }
+                    accounts[pw_data['user']] = {
+                        'f_hash1': lm, 'f_hash1_type': 'LM', 'f_hash2': nt, 'f_hash2_type': 'NT',
+                        'f_message': pw_data['msg'], 'f_source': source, 'f_compromised': True
+                    }
                 else:
-                    accounts[pw_data['user']] = { 'f_password': pw_data['pass'],
-                                                   'f_message': pw_data['msg'], 'f_source': source, 'f_compromised': True }
+                    if pw_data['pass']:
+                        compromised = True
+                    else:
+                        compromised = False
+                    accounts[pw_data['user']] = {
+                        'f_password': pw_data['pass'], 'f_hash1': pw_data['hash'], 'f_hash1_type': pw_data['type'],
+                        'f_message': pw_data['msg'], 'f_source': source, 'f_compromised': compromised,
+                    }
             except Exception, e:
                 logger.error("Error with line (%s): %s" % (line, e))
 
@@ -713,7 +723,7 @@ def process_mass_password(pw_file=None, pw_type=None, message=None, proto=None, 
                 # return { 'ip': ip, 'port': port, 'user': user, 'pass': pw, 'hash': ntlm, 'msg': msg }
                 ip = mass_pw_data.get('ip')
                 ip_accts = ip_dict.setdefault(ip, list())
-                if mass_pw_data.has_key('hash'):
+                if mass_pw_data['type'] == 'smb':
                     # we have an ntlm hash, split that instead of updating the password
                     (lm, nt) = mass_pw_data['hash'].split(':')[0:2]
                     ip_accts.append({
@@ -722,8 +732,24 @@ def process_mass_password(pw_file=None, pw_type=None, message=None, proto=None, 
                         'f_hash2': nt, 'f_hash2_type': 'NT',
                         'f_number': portnum, 'f_proto': proto,
                         'f_password': mass_pw_data.get('pass'),
-                        'f_description': mass_pw_data.get('msg'),
+                        'f_message': mass_pw_data.get('msg'),
                         'f_source': message, 'f_compromised': True
+                    })
+                    ip_dict[ip] = ip_accts
+                elif mass_pw_data['hash']:
+                    # we have a hash, not a password
+                    if mass_pw_data['pass']:
+                        compromised = True
+                    else:
+                        compromised = False
+                    ip_accts.append({
+                        'f_number': portnum, 'f_proto': proto,
+                        'f_username': mass_pw_data.get('user'),
+                        'f_password': mass_pw_data.get('pass'),
+                        'f_hash1': mass_pw_data.get('hash'),
+                        'f_hash1_type': mass_pw_data.get('type'),
+                        'f_message': mass_pw_data.get('msg'),
+                        'f_source': message, 'f_compromised': compromised,
                     })
                     ip_dict[ip] = ip_accts
                 else:
@@ -732,7 +758,7 @@ def process_mass_password(pw_file=None, pw_type=None, message=None, proto=None, 
                         'f_number': portnum, 'f_proto': proto,
                         'f_username': mass_pw_data.get('user'),
                         'f_password': mass_pw_data.get('pass'),
-                        'f_description': mass_pw_data.get('msg'),
+                        'f_message': mass_pw_data.get('msg'),
                         'f_source': message, 'f_compromised': True
                     })
                     ip_dict[ip] = ip_accts

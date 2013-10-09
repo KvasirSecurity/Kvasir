@@ -48,6 +48,10 @@ class JohnPot:
                 pw = p[loc+1:].strip('\n')
                 if self.win_hash_regex.match(pwhash):
                     pwhash = self.upper_windows(pwhash)
+                if pwhash.startswith('$rakp$'):
+                    # ipmi hashes
+                    pwhash = pwhash.replace('$rakp$', '')
+                    pwhash = pwhash.replace('$', ':')
                 self.potdata[pwhash] = pw
             else:
                 logging.error("Invalid line: ", p)
