@@ -87,7 +87,7 @@ def launch_terminal(record=None, launch_cmd=None):
         print("Spawning: %s" % (launch_cmd))
         subprocess.Popen(launch_cmd, shell=True)#, stdout=None, stdin=None, stderr=None)
     except Exception, e:
-	logger.error("Error spawning launch cmd (%s): %s\n" % (launch_cmd, e))
+        logger.error("Error spawning launch cmd (%s): %s\n" % (launch_cmd, e))
         print("Error spawning launch cmd (%s): %s\n" % (launch_cmd, e))
 
     return False
@@ -124,7 +124,7 @@ def scanner_import(
     addnoports=False,
     asset_group=None,
     engineer=None,
-    msf_workspace=False,
+    msf_settings={},
     ip_ignore_list=None,
     ip_include_list=None,
     update_hosts=False,
@@ -145,7 +145,7 @@ def scanner_import(
             addnoports=addnoports,
             asset_group=asset_group,
             engineer=engineer,
-            msf_workspace=msf_workspace,
+            msf_settings=msf_settings,
             ip_ignore_list=ip_ignore_list,
             ip_include_list=ip_include_list,
             update_hosts=update_hosts,
@@ -157,7 +157,7 @@ def scanner_import(
             filename=filename,
             asset_group=asset_group,
             engineer=engineer,
-            msf_workspace=msf_workspace,
+            msf_settings=msf_settings,
             ip_ignore_list=ip_ignore_list,
             ip_include_list=ip_include_list,
             update_hosts=update_hosts,
@@ -169,7 +169,7 @@ def scanner_import(
             filename=filename,
             asset_group=asset_group,
             engineer=engineer,
-            msf_workspace=msf_workspace,
+            msf_settings=msf_settings,
             ip_ignore_list=ip_ignore_list,
             ip_include_list=ip_include_list,
             update_hosts=update_hosts,
