@@ -717,9 +717,9 @@ def aa_by_host():
 
             #generation vuln link
             if settings.use_cvss:
-                severity = vulndetails.f_cvss_score
+                severity = int(float(vulndetails.f_cvss_score))
             else:
-                severity = vulndetails.f_severity
+                severity = int(vulndetails.f_severity)
             style = textdecoration + "color:" + severity_mapping(severity - 1)[2]
             vuln_title_link = A(vulndetails.f_vulnid, _title = vulninfo.f_status+ ' Severity: ' + str(severity),
                                 _style=style, _target="vulndata_%s" % (vulndetails.id),
