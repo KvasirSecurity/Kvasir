@@ -224,7 +224,7 @@ def process_report_xml(
     from skaldship.passwords import lookup_hash
 
     for host in hosts:
-
+        didwhat = "Unknown"
         if host.findtext('state') != "alive":
             stats['hosts_skipped'] += 1
             continue
