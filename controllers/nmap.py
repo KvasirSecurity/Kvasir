@@ -143,3 +143,104 @@ def import_xml_scan():
             redirect(URL('default', 'index'))
 
     return dict(form=form)
+################################################################################
+@auth.requires_login()
+def nmap_scan():
+    """
+    Run nmap scan and hand file over to parser
+    """
+
+    from zenmapCore_Kvasir.NmapCommand import NmapCommand
+    from zenmapCore_Kvasir.UmitLogging import log
+    from time import sleep
+
+    filedir = os.path.join(request.folder,'data','scanfiles')
+    response.title = "%s :: Run Nmap Scan" % (settings.title)
+
+
+    fields = []
+
+    # buld the dropdown user list
+    users = db(db.auth_user).select()
+    userlist = []
+    for user in users:
+        userlist.append( [ user.id, user.username ] )
+
+    fields.append(Field('f_engineer', type='integer', label=T('Engineer'), default=auth.user.id, requires=IS_IN_SET(userlist)))
+    fields.append(Field('f_asset_group', type='string', label=T('Asset Group'), requires=IS_NOT_EMPTY()))
+    fields.append(Field('f_addnoports', type='boolean', label=T('Add Hosts w/o Ports'), default=False))
+    fields.append(Field('f_target_list', type='text', label=T('Scan Targets')))
+    #fields.append(Field('f_include_list', type='text', label=T('Specify Hosts to Import')))
+    fields.append(Field('f_ignore_list', type='text', label=T('Hosts to Exclude')))
+    fields.append(Field('f_update_hosts', type='boolean', label=T('Update Host Information'), default=False))
+    fields.append(Field('f_taskit', type='boolean', default=auth.user.f_scheduler_tasks, label=T('Run in background task')))
+    form = SQLFORM.factory(*fields, table_name='nmap_scan')
+
+    if form.errors:
+        response.flash = 'Error in form'
+    elif form.accepts(request.vars, session):
+        # process a nmap scan
+        # build the hosts only/exclude list
+        ip_exclude = []
+        data = form.vars.get('f_ignore_list')
+        if data:
+            ip_exclude = data.split('\r\n')
+            # TODO: check for ip subnet/range and break it out to individuals
+        #ip_include = []
+        #data = form.vars.get('f_include_list')
+        #if data:
+        #    ip_include = data.split('\r\n')
+        #    # TODO: check for ip subnet/range and break it out to individuals
+        ip_target = []
+        data = form.vars.get('f_target_list')
+        if data:
+            ip_target = data.split('\r\n')
+            # TODO: check for ip subnet/range and break it out to individuals
+
+        log.debug("Exclude List: %s" % repr(ip_exclude))
+        log.debug("Target List: %s" % repr(ip_target))
+
+        N_ARGS = "nmap -F "
+        # TODO: create form field for user supplied args
+        N_ARGS+= " ".join(ip_target)
+        cmd = NmapCommand(N_ARGS)
+        log.debug("Command: %s" % repr(N_ARGS))
+        cmd.run_scan()
+        # TODO: do the scan as a task
+        # TODO: add exclude option for ip_exclude[]
+        runtime = 0
+        while cmd.scan_state():
+            log.debug("Seconds Elapsed: %s " % runtime)
+            sleep(5)
+            runtime += 5
+        log.debug("Scan Completed in: %s seconds " % runtime)
+
+        #parse results
+        filename = cmd.get_xml_output_filename()
+        task = scheduler.queue_task(
+            scanner_import,
+            pvars=dict(
+                scanner='nmap',
+                filename=filename,
+                addnoports=form.vars.f_addnoports,
+                asset_group=form.vars.f_asset_group,
+                engineer=form.vars.f_engineer,
+                msf_settings={},
+                ip_ignore_list=ip_exclude,
+                ip_include_list=[],
+                update_hosts=form.vars.f_update_hosts,
+            ),
+            group_name=settings.scheduler_group_name,
+            sync_output=5,
+            timeout=3600   # 1 hour
+        )
+
+        if task.id:
+            redirect(URL('tasks', 'status', args=task.id))
+        else:
+            response.flash = "Error submitting job: %s" % (task.errors)
+
+        #close and delete tmp xml file
+        cmd.close()
+        #TODO: remove file after task completes.
+    return dict(form=form)

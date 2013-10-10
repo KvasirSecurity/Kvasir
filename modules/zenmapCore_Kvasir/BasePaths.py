@@ -124,7 +124,7 @@ import os
 import os.path
 import sys
 
-from zenmapCore.Name import APP_NAME
+from zenmapCore_Kvasir.Name import APP_NAME
 
 def fs_dec(s):
     """Decode s from the filesystem decoding, handling various possible

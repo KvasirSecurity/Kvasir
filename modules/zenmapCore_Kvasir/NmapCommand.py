@@ -132,7 +132,7 @@ import re
 import tempfile
 import unittest
 
-import zenmapCore.I18N
+import zenmapCore_Kvasir.I18N
 
 from types import StringTypes
 try:
@@ -140,15 +140,18 @@ try:
 except ImportError, e:
     raise ImportError(str(e) + ".\n" + _("Python 2.4 or later is required."))
 
-import zenmapCore.Paths
-from zenmapCore.Paths import Path
-from zenmapCore.NmapOptions import NmapOptions
-from zenmapCore.UmitLogging import log
-from zenmapCore.UmitConf import PathsConfig
-from zenmapCore.Name import APP_NAME
+# Removed Path(s) dependency to support a Kvasir configurable item
+#import zenmapCore_Kvasir.Paths
+#from zenmapCore_Kvasir.Paths import Path
+from zenmapCore_Kvasir.NmapOptions import NmapOptions, split_quoted, join_quoted
+from zenmapCore_Kvasir.UmitLogging import log
+#from zenmapCore.UmitConf import PathsConfig
+from zenmapCore_Kvasir.Name import APP_NAME
+
 
 # The [paths] configuration from zenmap.conf, used to get nmap_command_path.
-paths_config = PathsConfig()
+# This is not needed for Kvasir when set via config_item
+#paths_config = PathsConfig()
 
 log.debug(">>> Platform: %s" % sys.platform)
 
@@ -210,7 +213,8 @@ class NmapCommand(object):
         self.ops = NmapOptions()
         self.ops.parse_string(command)
         # Replace the executable name with the value of nmap_command_path.
-        self.ops.executable = paths_config.nmap_command_path
+        #TODO: Create user config option for nmap bin path. Currently hardcoded to "/usr/bin/nmap"
+        self.ops.executable = "/usr/bin/nmap"
 
         # Normally we generate a random temporary filename to save XML output
         # to. If we find -oX or -oA, the user has chosen his own output file.
@@ -274,9 +278,10 @@ class NmapCommand(object):
             search_paths = []
         else:
             search_paths = path_env.split(os.pathsep)
-        for path in zenmapCore.Paths.get_extra_executable_search_paths():
-            if path not in search_paths:
-                search_paths.append(path)
+        #this is not necessary for Kvasir
+        #for path in zenmapCore_Kvasir.Paths.get_extra_executable_search_paths():
+        #    if path not in search_paths:
+        #        search_paths.append(path)
         return os.pathsep.join(search_paths)
 
     def run_scan(self, stderr = None):
