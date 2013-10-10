@@ -261,9 +261,14 @@ def detail():
 
     for k,v in vulns.iteritems():
         # take the severity and increment the sev_sum set item
-        count = sev_sum_dict.setdefault(v[0], 0)
+        if settings.use_cvss:
+            severity = int(float(v[1]))
+        else:
+            severity = v[0]
+
+        count = sev_sum_dict.setdefault(severity, 1)
         count += 1
-        sev_sum_dict[v[0]] = count
+        sev_sum_dict[severity] = count
 
     sev_sum_spark = []
     sev_sum = []

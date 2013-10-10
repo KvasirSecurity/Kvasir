@@ -92,6 +92,11 @@ def vuln_data(vuln, html=True, full=True):
     if vuln is None:
         return "NO RECORD SUBMITTED"
 
+    if current.globalenv['settings'].use_cvss:
+        severity = vuln.f_cvss_score
+    else:
+        severity = vuln.f_severity
+
     if full:
         # full == True means all information including references and exploits
         refdata = []
@@ -114,7 +119,7 @@ def vuln_data(vuln, html=True, full=True):
         return (vuln.id,
                 vuln.f_vulnid,
                 vuln.f_title,
-                severity_mapping(vuln.f_severity),
+                severity_mapping(severity),
                 vuln.f_cvss_score,
                 cvss_metrics(vuln),
                 markmin2html(vuln.f_description),
@@ -129,7 +134,7 @@ def vuln_data(vuln, html=True, full=True):
         return (vuln.id,
                 vuln.f_vulnid,
                 vuln.f_title,
-                severity_mapping(vuln.f_severity),
+                severity_mapping(severity),
                 vuln.f_cvss_score,
                 cvss_metrics(vuln),
                 vuln.f_pci_sev,
@@ -445,6 +450,7 @@ def do_host_status(records=[], query=None, asset_group=None, hosts=[]):
 
     db = current.globalenv['db']
     cache = current.globalenv['cache']
+    settings = current.globalenv['settings']
 
     # load all the vulndata from service_vulns into a dictionary
     # so we only have to query the memory variables instead of
@@ -513,9 +519,13 @@ def do_host_status(records=[], query=None, asset_group=None, hosts=[]):
         # then add them to their respective sev_sum_dict entry
         for k,v in vuln_sev.iteritems():
             # take the severity and increment the sev_sum set item
-            count = sev_sum_dict.setdefault(v[0], 0)
+            if settings.use_cvss:
+                severity = int(float(v[1]))
+            else:
+                severity = v[0]
+            count = sev_sum_dict.setdefault(severity, 0)
             count += 1
-            sev_sum_dict[v[0]] = count
+            sev_sum_dict[severity] = count
 
         # make the sparkline data string
         spark_list = []

@@ -6,7 +6,7 @@
       <div class="span6">
         <div class="widget-box">
           <div class="widget-title">
-            <h5>Top Host Severities</h5>
+            <h5>Top Host {{if settings.use_cvss:}}CVSS Scores{{else:}}Severities{{pass}}</h5>
           </div>
           <div class="widget-content">
             <div id="chart_host_sev"></div>
@@ -16,7 +16,7 @@
       <div class="span6">
         <div class="widget-box">
           <div class="widget-title">
-            <h5>Vulnerabilities by Severity</h5>
+            <h5>Vulnerabilities by {{if settings.use_cvss:}}CVSS Score{{else:}}Severity{{pass}}</h5>
           </div>
           <div class="widget-content">
             <div id="chart_vuln_sev"></div>
@@ -79,7 +79,9 @@ $(function () {
     </div>
     <div class="widget-content">
       <p align="right"><a target="vulncloud" href="{{=URL('stats', 'vulncloud')}}">Show All</a></p>
-      <div id="vulncloud"></div>
+      <div id="vulncloud">
+          Loading...
+      </div>
     </div>
   </div>
 

@@ -267,25 +267,51 @@ def vulncloud():
     if request.extension == "json":
         # build the json data
         vulncloud = {}
+        vd = db.t_vulndata
+        svc_vulns = db.t_service_vulns
 
         # grab the list of vulnerabilities
 
-        if(request.args(0) is not None):
-            vulns = db(db.t_vulndata.f_severity>=int(request.args(0))).select(db.t_vulndata.id, db.t_vulndata.f_vulnid, db.t_vulndata.f_severity, cache=(cache.ram,300))
+        q = (svc_vulns.f_vulndata_id == vd.id)
+        if request.args(0) is not None:
+            try:
+                minsev = int(request.args(0))
+            except:
+                minsev = 8
+
+            q &= (vd.f_cvss_score >= minsev)
+            if settings.use_cvss:
+                q &= (vd.f_cvss_score >= float(request.args(0)))
+            else:
+                q &= (vd.f_severity >= int(request.args(0)))
+
+            vulns = db(q).select(
+                vd.id, vd.f_vulnid, vd.f_severity, vd.f_cvss_score, cache=(cache.ram, 300)
+            )
         else:
-            vulns = db(db.t_vulndata.id > 0).select(db.t_vulndata.id, db.t_vulndata.f_vulnid, db.t_vulndata.f_severity, cache=(cache.ram,300))
-        #service_vulns = db(db.t_service_vulns).select(db.t_service_vulns.f_vulndata_id, groupby=db.t_service_vulns.f_vulndata_id, cache=(cache.ram,300))
+            vulns = db(vd.id > 0).select(vd.id, vd.f_vulnid, vd.f_severity, vd.f_cvss_score, cache=(cache.ram, 300))
 
         for row in vulns:
-            #vrow = db(db.t_vulndata.id == row.f_vulndata_id).select(db.t_vulndata.f_vulnid, db.t_vulndata.f_severity).first()
             count = db(db.t_service_vulns.f_vulndata_id == row.id).count()
+
             if count > 0:
-                vulncloud[row.f_vulnid] = vulncloud.setdefault(row.f_vulnid, { 'count': count, 'color': severity_mapping(row.f_severity - 1)[2] })
+                if settings.use_cvs:
+                    severity = float(row.f_cvss_score)
+                else:
+                    severity = int(row.f_severity)
+
+                vulncloud[row.f_vulnid] = vulncloud.setdefault(
+                    row.f_vulnid, {'count': count, 'color': severity_mapping(severity - 1)[2]}
+                )
 
         cloud = []
-        for k,v in vulncloud.iteritems():
+        for k, v in vulncloud.iteritems():
             cloud.append({'tag': k, 'count': v['count'], 'color': v['color']})
         return dict(vulncloud=cloud)
+
+    response.title = "%s :: Vulnerability Tag Cloud" % (settings.title)
+    response.files.append(URL(request.application, 'static', 'js/jquery.tagcloud-2.js'))
+    return dict()
 
     response.title = "%s :: Vulnerability Tag Cloud" % (settings.title)
     response.files.append(URL(request.application, 'static', 'js/jquery.tagcloud-2.js'))
@@ -306,8 +332,11 @@ def vulncircles_data():
     vulncircles = {}
 
     minsev = request.args(0) or 8
-    for row in db(db.t_vulndata.f_severity >= minsev).select(cache=(cache.ram,300)):
-        #vrow = db(db.t_vulndata.id == row.f_vulndata_id).select(db.t_vulndata.f_vulnid, db.t_vulndata.f_severity).first()
+    if settings.use_cvss:
+        rows = db(db.t_vulndata.f_cvss_score >= minsev).select(cache=(cache.ram, 300))
+    else:
+        rows = db(db.t_vulndata.f_severity >= minsev).select(cache=(cache.ram, 300))
+    for row in rows:
         vulncount = db(db.t_service_vulns.f_vulndata_id == row.id).count()
 
         exploits = db(db.t_exploit_references.f_vulndata_id == row.id).select()
@@ -331,7 +360,7 @@ def vulncircles_data():
         expcount = len(exploits)
 
         # if an account is sourced from a vuln, modifier is applied
-        query = (db.t_accounts.f_source == row.f_vulnid) & (db.t_accounts.f_compromised==True)
+        query = (db.t_accounts.f_source == row.f_vulnid) & (db.t_accounts.f_compromised == True)
         accounts = db(query).count()
         if accounts:
             account_mod = 2
@@ -379,28 +408,35 @@ def vulncircles_data():
         else:
             i_mod = 2
 
-        diameter = int((vulncount + (expcount * 2) * exploit_modifier) * (float(row.f_cvss_score) * (av_mod + ac_mod + au_mod + c_mod + i_mod)) * account_mod)
+        # severity setting check and calculations
+        if settings.use_cvss:
+            severity = float(row.f_cvss_score)
+        else:
+            severity = int(row.f_severity)
+
+        diameter = int((vulncount + (expcount * 2) * exploit_modifier) *
+                       (severity * (av_mod + ac_mod + au_mod + c_mod + i_mod)) * account_mod)
 
         if vulncount > 0:
-            vulncircles[row.f_vulnid] = vulncircles.setdefault(row.f_vulnid, { 'diameter': diameter, 'vulncount': vulncount, 'expcount': expcount, 'severity': row.f_severity })
-            #vulncircles[row.f_vulnid] = vulncircles.setdefault(row.f_vulnid, diameter)
+            vulncircles[row.f_vulnid] = vulncircles.setdefault(row.f_vulnid, {
+                'diameter': diameter, 'vulncount': vulncount, 'expcount': expcount, 'severity': severity
+            })
 
     data = {}
     for (k,v) in vulncircles.iteritems():
         sev = v['severity']
         values = data.setdefault(sev, [])
         values.append({
-            'name':k, 'size': v['diameter'], 'vulncount': v['vulncount'], 'expcount': v['expcount'], 'severity': v['severity']
+            'name': k, 'size': v['diameter'], 'vulncount': v['vulncount'],
+            'expcount': v['expcount'], 'severity': v['severity'],
         })
         data[sev] = values
 
     d3json = []
     for k in data.keys():
-        parent = {}
-        parent['name'] = 'Sev ' + str(k)
-        parent['children'] = data[k]
+        parent = {'name': 'Sev ' + str(k), 'children': data[k]}
         d3json.append(parent)
 
-    response.headers['Content-Type']='text/json'
+    response.headers['Content-Type'] = 'text/json'
     import gluon.contrib.simplejson
     return gluon.contrib.simplejson.dumps(d3json)
