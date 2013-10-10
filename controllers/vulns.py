@@ -577,7 +577,9 @@ def service_vuln_exploited():
                     spacount += 1
         db.commit()
     response.flash = "%s Exploited / %s Un-exploited" % (spacount, uncount)
-    response.headers['web2py-component-command'] = "vulntable.fnReloadAjax(); jQuery('.datatable tr.DTTT_selected').removeClass('DTTT_selected');"
+    referrer = request.env.http_referer or ''
+    if 'vulninfo_by_vulnid' not in referrer:
+        response.headers['web2py-component-command'] = "vulntable.fnReloadAjax(); jQuery('.datatable tr.DTTT_selected').removeClass('DTTT_selected');"
     return
 
 ##-------------------------------------------------------------------------
