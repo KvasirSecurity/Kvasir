@@ -181,7 +181,7 @@ jQuery(document).ready(function() {
         e.preventDefault();
         bootbox.confirm('This will switch all selected vulns to exploited. If they are already exploited they will be switched to vulnerable-exploited.', "Cancel", "OK", function(confirmed) {
             if(confirmed) {
-                var checks = dt_checkboxer_select_DT_RowIds(vulntable);
+                var checks = dt_checkboxer_select_DT_TRIds(vulntable);
                 if (checks == '') { alert('Nothing selected'); return false; }
                 var data = "ids=" + checks;
                 url = "{{=URL('vulns', 'service_vuln_exploited.json', user_signature=True)}}";
