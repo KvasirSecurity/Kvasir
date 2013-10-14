@@ -48,9 +48,8 @@ def script_metadata():
         }
     return scripts
 
+
 ##-------------------------------------------------------------------------
-
-
 def process_xml(
     filename=None,
     addnoports=False,
@@ -296,3 +295,36 @@ def process_xml(
     log(" [*] Import complete: hosts: %s added, %s skipped" % (hoststats['added'],
                                                                hoststats['skipped'],
                                                               ))
+
+##-------------------------------------------------------------------------
+
+def run_scan(
+    blacklist=None,
+    target_list=None,
+    scan_options=None,
+    ):
+    '''
+    Executes nmap scan
+    '''
+    from zenmapCore_Kvasir.NmapCommand import NmapCommand
+    from time import sleep
+
+    N_ARGS = "nmap -F "
+    N_ARGS += " ".join(target_list)
+
+    if blacklist:
+        N_ARGS += " --exclude "
+        N_ARGS += " ".join(blacklist)
+
+
+    log(" [*] Starting Nmap Scan: %s" % (N_ARGS))
+
+    cmd = NmapCommand(N_ARGS)
+    cmd.run_scan()
+    while cmd.scan_state():
+        sleep(1)
+
+    filename = cmd.get_xml_output_filename()
+    return filename
+
+

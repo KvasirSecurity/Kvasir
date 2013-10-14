@@ -15,6 +15,7 @@ from skaldship.general import get_host_record
 from gluon.scheduler import Scheduler
 
 import logging
+
 logger = logging.getLogger("web2py.app.kvasir")
 
 ##----------------------------------------------------------------------------
@@ -94,12 +95,66 @@ def launch_terminal(record=None, launch_cmd=None):
 
 ##----------------------------------------------------------------------------
 
+def run_scanner(
+        scanner=None,
+        asset_group=None,
+        engineer=None,
+        target_list=None,
+        blacklist=None,
+        scan_options=None,
+        addnoports=False,
+        update_hosts=False,
+        **kwargs
+):
+    '''
+    Schedule handler to process nmap scan
+    '''
+    from skaldship.log import log
+
+    if not isinstance(scanner, str):
+        return False
+    scanner = scanner.upper()
+    logger.info(" [*] Processing Nmap scan ")
+    if scanner == 'NMAP':
+        from skaldship.nmap import run_scan
+
+        nmap_xml_file = run_scan(
+            blacklist=blacklist,
+            target_list=target_list,
+            scan_options=scan_options,
+        )
+
+        if nmap_xml_file:
+            from skaldship.nmap import process_xml
+            log("Processing nmap xml file: %s" % (nmap_xml_file))
+            process_xml(
+                filename=nmap_xml_file,
+                addnoports=addnoports,
+                asset_group=asset_group,
+                engineer=engineer,
+                msf_settings={},
+                ip_ignore_list=None,
+                ip_include_list=None,
+                update_hosts=update_hosts,
+            )
+            logger.info('Removing temporary XML file: %s: \n' % nmap_xml_file)
+            try:
+                os.remove(nmap_xml_file)
+            except OSError as e:
+                logger.error('%s ' % e.strerror)
+                print e.errno
+                print e.filename
+                print e.strerror
+
+##----------------------------------------------------------------------------
+
 def canvas_exploit_xml(filename=None):
     """
     Process ImmunitySec CANVAS Exploits.xml file into the database
     """
     from skaldship.canvas import process_exploits
     from skaldship.exploits import connect_exploits
+
     process_exploits(filename)
     connect_exploits()
     return True
@@ -112,6 +167,7 @@ def nexpose_exploit_xml(filename=None):
     """
     from skaldship.nexpose import process_exploits
     from skaldship.exploits import connect_exploits
+
     process_exploits(filename)
     connect_exploits()
     return True
@@ -119,17 +175,17 @@ def nexpose_exploit_xml(filename=None):
 ##----------------------------------------------------------------------------
 
 def scanner_import(
-    scanner=None,
-    filename=None,
-    addnoports=False,
-    asset_group=None,
-    engineer=None,
-    msf_settings={},
-    ip_ignore_list=None,
-    ip_include_list=None,
-    update_hosts=False,
-    **kwargs
-    ):
+        scanner=None,
+        filename=None,
+        addnoports=False,
+        asset_group=None,
+        engineer=None,
+        msf_settings={},
+        ip_ignore_list=None,
+        ip_include_list=None,
+        update_hosts=False,
+        **kwargs
+):
     """
     Imports a Scanner XML file to Kvasir
     """
@@ -139,6 +195,7 @@ def scanner_import(
     scanner = scanner.upper()
     if scanner == 'NMAP':
         from skaldship.nmap import process_xml
+
         logger.info("Processing nmap file: %s" % (filename))
         process_xml(
             filename=filename,
@@ -152,6 +209,7 @@ def scanner_import(
         )
     elif scanner == 'NEXPOSE':
         from skaldship.nexpose import process_xml
+
         logger.info("Processing Nexpose file: %s" % (filename))
         process_xml(
             filename=filename,
@@ -164,6 +222,7 @@ def scanner_import(
         )
     elif scanner == 'NESSUS':
         from skaldship.nessus import process_xml
+
         logger.info("Processing Nessus file: %s" % (filename))
         process_xml(
             filename=filename,
@@ -176,6 +235,7 @@ def scanner_import(
         )
     elif scanner == 'METASPLOIT':
         from skaldship.metasploit import process_report_xml
+
         logger.info("Processing Metasploit Pro file: %s" % filename)
         process_report_xml(
             filename=filename,
@@ -187,6 +247,7 @@ def scanner_import(
         )
     elif scanner == 'SHODANHQ':
         from skaldship.shodanhq import process_report
+
         logger.info("Processing ShodanHQ file: %s" % (filename))
         process_report(
             filename=filename,
@@ -208,6 +269,7 @@ def do_host_status(records=[], query=None, asset_group=None, hosts=[]):
     Can also run through a specific list of record IDs instead.
     """
     from skaldship.general import do_host_status
+
     do_host_status(records=records, query=query, asset_group=asset_group, hosts=hosts)
     return True
 
@@ -220,6 +282,7 @@ def accounts_import_file(filename=None, service=['info', '0'], f_type=None, f_so
 
     print("Processing password file: %s" % (filename))
     from skaldship.passwords import process_password_file, insert_or_update_acct
+
     account_data = process_password_file(pw_file=filename, file_type=f_type, source=f_source)
     resp_text = insert_or_update_acct(service, account_data)
     print(resp_text)
@@ -233,6 +296,7 @@ def cpe_import_xml(filename=None, download=False, wipe=False):
     from the MITRE webserver
     """
     from skaldship.cpe import process_xml
+
     process_xml(filename, download, wipe)
     return True
 
@@ -243,6 +307,7 @@ def webshot(service=None):
     Grab a screenshot of a URL and import it to the evidence db.
     """
     from skaldship.valkyries.webimaging import do_screenshot
+
     do_screenshot(service)
     return True
 
@@ -253,6 +318,7 @@ def import_all_nexpose_vulndata(overwrite=False, nexpose_server={}):
     Import all vulnerability data from Nexpose
     """
     from skaldship.nexpose import import_all_vulndata
+
     import_all_vulndata(overwrite=overwrite, nexpose_server=nexpose_server)
     return True
 
