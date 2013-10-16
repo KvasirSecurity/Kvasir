@@ -307,22 +307,45 @@ def run_scan(
     Executes nmap scan
     '''
     from zenmapCore_Kvasir.NmapCommand import NmapCommand
+    from zenmapCore_Kvasir.NmapOptions import NmapOptions
     from time import sleep
 
-    N_ARGS = "nmap -F "
-    N_ARGS += " ".join(target_list)
+    if scan_options[0] is not 'nmap':
+        scan_options.insert(0, 'nmap')
+
+    if target_list:
+        data = []
+        for ip in target_list:
+            data.append(ip.strip(' \t\n\r'))
+        target_list = data
 
     if blacklist:
-        N_ARGS += " --exclude "
-        N_ARGS += " ".join(blacklist)
+        data = []
+        for ip in blacklist:
+            data.append(ip.strip(' \t\n\r'))
+        blacklist = [','.join(map(str, data))]
+        blacklist.insert(0, "--exclude")
 
+    ops = NmapOptions()
+    try:
+        ops.parse(scan_options + target_list + blacklist)
+    except Exception as e:
+        log("[!] %s" % e)
 
-    log(" [*] Starting Nmap Scan: %s" % (N_ARGS))
+    cmd = NmapCommand(ops.render_string())
 
-    cmd = NmapCommand(N_ARGS)
+    log(" [*] Starting Nmap Scan: %s" % (cmd.command))
     cmd.run_scan()
+
+    try:
+        cmd.scan_state()
+    except Exception as e:
+        log("[!] %s" % e)
+
     while cmd.scan_state():
         sleep(1)
+
+    log(" [*] Nmap Scan Complete")
 
     filename = cmd.get_xml_output_filename()
     return filename

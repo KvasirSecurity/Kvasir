@@ -1,0 +1,32 @@
+{{extend 'layout.html'}}
+
+<div class="row-fluid">
+    <div class="span8">
+        <div class="widget-box">
+            <div class="widget-title">
+                <span class="icon">
+                 <i class="icon-align-justify"></i>
+                </span>
+                <h5>{{=response.title or settings.title}}</h5>
+            </div>
+            <div class="widget-content">
+                {{=form}}
+            </div>
+        </div>
+    </div>
+    <div id="info" class="span4 alert alert-info">
+        <h3>Nmap Scan Overview</h3>
+        <p>This module will run an nmap scan from the Kvasir server and import the results. To use this module,
+            nmap must be present on the system and found in $PATH. Some options require root.</p>
+        <p> Default Scan Options are: <br>
+            Intense scan = "nmap -T4 -A -v" <br>
+            Intense scan plus UDP = "nmap -sS -sU -T4 -A -v" <br>
+            Intense scan, all TCP ports = "nmap -p 1-65535 -T4 -A -v" <br>
+            Intense scan, no ping = "nmap -T4 -A -v -Pn" <br>
+            Ping scan = "nmap -sn" <br>
+            Quick scan = "nmap -T4 -F" <br>
+            Quick scan plus = "nmap -sV -T4 -O -F --version-light" <br>
+            Slow comprehensive scan = "nmap -sS -sU -T4 -A -v -PE -PP -PS80,443 -PA3389 -PU40125 -PY -g 53 --script "default"</p>
+        <p>The nmap output option "-oX" is always implied. Temporary xml files are written to /tmp</p>
+    </div>
+</div>

@@ -213,8 +213,7 @@ class NmapCommand(object):
         self.ops = NmapOptions()
         self.ops.parse_string(command)
         # Replace the executable name with the value of nmap_command_path.
-        #TODO: Create user config option for nmap bin path. Currently hardcoded to "/usr/bin/nmap"
-        self.ops.executable = "/usr/bin/nmap"
+        #self.ops.executable = paths_config.nmap_command_path
 
         # Normally we generate a random temporary filename to save XML output
         # to. If we find -oX or -oA, the user has chosen his own output file.
