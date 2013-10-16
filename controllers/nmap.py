@@ -173,7 +173,6 @@ def nmap_scan():
 
     fields.append(Field('f_engineer', type='integer', label=T('Engineer'), default=auth.user.id, requires=IS_IN_SET(userlist)))
     fields.append(Field('f_asset_group', type='string', label=T('Asset Group'), requires=IS_NOT_EMPTY()))
-    #fields.append(Field('f_scan_options', type='string', label=T('Scan Options')))
     fields.append(Field('f_scan_options', label=T('Scan Options'), requires=IS_IN_SET(sorted(scan_profiles.keys())),default='Quick Scan'))
     fields.append(Field('f_target_list', type='text', label=T('Scan Targets')))
     fields.append(Field('f_blacklist', type='text', label=T('Blacklist')))
