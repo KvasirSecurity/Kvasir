@@ -8,7 +8,7 @@ __version__ = "1.0"
 ##
 ## (c) 2010-2013 Cisco Systems, Inc.
 ##
-## nMap Utilities for Kvasir
+## Nmap Utilities for Kvasir
 ##
 ## Author: Kurt Grutzmacher <kgrutzma@cisco.com>
 ##--------------------------------------#
@@ -60,7 +60,7 @@ def process_xml(
     ip_include_list=None,
     update_hosts=False,
     ):
-    # Upload and process nMap XML Scan file
+    # Upload and process Nmap XML Scan file
     import re
     import os
     from skaldship.general import get_host_record, do_host_status
@@ -82,7 +82,7 @@ def process_xml(
         ip_only = ip_include_list.split('\r\n')
         # TODO: check for ip subnet/range and break it out to individuals
 
-    log(" [*] Processing nMap scan file %s" % (filename))
+    log(" [*] Processing Nmap scan file %s" % (filename))
 
     nmap_parsed = NmapParser()
     nmap_parsed.parse_file(filename)
