@@ -122,11 +122,12 @@
 
 import re
 
+
 from optparse import OptionParser
-from zenmapCore.Name import APP_NAME, NMAP_DISPLAY_NAME
-from zenmapCore.Version import VERSION
-import zenmapCore.I18N
-from zenmapCore.BasePaths import base_paths
+from zenmapCore_Kvasir.Name import APP_NAME, NMAP_DISPLAY_NAME
+from zenmapCore_Kvasir.Version import VERSION
+import zenmapCore_Kvasir.I18N
+from zenmapCore_Kvasir.BasePaths import base_paths
 
 class UmitOptionParser(OptionParser):
     def __init__(self, args=False):

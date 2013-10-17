@@ -128,10 +128,10 @@ import os.path
 import sys
 import shutil
 
-from zenmapCore.BasePaths import base_paths, fs_dec
-from zenmapCore.Version import VERSION
-from zenmapCore.Name import APP_NAME
-from zenmapCore.UmitOptionParser import option_parser
+from zenmapCore_Kvasir.BasePaths import base_paths, fs_dec
+from zenmapCore_Kvasir.Version import VERSION
+from zenmapCore_Kvasir.Name import APP_NAME
+from zenmapCore_Kvasir.UmitOptionParser import option_parser
 
 # Find out the prefix under which data files (interface definition XML,
 # pixmaps, etc.) are stored. This can vary depending on whether we are running
@@ -236,7 +236,7 @@ def create_user_config_dir(user_dir, template_dir):
     """Create a user configuration directory by creating the directory if
     necessary, then copying all the files from the given template directory,
     skipping any that already exist."""
-    from zenmapCore.UmitLogging import log
+    from zenmapCore_Kvasir.UmitLogging import log
     log.debug(">>> Create user dir at %s" % user_dir)
     create_dir(user_dir)
 

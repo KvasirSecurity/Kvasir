@@ -143,3 +143,80 @@ def import_xml_scan():
             redirect(URL('default', 'index'))
 
     return dict(form=form)
+
+##-------------------------------------------------------------------------
+
+
+@auth.requires_login()
+def nmap_scan():
+    """
+    Run nmap scan and hand file over to parser
+    """
+    response.title = "%s :: Run Nmap Scan" % (settings.title)
+
+    scan_profiles = {
+        'Ping Scan': ["-sn"],
+        'Intense Scan': ["-T4", "-A", "-v"],
+        'Intense Scan (All TCP Ports)': ["-p", "1-65535", "-T4", "-A", "-v"],
+        'Intense Scan (No Ping)': ["-T4", "-A", "-v", "-Pn"],
+        'Quick Scan': ["-T4", "-F"],
+        'Quick Scan Plus': ["-sV", "-T4", "-O", "-F", "--version-light"],
+        'Slow Comprehensive Scan': ["-sS", "-sU", "-T4", "-A", "-v", "-PE", "-PP", "-PS80,443", "-PA3389", "-PU40125", "-PY", "-g 53", "--script", "default"]
+    }
+
+    fields = []
+    # buld the dropdown user list
+    users = db(db.auth_user).select()
+    userlist = []
+    for user in users:
+        userlist.append( [ user.id, user.username ] )
+
+    fields.append(Field('f_engineer', type='integer', label=T('Engineer'), default=auth.user.id, requires=IS_IN_SET(userlist)))
+    fields.append(Field('f_asset_group', type='string', label=T('Asset Group'), requires=IS_NOT_EMPTY()))
+    fields.append(Field('f_scan_options', label=T('Scan Options'), requires=IS_IN_SET(sorted(scan_profiles.keys())),default='Quick Scan'))
+    fields.append(Field('f_target_list', type='text', label=T('Scan Targets')))
+    fields.append(Field('f_blacklist', type='text', label=T('Blacklist')))
+    fields.append(Field('f_addnoports', type='boolean', label=T('Add Hosts w/o Ports'), default=False))
+    fields.append(Field('f_update_hosts', type='boolean', label=T('Update Host Information'), default=False))
+
+    form = SQLFORM.factory(*fields, table_name='nmap_scan')
+
+    if form.errors:
+        response.flash = 'Error in form'
+    elif form.accepts(request.vars, session):
+        # process a nmap scan
+        # build the hosts only/exclude list
+        ip_blacklist = []
+        data = form.vars.get('f_blacklist')
+        if data:
+            ip_blacklist = data.split('\r\n')
+            # TODO: check for ip subnet/range and break it out to individuals
+        ip_targets = []
+        data = form.vars.get('f_target_list')
+        if data:
+            ip_targets = data.split('\r\n')
+            # TODO: check for ip subnet/range and break it out to individuals
+
+        task = scheduler.queue_task(
+            run_scanner,
+            pvars=dict(
+                scanner='nmap',
+                asset_group=form.vars.f_asset_group,
+                engineer=form.vars.f_engineer,
+                target_list=ip_targets,
+                blacklist=ip_blacklist,
+                scan_options=scan_profiles[form.vars.f_scan_options],
+                addnoports=form.vars.f_addnoports,
+                update_hosts=form.vars.f_update_hosts,
+            ),
+            group_name=settings.scheduler_group_name,
+            sync_output=5,
+            timeout=3600   # 1 hour
+        )
+
+        if task.id:
+            redirect(URL('tasks', 'status', args=task.id))
+        else:
+            response.flash = "Error submitting job: %s" % (task.errors)
+
+    return dict(form=form)
