@@ -72,7 +72,7 @@ def launch_terminal(record=None, launch_cmd=None):
     from skaldship.general import check_datadir
     # Check to see if data directories exist, create otherwise
     check_datadir(request.folder)
-    datadir = os.path.join(request.folder, "data")
+    datadir = os.path.join(os.getcwd(), request.folder, "data")
 
     # chdir to datadir!
     launch_cmd = launch_cmd.replace("_DATADIR_", datadir)
