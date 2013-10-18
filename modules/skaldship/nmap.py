@@ -311,7 +311,10 @@ def run_scan(
     from time import sleep
 
     if scan_options[0] is not 'nmap':
-        scan_options.insert(0, 'nmap')
+        if 'nmap' in settings:
+            scan_options.insert(0, settings.nmap)
+        else:
+            scan_options.insert(0, 'nmap')
 
     if target_list:
         data = []
@@ -342,8 +345,15 @@ def run_scan(
     except Exception as e:
         log("[!] %s" % e)
 
+    full_output = ""
     while cmd.scan_state():
-        sleep(1)
+        sleep(5)
+        result = cmd.get_output()
+        start = len(full_output) - len(result)
+        output = result[start:]
+        full_output = "%s%s" % (full_output, output)
+        log(output)
+
 
     log(" [*] Nmap Scan Complete")
 

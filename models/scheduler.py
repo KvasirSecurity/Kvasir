@@ -137,14 +137,6 @@ def run_scanner(
                 ip_include_list=None,
                 update_hosts=update_hosts,
             )
-            logger.info('Removing temporary XML file: %s: \n' % nmap_xml_file)
-            try:
-                os.remove(nmap_xml_file)
-            except OSError as e:
-                logger.error('%s ' % e.strerror)
-                print e.errno
-                print e.filename
-                print e.strerror
 
 ##----------------------------------------------------------------------------
 

@@ -40,6 +40,7 @@ settings.scheduler_group_name = socket.gethostname()
 
 settings.use_cvss = False                     # use f_cvss_score instead of f_severity for t_vulndata
 settings.shodanhq_apikey = ''                 # obtain @ http://www.shodanhq.com/api_doc
+settings.nmap = 'nmap'                        # use $PATH searching for nmap binary
 settings.password_upload_dir = 'data/passwords/misc'
 settings.nmap_sharedir = '/usr/local/share/nmap'
 settings.nmap_scriptdir = os.path.join(settings.nmap_sharedir, 'scripts')
