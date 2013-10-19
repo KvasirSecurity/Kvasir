@@ -42,7 +42,7 @@ var tasktable;
 
 jQuery(document).ready(function() {
 
-    $("#stop_button").on('click', function( ) {
+    $(".btn-danger").on('click', function( ) {
         var tr_id = "id=" + $(this).parent().parent().attr('id');
         var url = "{{=URL('tasks', 'stop.json', user_signature=True)}}";
         $.web2py.ajax_page( 'POST', url, tr_id, 'undefined' );
