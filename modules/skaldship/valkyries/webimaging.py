@@ -19,8 +19,8 @@ from gluon import current
 from subprocess import call
 import os
 import urllib
+from skaldship.log import log
 import logging
-logger = logging.getLogger("web2py.app.kvasir")
 
 ##----------------------------------------------------------------------------
 
@@ -37,6 +37,7 @@ def grab_screenshot(url=None, outfile=None, phantomjs="/usr/bin/phantomjs"):
     @output:
         [True/False, png image data]
     """
+    import os
     db = current.globalenv['db']
 
     if not outfile:
@@ -59,11 +60,11 @@ def grab_screenshot(url=None, outfile=None, phantomjs="/usr/bin/phantomjs"):
     if platform in ["linux", "linux2"]:
         timeout = ["/usr/bin/timeout", "-k", "2", "5"]
     elif platform in ["darwin", "freebsd"]:
-        timeout = ["%sprivate/timeout3" % folder, "-t" "5"]
+        timeout = [os.path.join(folder, 'private/timeout3'), "-t" "5"]
     else:
         timeout = []
     phantom = timeout + [phantomjs, "--ignore-ssl-errors=true", "%s/modules/skaldship/valkyries/webimaging.js" % (folder), url, outfile]
-    logging.debug("calling: %s" % str(phantom))
+    log("calling: %s" % str(phantom), logging.DEBUG)
     call(phantom)
     try:
         f = file(outfile)
@@ -88,6 +89,7 @@ def do_screenshot(services=None):
     from skaldship.general import check_datadir
 
     db = current.globalenv['db']
+    settings = current.globalenv['settings']
 
     if isinstance(services, int):
         services = [services]
@@ -100,6 +102,7 @@ def do_screenshot(services=None):
     if isinstance(services, Row):
         service_rows = [services]
 
+    phantomjs = settings.get('phantomjs', 'phantomjs')
     good_count = 0
     invalid_count = 0
     for svc_rec in service_rows:
@@ -120,7 +123,7 @@ def do_screenshot(services=None):
             scheme = 'http'
         url = "%s://%s:%s/" % (scheme, ipaddr, svc_rec.f_number)
 
-        res = grab_screenshot(url, os.path.join(folder, filename))
+        res = grab_screenshot(url, os.path.join(folder, filename), phantomjs)
         if res[0]:
             query = (db.t_evidence.f_hosts_id == svc_rec.f_hosts_id) & (db.t_evidence.f_filename == filename)
             db.t_evidence.update_or_insert(
