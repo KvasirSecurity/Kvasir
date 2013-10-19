@@ -691,14 +691,22 @@ def webshot_ajax():
             taskit = False
 
         if taskit:
-            task_id = scheduler.queue_task(
-                webshot,
-                pargs=[svc_list],
-                group_name=settings.scheduler_group_name,
-                sync_output=5,
-                timeout=1800    # 30 minutes
-            )
-            msg = "%s web screenshot tasks %s" % (len(svc_list), A("scheduled", _href=(URL('tasks', 'status', args=task_id))))
+            # submit tasks in service groups of 50 at a time to be executed
+            total_svcs = len(svc_list)
+            task_ids = []
+            for cnt in range(0, total_svcs, 50):
+                task = scheduler.queue_task(
+                    webshot,
+                    pargs=[svc_list[cnt:cnt+49]],
+                    group_name=settings.scheduler_group_name,
+                    sync_output=5,
+                    timeout=1800    # 30 minutes
+                )
+                if task.id:
+                    task_ids.append(task.id)
+                else:
+                    logger.error("Error creating webshot task: %s" % task.error)
+            msg = "%s web screenshot tasks for %s services started" % (len(task_ids), len(svc_list))
         else:
             res = do_screenshot(svc_list)
             msg = "%s web screenshot(s) taken from %s services(s), %s failed" % (res[0], len(svc_list), res[1])
