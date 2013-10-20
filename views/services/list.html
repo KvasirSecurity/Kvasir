@@ -6,7 +6,16 @@
     <div id="servicesform"  class="btn-toolbar">
         {{=XML(add.btn_show())}}
         <a id="delete_service" class="btn btn-small"><i class="icon-remove"></i> Delete</a>
-        <a id="webshot_service" class="btn btn-small"><i class="icon-camera"></i> Webshot</a>
+        <div class="btn-group">
+            <a class="btn btn-small dropdown-toggle" data-toggle="dropdown" href="#">
+            <i class="icon-tasks"></i> Valkyries
+            <span class="caret"></span>
+            </a>
+            <ul class="dropdown-menu">
+                <li><a id="webshot_service"> Webshot</a></li>
+                <li><a id="vncshot_service"> VNC Shot</a></li>
+            </ul>
+        </div>
         <a id="reload" onclick="javascript:servicetable.fnReloadAjax(); return false;" class="btn btn-small"><i class="icon-refresh"></i> Reload</a>
         <a id="filter_hosts" class="btn btn-small" data-toggle="modal" href="#filterModal"><i class="icon-filter"></i> Filter</a>
     </div>
@@ -133,8 +142,26 @@ jQuery(document).ready(function() {
 
         bootbox.confirm('Grab web screenshots?', "Cancel", "Ok", function(confirmed) {
             if(confirmed) {
-                var data = "ids=" + checks;
-                url = "{{=URL('services', 'webshot_ajax.json', user_signature=True)}}";
+                var data = "valkyrie=webshot&ids=" + checks;
+                url = "{{=URL('services', 'valkyries_ajax.json', user_signature=True)}}";
+                $.web2py.ajax_page( 'POST', url, data, 'undefined' );
+            }
+        });
+    });
+
+    $("#vncshot_service").click(function(e) {
+        e.preventDefault();
+
+        var checks = dt_checkboxer_select_DT_RowIds(servicetable);
+        if (checks == '') {
+            alert('No services selected');
+            return false;
+        }
+
+        bootbox.confirm('Grab VNC screenshots?', "Cancel", "Ok", function(confirmed) {
+            if(confirmed) {
+                var data = "valkyrie=vncshot&ids=" + checks;
+                url = "{{=URL('services', 'valkyries_ajax.json', user_signature=True)}}";
                 $.web2py.ajax_page( 'POST', url, data, 'undefined' );
             }
         });
