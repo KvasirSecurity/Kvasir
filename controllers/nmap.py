@@ -39,6 +39,8 @@ def import_xml_scan():
     Upload/import Nmap XML Scan file via scheduler task
     """
     import time
+    from skaldship.general import check_datadir
+
     try:
         # check to see if we have a Metasploit RPC instance configured and talking
         from MetasploitAPI import MetasploitAPI
@@ -48,6 +50,7 @@ def import_xml_scan():
         working_msf_api = False
 
     filedir = os.path.join(request.folder,'data','scanfiles')
+    check_datadir(request.folder)
     response.title = "%s :: Import Nmap XML Scan Results" % (settings.title)
 
     fields = []
@@ -152,6 +155,10 @@ def nmap_scan():
     """
     Run nmap scan and hand file over to parser
     """
+    from skaldship.general import check_datadir
+    import time
+    import os
+
     response.title = "%s :: Run Nmap Scan" % (settings.title)
 
     scan_profiles = {
@@ -173,7 +180,9 @@ def nmap_scan():
 
     fields.append(Field('f_engineer', type='integer', label=T('Engineer'), default=auth.user.id, requires=IS_IN_SET(userlist)))
     fields.append(Field('f_asset_group', type='string', label=T('Asset Group'), requires=IS_NOT_EMPTY()))
-    fields.append(Field('f_scan_options', label=T('Scan Options'), requires=IS_IN_SET(sorted(scan_profiles.keys())),default='Quick Scan'))
+    fields.append(Field('f_scan_profile', label=T('Scan Profile'),
+                        requires=IS_EMPTY_OR(IS_IN_SET(sorted(scan_profiles.keys()), zero=None))))
+    fields.append(Field('f_scan_options', type='string', label=T('Scan Options')))
     fields.append(Field('f_target_list', type='text', label=T('Scan Targets')))
     fields.append(Field('f_blacklist', type='text', label=T('Blacklist')))
     fields.append(Field('f_addnoports', type='boolean', label=T('Add Hosts w/o Ports'), default=False))
@@ -197,6 +206,16 @@ def nmap_scan():
             ip_targets = data.split('\r\n')
             # TODO: check for ip subnet/range and break it out to individuals
 
+        if form.vars.f_scan_options:
+            scan_options = form.vars.f_scan_options.split(' ')
+        else:
+            scan_options = scan_profiles[form.vars.f_scan_profile]
+
+        check_datadir(request.folder)
+        filename = "nmap-%s-%s.xml" % (form.vars.f_asset_group, int(time.time()))
+        filedir = os.path.join(request.folder, 'data', 'scanfiles', filename)
+        scan_options.extend(['--stats-every', '5s', '-oX', filedir])
+
         task = scheduler.queue_task(
             run_scanner,
             pvars=dict(
@@ -205,7 +224,7 @@ def nmap_scan():
                 engineer=form.vars.f_engineer,
                 target_list=ip_targets,
                 blacklist=ip_blacklist,
-                scan_options=scan_profiles[form.vars.f_scan_options],
+                scan_options=scan_options,
                 addnoports=form.vars.f_addnoports,
                 update_hosts=form.vars.f_update_hosts,
             ),

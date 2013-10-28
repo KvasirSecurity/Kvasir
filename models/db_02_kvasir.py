@@ -144,7 +144,7 @@ s_service_vuln_data = db(db.t_service_vulns.f_vulndata_id==db.t_vulndata.id)
 db.define_table('t_service_info',
     Field('id','id', represent=lambda id,row:SPAN(A(id,_href=URL('services', 'info_edit',args=id)))),
     Field('f_services_id', 'reference t_services', label=T('Service'),
-        represent=lambda id,row:XML("%s :: %s/%s" % (host_title_maker([db.t_services[id].f_hosts_id]), db.t_services[id].f_proto, db.t_services[id].f_number))),
+        represent=lambda id,row:XML("%s :: %s/%s" % (host_title_maker(db.t_hosts[db.t_services[id].f_hosts_id]), db.t_services[id].f_proto, db.t_services[id].f_number))),
     Field('f_name', type='text', label=T('Key'), requires=IS_NOT_EMPTY(), widget=autocomplete_bootstrap),
     Field('f_text', type='text', length=2048, label=T('Value'), requires=IS_NOT_EMPTY(), widget=autocomplete_bootstrap),
     format='%(f_service.f_proto)s/%(f_service.f_number)s :: %(f_name) :: %(f_text)s',

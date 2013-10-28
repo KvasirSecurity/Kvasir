@@ -72,7 +72,7 @@ def launch_terminal(record=None, launch_cmd=None):
     from skaldship.general import check_datadir
     # Check to see if data directories exist, create otherwise
     check_datadir(request.folder)
-    datadir = os.path.join(request.folder, "data")
+    datadir = os.path.join(os.getcwd(), request.folder, "data")
 
     # chdir to datadir!
     launch_cmd = launch_cmd.replace("_DATADIR_", datadir)
@@ -137,14 +137,6 @@ def run_scanner(
                 ip_include_list=None,
                 update_hosts=update_hosts,
             )
-            logger.info('Removing temporary XML file: %s: \n' % nmap_xml_file)
-            try:
-                os.remove(nmap_xml_file)
-            except OSError as e:
-                logger.error('%s ' % e.strerror)
-                print e.errno
-                print e.filename
-                print e.strerror
 
 ##----------------------------------------------------------------------------
 
@@ -302,13 +294,17 @@ def cpe_import_xml(filename=None, download=False, wipe=False):
 
 ##------------------------------------------------------------------------
 
-def webshot(service=None):
+def run_valkyrie(valkyrie_type=None, services=None):
     """
-    Grab a screenshot of a URL and import it to the evidence db.
+    Run a valkyrie
     """
-    from skaldship.valkyries.webimaging import do_screenshot
+    if valkyrie_type == 'webshot':
+        from skaldship.valkyries.webimaging import do_screenshot
+        do_screenshot(services)
+    elif valkyrie_type == 'vncshot':
+        from skaldship.valkyries.vncscreenshot import do_screenshot
+        do_screenshot(services)
 
-    do_screenshot(service)
     return True
 
 ##-------------------------------------------------------

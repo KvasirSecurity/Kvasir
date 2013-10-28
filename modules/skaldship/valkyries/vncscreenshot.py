@@ -4,9 +4,14 @@ __version__ = "1.0"
 
 """
 ##-----------------------------------------------#
-## Kvasir Skaldship WebImaging Valkyrie
+## Kvasir Skaldship VNC Screenshot Valkyrie
 ##
-## Grab screenshots of websites using phantomjs
+## Grab screenshots of VNC desktops using vncsnapshot
+## http://sourceforge.net/projects/vncsnapshot/
+##
+## patches are required to get vncsnapshot to work in 64bit OS
+## https://launchpadlibrarian.net/85079370/vncsnapshot_1.2a-5ubuntu1.diff.gz
+## for debian/ubuntu do "apt-get install vncsnapshot"
 ##
 ## (c) 2010-2013 Cisco Systems, Inc.
 ##
@@ -14,58 +19,57 @@ __version__ = "1.0"
 ##-----------------------------------------------#
 """
 
-from gluon import current
 #from skaldship.general import get_host_record
 from subprocess import call
-import os
-import urllib
 from skaldship.log import log
 import logging
 
 ##----------------------------------------------------------------------------
 
 
-def grab_screenshot(url=None, outfile=None, phantomjs="/usr/bin/phantomjs"):
+def grab_screenshot(host=None, port=5900, outfile=None, vncsnapshot='vncsnapshot'):
     """
-    Capture a PNG image of a URL using phantomjs
+    Capture a JPEG image of a VNC Desktop using vncsnapshot
 
     @args:
-        url: Website URL to retrieve
+        host: Host address
+        port: Port address (5900, 5901, 5902, etc)
         outfile: Output filename, will overwrite but not remove failures
-        phantomjs: Full path to phantomjs binary
 
     @output:
-        [True/False, png image data]
+        [True/False, jpeg image data]
     """
     import os
-    db = current.globalenv['db']
+    from gluon import current
+    from sys import platform
 
     if not outfile:
         raise Exception("No output filename provided")
 
     try:
-        os.stat(phantomjs)
+        os.stat(vncsnapshot)
     except OSError:
-        phantomjs = "/usr/local/bin/phantomjs"
+        vncsnapshot = "/usr/local/bin/vncsnapshot"
         try:
-            os.stat(phantomjs)
+            os.stat(vncsnapshot)
         except OSError:
-            logging.error("Unable to locate phantomjs binary")
+            logging.error("Unable to locate vncsnapshot binary")
             return [False, None]
 
-    # encode the url to make sure it passes cleanly to phantomjs
-    url = urllib.quote(url, safe='/:')
     folder = current.globalenv['request'].folder
-    from sys import platform
     if platform in ["linux", "linux2"]:
-        timeout = ["/usr/bin/timeout", "-k", "2", "5"]
+        cmd = ["/usr/bin/timeout", "-k", "2", "10"]
     elif platform in ["darwin", "freebsd"]:
-        timeout = [os.path.join(folder, 'private/timeout3'), "-t" "5"]
+        cmd = [os.path.join(folder, 'private/timeout3'), "-t", "10"]
     else:
-        timeout = []
-    phantom = timeout + [phantomjs, "--ignore-ssl-errors=true", "%s/modules/skaldship/valkyries/webimaging.js" % (folder), url, outfile]
-    log("calling: %s" % str(phantom), logging.DEBUG)
-    call(phantom)
+        cmd = []
+
+    port = int(port)
+    port -= 5900
+    cmd.extend([vncsnapshot, '-compresslevel', '9', "%s:%s" % (host, port), outfile])
+    #log("calling: %s" % str(cmd), logging.DEBUG)
+    call(cmd)
+
     try:
         f = file(outfile)
         imgdata = f.read()
@@ -82,11 +86,14 @@ def grab_screenshot(url=None, outfile=None, phantomjs="/usr/bin/phantomjs"):
 
 def do_screenshot(services=None):
     """
-    Grab a screenshot of a URL and import it to the evidence db.
+    Grab a screenshot and import it to the evidence db.
     """
 
     from gluon.dal import Row
+    from gluon import current
+    import os
     from skaldship.general import check_datadir
+    from multiprocessing import Process
 
     db = current.globalenv['db']
     settings = current.globalenv['settings']
@@ -102,9 +109,9 @@ def do_screenshot(services=None):
     if isinstance(services, Row):
         service_rows = [services]
 
-    phantomjs = settings.get('phantomjs', 'phantomjs')
     good_count = 0
     invalid_count = 0
+
     for svc_rec in service_rows:
         if not isinstance(svc_rec, Row):
             invalid_count += 1
@@ -112,28 +119,22 @@ def do_screenshot(services=None):
 
         # go with ipv6 if defined, else pick the ipv4 address
         ipaddr = svc_rec.f_hosts_id.f_ipv6 or svc_rec.f_hosts_id.f_ipv4
-        port = "%s%s" % (svc_rec.f_number, svc_rec.f_proto[0])
+        port = svc_rec.f_number
         check_datadir(current.globalenv['request'].folder)
         folder = os.path.join(current.globalenv['request'].folder, "data/screenshots")
-        filename = "%s-%s-webshot.png" % (ipaddr.replace(':', '_'), port)
+        filename = "%s-%st-vnc_screenshot.png" % (ipaddr.replace(':', '_'), port)
 
-        if svc_rec.f_name in ['http', 'https', 'HTTP', 'HTTPS']:
-            scheme = svc_rec.f_name.lower()
-        else:
-            scheme = 'http'
-        url = "%s://%s:%s/" % (scheme, ipaddr, svc_rec.f_number)
-
-        res = grab_screenshot(url, os.path.join(folder, filename), phantomjs)
+        res = grab_screenshot(ipaddr, port, os.path.join(folder, filename))
         if res[0]:
             query = (db.t_evidence.f_hosts_id == svc_rec.f_hosts_id) & (db.t_evidence.f_filename == filename)
             db.t_evidence.update_or_insert(
                 query, f_filename=filename, f_hosts_id=svc_rec.f_hosts_id, f_data=res[1],
-                f_evidence=filename, f_type="Screenshot", f_text="Web Screenshot - %s" % (url))
+                f_evidence=filename, f_type="Screenshot", f_text="VNC Screenshot - %s:%s" % (ipaddr, port))
             db.commit()
-            print(" [-] Web screenshot obtained: %s" % (url))
+            print(" [-] VNC screenshot obtained: %s:%s" % (ipaddr, port))
             good_count += 1
         else:
-            print(" [!] Web screenshot failed: %s" % (url))
+            print(" [!] VNC screenshot failed: %s:%s" % (ipaddr, port))
             invalid_count += 1
 
     return [good_count, invalid_count]
@@ -145,12 +146,13 @@ if __name__ == "__main__":
     from hashlib import md5
 
     if len(sys.argv) <= 2:
-        sys.exit("Usage: %s <url> <filename>" % (sys.argv[0]))
+        sys.exit("Usage: %s <host> <port> <filename>" % (sys.argv[0]))
 
-    url = sys.argv[1]
-    outfile = sys.argv[2]
+    host = sys.argv[1]
+    port = sys.argv[2]
+    outfile = sys.argv[3]
 
-    result = grab_screenshot(url, outfile)
+    result = grab_screenshot(host, port, outfile)
     imgresult = result[1]
 
     print "Result = %s" % result[0]

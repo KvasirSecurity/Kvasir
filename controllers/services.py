@@ -670,39 +670,56 @@ def apps_list():
 
 @auth.requires_signature()
 @auth.requires_login()
-def webshot_ajax():
+def valkyries_ajax():
     """
-    Take a list of service_ids, build URLs and grab images of the web
-    sites, if available.
+    Take a list of service_ids, build relevant data send them to the right valkyrie
     """
 
-    from skaldship.valkyries.webimaging import do_screenshot
+    valkyrie_type = request.vars.get('valkyrie')
     svc_count = 0
     good_count = 0
-    if request.vars.has_key('ids'):
+    if 'ids' in request.vars:
         svc_list = []
         for z in request.vars.ids.split('|'):
             if z is not '':
                 svc_list.append(z)
         if len(svc_list) > 5 or request.vars.f_taskit:
             # we have to scheduler task 20 or more images because of timeouts
-            taskit = True
-        else:
-            taskit = False
+            # submit tasks in service groups of 50 at a time to be executed
 
-        if taskit:
-            task_id = scheduler.queue_task(
-                webshot,
-                pargs=[svc_list],
-                group_name=settings.scheduler_group_name,
-                sync_output=5,
-                timeout=1800    # 30 minutes
-            )
-            msg = "%s web screenshot tasks %s" % (len(svc_list), A("scheduled", _href=(URL('tasks', 'status', args=task_id))))
+            total_svcs = len(svc_list)
+            task_ids = []
+            for cnt in range(0, total_svcs, 50):
+                task = scheduler.queue_task(
+                    run_valkyrie,
+                    pvars=dict(
+                        valkyrie_type=valkyrie_type,
+                        services=svc_list[cnt:cnt+49]
+                    ),
+                    group_name=settings.scheduler_group_name,
+                    sync_output=5,
+                    timeout=1800    # 30 minutes
+                )
+                if task.id:
+                    task_ids.append(task.id)
+                else:
+                    logger.error("Error creating webshot task: %s" % task.error)
+            msg = "%s web screenshot tasks for %s services started" % (len(task_ids), len(svc_list))
+
         else:
+            if valkyrie_type == 'webshot':
+                from skaldship.valkyries.webimaging import do_screenshot
+            elif valkyrie_type == 'vncshot':
+                from skaldship.valkyries.vncscreenshot import do_screenshot
+            else:
+                msg = "Unknown valkyrie type"
+                reponse.flash = msg
+                return dict(msg=msg)
+
             res = do_screenshot(svc_list)
-            msg = "%s web screenshot(s) taken from %s services(s), %s failed" % (res[0], len(svc_list), res[1])
+            msg = "%s screenshot(s) taken from %s services(s), %s failed" % (res[0], len(svc_list), res[1])
             response.headers['web2py-component-command'] = "jQuery('.datatable tr.DTTT_selected').removeClass('DTTT_selected');"
+
     else:
         msg = "No services sent!"
 

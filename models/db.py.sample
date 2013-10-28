@@ -40,6 +40,8 @@ settings.scheduler_group_name = socket.gethostname()
 
 settings.use_cvss = False                     # use f_cvss_score instead of f_severity for t_vulndata
 settings.shodanhq_apikey = ''                 # obtain @ http://www.shodanhq.com/api_doc
+settings.nmap = 'nmap'                        # use $PATH searching for nmap binary
+settings.phantomjs = 'phantomjs'              # use $PATH searching for phantomjs binary
 settings.password_upload_dir = 'data/passwords/misc'
 settings.nmap_sharedir = '/usr/local/share/nmap'
 settings.nmap_scriptdir = os.path.join(settings.nmap_sharedir, 'scripts')
@@ -101,12 +103,3 @@ logger = get_configured_logger(request.application)
 
 # Assign auth to current
 current.auth = auth
-
-# I hate putting globals in but this seems to be the best user-serviceable area without having to check
-# database entries in t_errata each time.
-
-IGNORED_NESSUS_PLUGINS = [
-    '19506',        # Nessus Scan Information
-    '11219',        # Nessus SYN Scanner
-    '34277',        # Nessus UDP Scanner
-]

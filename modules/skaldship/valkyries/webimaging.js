@@ -14,7 +14,13 @@ if (system.args.length <= 2) {
 
 url = system.args[1];
 outputfile = system.args[2];
+useragent = system.args[3];
 
+if (!useragent) {
+    useragent = 'Mozilla/5.0 (Macintosh; Intel Mac OS X) AppleWebKit/534.34 (KHTML, like Gecko) Kvasir'
+}
+
+page.settings.userAgent = useragent;
 page.viewportSize = { width: 1024, height: 768 };
 page.clipRect = { top: 0, left: 0, width: 1024, height: 768 };
 page.timeout = 200;

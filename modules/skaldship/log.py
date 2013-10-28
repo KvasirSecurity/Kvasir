@@ -14,7 +14,6 @@ __version__ = "1.0"
 ##--------------------------------------#
 """
 
-from gluon import current
 import inspect
 import logging
 logger = logging.getLogger("web2py.app.kvasir")
@@ -26,8 +25,12 @@ def log(message, level=logging.INFO, *args, **kwargs):
     so it will be picked up. Otherwise use the current logger module
     and send with the specified level
     """
-    if 'W2P_TASK' in current.globalenv:
-        print(message)
+    try:
+        from gluon import current
+        if 'W2P_TASK' in current.globalenv:
+            print(message)
+    except ImportError:
+        pass
 
     # find the calling function
     try:

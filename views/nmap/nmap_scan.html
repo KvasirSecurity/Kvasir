@@ -17,16 +17,35 @@
     <div id="info" class="span4 alert alert-info">
         <h3>Nmap Scan Overview</h3>
         <p>This module will run an nmap scan from the Kvasir server and import the results. To use this module,
-            nmap must be present on the system and found in $PATH. Some options require root.</p>
-        <p> Default Scan Options are: <br>
-            Intense scan = "nmap -T4 -A -v" <br>
-            Intense scan plus UDP = "nmap -sS -sU -T4 -A -v" <br>
-            Intense scan, all TCP ports = "nmap -p 1-65535 -T4 -A -v" <br>
-            Intense scan, no ping = "nmap -T4 -A -v -Pn" <br>
-            Ping scan = "nmap -sn" <br>
-            Quick scan = "nmap -T4 -F" <br>
-            Quick scan plus = "nmap -sV -T4 -O -F --version-light" <br>
-            Slow comprehensive scan = "nmap -sS -sU -T4 -A -v -PE -PP -PS80,443 -PA3389 -PU40125 -PY -g 53 --script "default"</p>
-        <p>The nmap output option "-oX" is always implied. Temporary xml files are written to /tmp</p>
+            nmap must be present on the system and found in $PATH. Some options require root and all scanning will
+            be performed using the task scheduler.</p>
+        <p> Default Scan Options are:
+            <dl class="dl-horizontal">
+                <dt>Intense</dt>
+                <dd>nmap -T4 -A -v</dd>
+
+                <dt>Intense plus UDP</dt>
+                <dd>nmap -sS -sU -T4 -A -v</dd>
+
+                <dt>Intense, all TCP ports</dt>
+                <dd>nmap -p 1-65535 -T4 -A -v</dd>
+
+                <dt>Intense, no ping</dt>
+                <dd>nmap -T4 -A -v -Pn</dd>
+
+                <dt>Ping scan</dt>
+                <dd>nmap -sn</dd>
+
+                <dt>Quick scan</dt>
+                <dd>nmap -T4 -F</dd>
+
+                <dt>Quick scan plus</dt>
+                <dd>nmap -sV -T4 -O -F --version-light</dd>
+
+                <dt>Slow comprehensive</dt>
+                <dd>nmap -sS -sU -T4 -A -v -PE -PP -PS80,443 -PA3389 -PU40125 -PY -g 53 --script "default"</dd>
+            </dl>
+        </p>
+        <p>The nmap output option "-oX" is always implied.</p>
     </div>
 </div>

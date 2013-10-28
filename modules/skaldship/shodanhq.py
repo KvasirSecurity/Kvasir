@@ -143,7 +143,7 @@ class ShodanData():
             addl_fields = {
                 'smtp.banner': port_data,
             }
-        elif f_number == '80':
+        elif f_number in HTTP_PORTS:
             # TODO: parse HTTP headers.. ugly
             f_banner = port_data
             f_name = 'HTTP'
