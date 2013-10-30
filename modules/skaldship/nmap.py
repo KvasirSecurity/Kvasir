@@ -174,6 +174,53 @@ def process_xml(
             continue
         hosts.append(host_id)
 
+        # process OS related info
+        for os in node.osmatches:
+            os_id = None
+            host_id = None
+            f_title = os['name'] #title
+            for k in os['osclasses']:
+                f_cpename= k['cpe'].lstrip('cpe:/o:')
+                f_vendor = k['vendor']
+                f_product = k['osfamily']
+                f_version = k['osgen']
+                f_class = k['type']
+                f_family = k['osfamily']
+                f_certainty= k['accuracy']
+
+                cpe_res = db((db.t_os.f_cpename == f_cpename)&(db.t_os.f_title == f_title)).select().first()
+
+                if cpe_res is not None:
+                    os_id = cpe_res.id
+
+                else:
+                    try:
+                        os_id = db.t_os.insert(
+                        f_cpename = f_cpename,
+                        f_title = f_title,
+                        f_vendor = f_vendor,
+                        f_product = f_product,
+                        f_version = f_version,
+                        )
+                    except Exception, e:
+                        logger.error("Error inserting OS: %s" % (e))
+
+                    db.commit()
+
+                if os_id and (f_class or f_family or f_certainty):
+                    ipaddr = node.ip.get('addr')
+                    host_id = get_host_record(ipaddr)
+                    host_id = host_id.id
+                    try:
+                        db.t_host_os_refs.insert(f_certainty = f_certainty,
+                                                 f_family = f_family,
+                                                 f_class = f_class,
+                                                 f_hosts_id = host_id,
+                                                 f_os_id = os_id)
+                    except Exception, e:
+                        logger.error("Error inserting OS: %s" % (e))
+                    db.commit()
+
         # process non-port <hostscript> entries. Add to info/0:
         for hostscripts in node.hostscripts:
             query = (svc_db.f_proto == 'info') & (svc_db.f_number == 0) & (svc_db.f_hosts_id == host_id)
@@ -219,6 +266,13 @@ def process_xml(
             log(" [-] Adding port: %s/%s (%s)" % (f_proto, f_number, f_name))
             svc_id = db.t_services.update_or_insert(f_proto=f_proto, f_number=f_number, f_status=f_status, f_hosts_id=host_id, f_name=f_name)
 
+            # if record exists, update returns None so look up the record:
+            if svc_id is None:
+                svc_id = db((db.t_services.f_hosts_id == host_id) &
+                           (db.t_services.f_proto == f_proto) &
+                           (db.t_services.f_number == f_number)).select('id').first()
+                svc_id = svc_id.id
+
             if f_product:
                 version = port.get('service_version')
                 if version:
@@ -228,8 +282,19 @@ def process_xml(
 
             # Process <script> service entries
             for script in port.get('scripts'):
-                db.t_service_info.update_or_insert(f_services_id=svc_id, f_name=script.get('id'), f_text=script.get('output'))
+                try:
+                    db.t_service_info.update_or_insert(f_services_id=svc_id, f_name=script.get('id'), f_text=script.get('output'))
+                except Exception, e:
+                    logger.error("Error inserting Script: %s" % (e))
                 db.commit()
+                # check for banner id and update t_services banner field with the output
+                if script.get('id') == "banner":
+                    try:
+                        db.t_services.update_or_insert((db.t_services.id == svc_id), f_banner = script.get('output'))
+                    except Exception, e:
+                        logger.error("Error inserting Banner: %s" % (e))
+                    db.commit()
+
 
             # Process <cpe> service entries
             port_cpe = port.get('service_cpe')
