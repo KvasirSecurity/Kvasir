@@ -41,7 +41,7 @@ db.define_table('t_hosts',
 ## if not they'll be flagged as such.
 db.define_table('t_os',
     Field('id','id', represent=lambda id,row:SPAN(A(id,_href=URL('os', 'os_edit',args=id)))),
-    Field('f_cpename', length=255, type='string', label=T('CPE Name'), unique=True),
+    Field('f_cpename', length=255, type='string', label=T('CPE Name'), unique=False),
     Field('f_title', type='string', label=T('Title'), requires=IS_NOT_EMPTY()),
     Field('f_vendor', type='string', label=T('Vendor'), widget=autocomplete_bootstrap, requires=IS_NOT_EMPTY()),
     Field('f_product', type='string', label=T('Product'), widget=autocomplete_bootstrap, requires=IS_NOT_EMPTY()),
