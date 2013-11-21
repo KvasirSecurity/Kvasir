@@ -10,7 +10,7 @@
 ## Author: Kurt Grutzmacher <kgrutzma@cisco.com>
 ##--------------------------------------#
 
-from skaldship.general import create_hostfilter_query, get_host_record, pagination, host_title_maker
+from skaldship.hosts import create_hostfilter_query, get_host_record, pagination, host_title_maker
 import gluon.contrib.simplejson
 import logging
 logger = logging.getLogger("web2py.app.kvasir")

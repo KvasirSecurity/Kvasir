@@ -10,7 +10,7 @@
 ## Author: Kurt Grutzmacher <kgrutzma@cisco.com>
 ##--------------------------------------#
 
-from skaldship.general import get_host_record, host_title_maker, host_a_maker
+from skaldship.hosts import get_host_record, host_title_maker, host_a_maker
 import logging
 logger = logging.getLogger("web2py.app.kvasir")
 crud.settings.formstyle = formstyle_bootstrap_kvasir

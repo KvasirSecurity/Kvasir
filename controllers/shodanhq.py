@@ -37,7 +37,7 @@ def import_report():
     #try:
     #    from shodan import WebAPI
     #    from shodan.api import WebAPIError
-    #    webapi = WebAPI(settings.shodanhq_apikey)
+    #    webapi = WebAPI(settings.kvasir_config.get('shodanhq_api_key', '')
     #except ImportError:
     #    webapi = None
 
@@ -104,7 +104,7 @@ def import_report():
                 ),
                 group_name=settings.scheduler_group_name,
                 sync_output=5,
-                timeout=3600   # 1 hour
+                timeout=settings.scheduler_timeout
             )
             if task.id:
                 redirect(URL('tasks', 'status', args=task.id))

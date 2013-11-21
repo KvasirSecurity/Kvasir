@@ -10,7 +10,7 @@
 ## Author: Kurt Grutzmacher <kgrutzma@cisco.com>
 ##--------------------------------------#
 
-from skaldship.general import get_host_record, host_title_maker, host_a_maker, create_hostfilter_query
+from skaldship.hosts import get_host_record, host_title_maker, host_a_maker, create_hostfilter_query
 import re
 import logging
 logger = logging.getLogger("web2py.app.kvasir")

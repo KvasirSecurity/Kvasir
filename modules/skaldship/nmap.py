@@ -22,8 +22,8 @@ cache = current.globalenv['cache']
 settings = current.globalenv['settings']
 session = current.globalenv['session']
 
-##-------------------------------------------------------------------------
 
+##-------------------------------------------------------------------------
 
 def script_metadata():
     """
@@ -63,7 +63,7 @@ def process_xml(
     # Upload and process Nmap XML Scan file
     import re
     import os
-    from skaldship.general import get_host_record, do_host_status
+    from skaldship.hosts import get_host_record, do_host_status
     from skaldship.cpe import lookup_cpe
     from zenmapCore_Kvasir.NmapParser import NmapParser
 

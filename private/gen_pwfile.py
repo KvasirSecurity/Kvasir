@@ -22,7 +22,7 @@ __version__ = "1.0"
 
 import sys, os, csv
 from optparse import OptionParser, OptionGroup
-from skaldship.general import get_host_record
+from skaldship.hosts import get_host_record
 
 ########################################################################
 class HostQuery:

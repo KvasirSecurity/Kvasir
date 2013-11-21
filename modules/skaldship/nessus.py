@@ -21,7 +21,7 @@ try:
     from cStringIO import StringIO
 except ImportError:
     from StringIO import StringIO
-from skaldship.general import get_host_record, do_host_status
+from skaldship.hosts import get_host_record, do_host_status
 from skaldship.exploits import connect_exploits
 from gluon.validators import IS_SLUG
 from skaldship.log import log
@@ -38,6 +38,28 @@ except ImportError:
             from lxml import etree
         except:
             raise Exception('No valid ElementTree parser found')
+
+
+##-------------------------------------------------------------------------
+
+def nessus_get_config(session={}):
+    """
+    Returns a dict of metasploit configuration settings based on yaml or session
+    """
+
+    nessus_config = current.globalenv['settings']['kvasir_config'].get('nessus') or {}
+    config = {}
+    config['ignored_plugins'] = nessus_config.get('ignored_plugins', [19506, 11219, 34277])
+    config['servers'] = {}
+    for server in nessus_config.get('servers'):
+        for k,v in server.iteritems():
+            config['servers'][k] = {
+                'url': v.get('url', 'http://localhost:8834/'),
+                'user': v.get('user', 'admin'),
+                'password': v.get('password', 'password')
+            }
+
+    return config
 
 
 ##-------------------------------------------------------------------------
@@ -357,6 +379,7 @@ def process_xml(
         msg: A string status message
     """
     from skaldship.cpe import lookup_cpe
+    nessus_config = nessus_get_config()
 
     db = current.globalenv['db']
     cache = current.globalenv['cache']
@@ -457,7 +480,7 @@ def process_xml(
             ######################################################################################################
             d = {}
 
-            if pluginID in settings.ignored_nessus_plugins:
+            if pluginID in nessus_config.get('ignored_plugins'):
                 continue
 
             nessus_vulns.stats['added'] += 1

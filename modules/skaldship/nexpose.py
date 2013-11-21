@@ -23,7 +23,8 @@ try:
     from cStringIO import StringIO
 except ImportError:
     from StringIO import StringIO
-from skaldship.general import html_to_markmin, do_host_status
+from skaldship.general import html_to_markmin
+from skaldship.hosts import do_host_status
 from skaldship.exploits import connect_exploits
 import logging
 from skaldship.log import log
@@ -489,7 +490,7 @@ def process_xml(
     # Upload and process Nexpose XML Scan file
 
     from skaldship.cpe import lookup_cpe
-    from skaldship.general import get_host_record
+    from skaldship.hosts import get_host_record
     from gluon.validators import IS_IPADDRESS
     import os
 

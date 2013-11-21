@@ -10,7 +10,7 @@
 ## Author: Kurt Grutzmacher <kgrutzma@cisco.com>
 ##--------------------------------------#
 
-from skaldship.general import host_title_maker
+from skaldship.hosts import host_title_maker
 
 
 ########################################

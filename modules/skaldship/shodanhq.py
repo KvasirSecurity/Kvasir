@@ -16,7 +16,7 @@ __version__ = "1.0"
 
 from gluon import current
 from skaldship.log import log
-from skaldship.general import get_host_record, do_host_status
+from skaldship.hosts import get_host_record, do_host_status
 
 ##-------------------------------------------------------------------------
 

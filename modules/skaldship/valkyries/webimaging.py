@@ -15,7 +15,6 @@ __version__ = "1.0"
 """
 
 from gluon import current
-#from skaldship.general import get_host_record
 from subprocess import call
 import os
 import urllib

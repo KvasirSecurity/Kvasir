@@ -49,6 +49,5 @@ databases/*.sqlite*
 cache/
 .idea/
 
-# keep your db.py away
-models/db.py
-
+# don't want your config in git
+kvasir.yaml

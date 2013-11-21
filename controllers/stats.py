@@ -10,7 +10,8 @@
 ## Author: Kurt Grutzmacher <kgrutzma@cisco.com>
 ##--------------------------------------#
 
-from skaldship.general import severity_mapping, create_hostfilter_query
+from skaldship.general import severity_mapping
+from skaldship.hosts import create_hostfilter_query
 from skaldship.statistics import db_statistics, adv_db_statistics, graphs_index
 
 import logging
@@ -301,7 +302,7 @@ def vulncloud():
                     severity = int(row.f_severity)
 
                 vulncloud[row.f_vulnid] = vulncloud.setdefault(
-                    row.f_vulnid, {'count': count, 'color': severity_mapping(severity - 1)[2]}
+                    row.f_vulnid, {'count': count, 'color': severity_mapping(severity)[2]}
                 )
 
         cloud = []
@@ -419,7 +420,8 @@ def vulncircles_data():
 
         if vulncount > 0:
             vulncircles[row.f_vulnid] = vulncircles.setdefault(row.f_vulnid, {
-                'diameter': diameter, 'vulncount': vulncount, 'expcount': expcount, 'severity': severity
+                'diameter': diameter, 'vulncount': vulncount, 'expcount': expcount,
+                'severity': severity, 'title': row.f_title,
             })
 
     data = {}
@@ -428,7 +430,7 @@ def vulncircles_data():
         values = data.setdefault(sev, [])
         values.append({
             'name': k, 'size': v['diameter'], 'vulncount': v['vulncount'],
-            'expcount': v['expcount'], 'severity': v['severity'],
+            'expcount': v['expcount'], 'severity': v['severity'], 'title': v['title']
         })
         data[sev] = values
 

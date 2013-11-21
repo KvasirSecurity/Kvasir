@@ -9,6 +9,8 @@
 ## Author: Kurt Grutzmacher <kgrutzma@cisco.com>
 ##--------------------------------------#
 
+from skaldship.metasploit import msf_get_config
+from skaldship.nessus import nessus_get_config
 import logging
 logger = logging.getLogger("web2py.app.kvasir")
 crud.settings.formstyle = formstyle_bootstrap_kvasir
@@ -23,10 +25,11 @@ def import_xml_scan():
     """
     Upload/import Nexpose XML Scan file via scheduler task
     """
+    msf_settings = msf_get_config(session)
     try:
         # check to see if we have a Metasploit RPC instance configured and talking
         from MetasploitAPI import MetasploitAPI
-        msf_api = MetasploitAPI(host=auth.user.f_msf_pro_url, apikey=auth.user.f_msf_pro_key)
+        msf_api = MetasploitAPI(host=msf_settings['url'], apikey=msf_settings['key'])
         working_msf_api = msf_api.login()
     except:
         working_msf_api = False
@@ -45,21 +48,28 @@ def import_xml_scan():
     for user in users:
         userlist.append([user.id, user.username])
 
+    nessus_config = nessus_get_config(session)
+    # {'ignored_vulnids': [19506, 11219, 34277],
+    #  'servers': {'server_1': {'password': 'password',
+    #                           'url': 'https://localhost:8834/',
+    #                           'user': 'admin'}}}
     nessusreports = [[0, None]]
-    if auth.user.f_nessus_host is not None:
+    import NessusAPI
+    #if auth.user.f_nessus_host is not None:
+    servers = nessus_config.get('servers', {})
+    for k, v in servers.iteritems():
         try:
             # check to see if NessusAPI is working
-            import NessusAPI
-            nessus = NessusAPI.NessusConnection(auth.user.f_nessus_user, auth.user.f_nessus_pw, url=auth.user.f_nessus_host)
+            nessus = NessusAPI.NessusConnection(v.get('user'), v.get('password'), url=v.get('url'))
             reports = nessus.list_reports()
             for report in reports:
                 ts = time.ctime(float(report.timestamp))
-                nessusreports.append([report.name, "%s - %s (%s)" % (report.readablename, ts, report.status)])
+                nessusreports.append(["%s:%s" % (k, report.name), "%s: %s - %s (%s)" % (k, report.readablename, ts, report.status)])
         except Exception, e:
-            logger.error("Error communicating with Nessus: %s" % str(e))
+            logger.error("Error communicating with %s (u:%s/p:%s): %s" % (k, v.get('user'), v.get('password'), str(e)))
 
-        if len(nessusreports) > 1:
-            fields.append(Field('f_nessus_report', type='integer', label=T('Nessus Report'), requires=IS_IN_SET(nessusreports, zero=None)))
+    if len(nessusreports) > 1:
+        fields.append(Field('f_nessus_report', type='integer', label=T('Nessus Report'), requires=IS_IN_SET(nessusreports, zero=None)))
 
     fields.append(Field('f_filename', 'upload', uploadfolder=filedir, label=T('Nessus XML File')))
     fields.append(Field('f_engineer', type='integer', label=T('Engineer'), default=auth.user.id, requires=IS_IN_SET(userlist)))
@@ -86,13 +96,20 @@ def import_xml_scan():
         if nessusreports == [[0, None]]:
             report_name = '0'
         else:
-            report_name = form.vars.f_nessus_report
+            try:
+                (server, report_name) = form.vars.f_nessus_report.split(':')
+            except ValueError, e:
+                logger.error("Invalid report name sent: %s" % report_name)
+                return dict(form=form)
 
         if report_name != '0':
             filename = os.path.join(filedir, "nessus-%s-%s.xml" % (form.vars.f_asset_group, int(time.time())))
             check_datadir(request.folder)
             fout = open(filename, "w")
             try:
+                # build a new nessus connection with the configured server details and download the report
+                n_server = nessus_config.get('servers').get(server)
+                nessus = NessusAPI.NessusConnection(n_server.get('user'), n_server.get('password'), url=n_server.get('url'))
                 nessus.download_report(report_name, fout)
                 fout.close()
             except Exception, e:
@@ -121,7 +138,7 @@ def import_xml_scan():
                 msf_workspace = None
         else:
             msf_workspace = None
-        msf_settings = {'workspace': msf_workspace, 'url': auth.user.f_msf_pro_url, 'key': auth.user.f_msf_pro_key}
+        msf_settings = {'workspace': msf_workspace, 'url': msf_settings['url'], 'key': msf_settings['key']}
 
         if form.vars.f_taskit:
             task = scheduler.queue_task(
@@ -138,7 +155,7 @@ def import_xml_scan():
                 ),
                 group_name=settings.scheduler_group_name,
                 sync_output=5,
-                timeout=3600   # 1 hour
+                timeout=settings.scheduler_timeout
             )
             if task.id:
                 redirect(URL('tasks', 'status', args=task.id))

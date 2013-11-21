@@ -10,7 +10,8 @@
 ## Author: Kurt Grutzmacher <kgrutzma@cisco.com>
 ##--------------------------------------#
 
-from skaldship.general import get_oreally_404, host_title_maker
+from skaldship.general import get_oreally_404
+from skaldship.hosts import host_title_maker
 from skaldship.statistics import db_statistics, adv_db_statistics, graphs_index
 crud.settings.formstyle = formstyle_bootstrap_kvasir
 
@@ -129,7 +130,7 @@ def update_dynamic_fields():
     """
     Executes the following functions that update dynamic field entries:
 
-       skaldship.general.do_host_status
+       skaldship.hosts.do_host_status
        skaldship.exploits.connect_exploits
     """
     response.title = "%s :: Update Dynamic Fields" % (settings.title)
@@ -149,7 +150,7 @@ def update_dynamic_fields():
         Field('f_taskit', type='boolean', default=auth.user.f_scheduler_tasks, label=T('Run in background task')),
     )
 
-    from skaldship.general import do_host_status
+    from skaldship.hosts import do_host_status
     from skaldship.exploits import connect_exploits
     if form.accepts(request.vars, session):
         if form.vars.f_exploit_link:

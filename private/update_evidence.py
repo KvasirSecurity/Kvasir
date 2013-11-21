@@ -22,7 +22,7 @@ __version__ = "1.0"
 import sys, os, glob
 import hashlib, re
 from optparse import OptionParser, OptionGroup
-from skaldship.general import get_host_record
+from skaldship.hosts import get_host_record
 
 IPV4_REGEX = re.compile("^(?P<ipv4>((25[0-5]|2[0-4]\d|1\d\d|[1-9]\d|\d)\.){3}(25[0-5]|2[0-4]\d|1\d\d|[1-9]\d|\d))")
 

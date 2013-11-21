@@ -1,0 +1,146 @@
+##########################################################################################################
+#
+# Kvasir Configuration file.
+#
+# Lookup priority:
+#
+#  $HOME/.kvasir/kvasir.yaml
+#  $WEB2PY_HOME/applications/appname/kvasir.yaml
+#
+##########################################################################################################
+
+##########################################################################################################
+#
+# Kvasir Database configurations
+#
+##########################################################################################################
+
+db:
+  migrate: True           # if multiple web2py instances are used with 1 database, only 1 user needs True
+  fake_migrate: False     # only True if absolutely necessary
+  kvasir:
+    # any web2py supported URI connection string is acceptable - additional libraries may be required
+    # see ttp://web2py.com/books/default/chapter/29/06#Connection-strings
+    uri: postgres://pguser:pgpass@localhost:5432/kvasir
+    pool_size: 10
+  msf:
+    # direct msf db support is not currently supported - future support planned
+    uri: postgres://msfuser:msfpass@localhost:5432/msf
+    pool_size: 10
+
+##########################################################################################################
+#
+# Customer configuration settings
+#
+##########################################################################################################
+
+customer: "CUSTOMER NAME"
+assessment_type: "Internal"
+start_date: "START_DATE"
+end_date: "END_DATE"
+
+##########################################################################################################
+#
+# Global configuration settings
+#
+##########################################################################################################
+
+# Use f_cvss_score instead of f_severity for graphs and statistics
+use_cvss: false
+
+password_upload_dir: data/passwords/misc
+
+# ShodanHQ API Key (future WebAPI usage)
+shodanhq_api_key: none
+
+# Web2py security_key should be unique and changed. It's used to encrypt passwords and generate CSRF tokens
+security_key: "sha512:36518081-c858-47ad-8832-a28d842f3052"
+
+##########################################################################################################
+#
+# Web2py scheduler settings
+#
+# scheduler_group_name:
+#
+# By default Kvasir uses your hostname as a unique group identifier. Only workers configured to look for
+# this group name will run tasks. By setting this value Kvasir will support multiple scheduler instances.
+# Be aware that the "launch_command" task will execute on the first available worker in the group which
+# could be problematic.
+#
+# In general this should remain undefined.
+#
+# scheduler_timeout:
+#
+# Amount of time in seconds a task is allowed to run. Default is 1 hour.
+#
+##########################################################################################################
+
+#scheduler_group_name: group_name
+scheduler_timeout: 3600
+
+##########################################################################################################
+#
+# launch_command is executed by the scheduler service.
+# variables:
+#    _IP_ - Target IP Address
+#    _DATADIR_ - The data directory location in Kvasir
+#    _LOGFILE_ - A logfile name for the "script" command in data/session-logs
+#
+# XTERM (works on Linux and OSX)
+launch_command: "xterm -sb -sl 1500 -vb -T 'manual hacking: _IP_' -n 'manual hacking: _IP_' -e script _LOGFILE_"
+
+# Gnome-terminal
+#launch_command: "gnome-terminal --window -t 'manual hacking: _IP_' -e 'script _LOGFILE_'"
+
+# OSX AppleScript Terminal
+#launch_command: osascript ../private/terminal.scpt _IP_ _DATADIR_ _LOGFILE_
+
+##########################################################################################################
+#
+# web2py login configuration
+# See: http://www.web2py.com/book/XXX
+#
+##########################################################################################################
+login:
+  method: 'local'
+  config: ''
+
+##########################################################################################################
+#
+# Vulnerability scanner and Metasploit API settings
+#
+##########################################################################################################
+
+# Nmap settings
+nmap:
+  binary: /usr/local/bin/nmap
+  sharedir: /usr/local/share/nmap
+  scriptdir: /usr/local/share/nmap/scripts
+  nselibdir: /usr/local/share/nmap/nselib
+
+# multiple Nessus servers may be configured
+nessus:
+  servers: [
+    server_name: {
+      url: 'https://localhost:8834/',
+      user: admin,
+      password: password,
+    },
+  ]
+  ignored_plugins: [
+    19506,     # Nessus Scan Information
+    11219,     # Nessus SYN Scanner
+    34277,     # Nessus UDP Scanner
+    10335,     # Port is open
+  ]
+
+nexpose:
+  host: 127.0.0.1
+  port: 3780
+  user: nxadmin
+  password: password
+  ignored_vulnids: [ ]
+
+metasploit:
+  url: "https://localhost:3790/"
+  api_key: undefined

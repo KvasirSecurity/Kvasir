@@ -16,9 +16,27 @@ __version__ = "1.0"
 
 from gluon import current
 import logging
-from skaldship.general import get_host_record, do_host_status
+from skaldship.hosts import get_host_record, do_host_status
 
 logger = logging.getLogger("web2py.app.kvasir")
+
+
+def msf_get_config():
+    """
+    Returns a dict of metasploit configuration settings based on yaml or session
+    """
+
+    msf_config = current.globalenv['settings']['kvasir_config'].get('metasploit') or {}
+    config = {}
+    config['key'] = session.get('msf_key', msf_config.get('api_key'))
+    config['url'] = session.get('msf_url', msf_config.get('url', 'https://localhost:3790'))
+
+    config['ws_num'] = session.get('msf_workspace_num', 1)
+    config['workspace'] = session.get('msf_workspace', 'default')
+    config['user'] = session.get('msf_user', None)
+
+    return config
+
 
 def process_pwdump_loot(loot_list=[], msf=None):
     """
