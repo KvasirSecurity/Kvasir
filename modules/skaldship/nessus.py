@@ -136,13 +136,14 @@ class NessusHosts:
             log(" [-] Adding host: %s" % ipaddr)
         elif self.update_hosts:
             if hostfields['f_ipv4']:
-                host_id = self.db(localdb.t_hosts.f_ipv4 == hostfields['f_ipv4']).update(**hostfields)
+                host_id = self.db(self.db.t_hosts.f_ipv4 == hostfields['f_ipv4']).update(**hostfields)
                 self.db.commit()
                 host_id = get_host_record(hostfields['f_ipv4'])
-                host_id = host_id.id
+                if host_id:
+                    host_id = host_id.id
                 log(" [-] Updating IP: %s" % (hostfields['f_ipv4']))
             else:
-                host_id = self.db(localdb.t_hosts.f_ipv6 == hostfields['f_ipv6']).update(**hostfields)
+                host_id = self.db(self.db.t_hosts.f_ipv6 == hostfields['f_ipv6']).update(**hostfields)
                 self.db.commit()
                 host_id = get_host_record(hostfields['f_ipv6'])
                 host_id = host_id.id
