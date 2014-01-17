@@ -259,11 +259,11 @@ def pagination(request, curr_host):
     pagination['next'] = A("(n)", _id="nexthostlink", _class="button", _href=hostnext, _style=hostnextstyle, _title=hostnexttitle)
     pagination['form'] = FORM(
                               SELECT(
-                                hostlist, value=request.args(0), _class="chosen-select", _id="host_select",
+                                hostlist, value=request.args(0), _class="host-select", _id="host_select",
                                 _name="host_select", _onchange="window.location.href=$('#host_select').val()",
                                 **{'_data-placeholder':'Choose a host'}
                               ),
-                              SCRIPT('$("#host_select").chosen({search_contains: true, enable_split_word_search: true});'),
+                              SCRIPT('$("#host_select").select2({search_contains: true, enable_split_word_search: true});'),
                          )
     pagination['host_number'] = "( %d/%d )" % (hostselected, len(hostlist))
 

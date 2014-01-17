@@ -52,7 +52,7 @@ jQuery(document).ready(function() {
         e.preventDefault();
 
         dialog_import_account.load("{{=URL('accounts', 'import_file.load')}}")
-        jQuery('#t_accounts_f_services_id').chosen();
+        jQuery('#t_accounts_f_services_id').select2();
 
         bootbox.confirm(dialog_import_account, "Cancel", "Submit", function(confirmed) {
             if(confirmed) {
@@ -81,7 +81,7 @@ jQuery(document).ready(function() {
       e.preventDefault();
 
         dialog_paste_account.load("{{=URL('accounts', 'paste.load')}}")
-        jQuery('#t_accounts_f_services_id').chosen();
+        jQuery('#t_accounts_f_services_id').select2();
 
         bootbox.confirm(dialog_paste_account, "Cancel", "Submit", function(confirmed) {
             if(confirmed) {
