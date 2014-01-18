@@ -239,7 +239,22 @@ db.define_table('t_evidence',
     #Field('f_evidence', 'upload', uploadfolder=os.path.join(request.folder, 'data', 'evidence'), label=T('File'), autodelete=False),
     Field('f_evidence', 'upload', label=T('File'), uploadfield='f_data'),
     Field('f_data', 'blob'),
-    format='%(f_note_type)s',
+    format='%(f_type)s',
+    fake_migrate=settings.fake_migrate, migrate=settings.migrate)
+
+########################################
+## Tool output
+db.define_table('t_tool_output',
+    Field('id', 'id', represent=lambda id, row: SPAN(A(id, _href=URL('tooloutput', 'edit', args=id)))),
+    Field('f_hosts_id', type='reference t_hosts', label=T('Host'), represent=lambda id, row: XML(host_title_maker(db.t_hosts[id]))),
+    Field('f_type', type='string', label=T('Type'), widget=autocomplete_bootstrap),
+    Field('f_note', type='text', label=T('Note')),
+    Field('f_filename', type='string', label=T('Filename')),
+    # Files are stored in the database, to change this uncomment the next line and comment the one after it
+    #Field('f_evidence', 'upload', uploadfolder=os.path.join(request.folder, 'data', 'tool_output'), label=T('File'), autodelete=False),
+    Field('f_output', 'upload', label=T('File'), uploadfield='f_data'),
+    Field('f_data', 'blob'),
+    format='%(f_type)s',
     fake_migrate=settings.fake_migrate, migrate=settings.migrate)
 
 ########################################

@@ -1,0 +1,110 @@
+<link rel="stylesheet" type="text/css" media="screen" href="{{=URL('static','fancybox/jquery.fancybox-1.3.4.css')}}"></link>
+<script src="{{=URL('static','fancybox/jquery.fancybox-1.3.4.pack.js')}}"></script>
+
+{{if host:}}
+<h2>Tool Output for host {{=host_title_maker(host)}}</h2>
+{{pass}}
+
+<br/>
+
+<div id="tool_output_list">
+
+    <div id="tool_output_buttons" class="navbar btn-toolbar">
+        <a id="add_tool_output" href="#add_tool_output_modal" data-toggle="modal" class="btn btn-small"><i class="icon-plus"></i> Add</a>
+        <a id="delete_tool_output" class="btn btn-small"><i class="icon-remove"></i> Delete</a>
+        <a id="reload_tool_output" class="btn btn-small" onclick="javascript:tool_output_table.fnReloadAjax(); return false;"><i class="icon-refresh"></i> Reload</a>
+    </div>
+
+    {{
+    if tool_output:
+        =tool_output
+    else:
+        =TAG.blockquote(T('No Data'))
+    pass
+    }}
+</div>
+
+<div id="add_tool_output_modal" class="modal hide fade" tabindex="-1" role="dialog" aria-hidden="true">
+    <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal" aria-hidden="true">?</button>
+        <h3 id="add_tool_output_header">Add Tool Output</h3>
+    </div>
+
+    <div class="modal-body">
+    </div>
+
+    <div class="modal-footer">
+        <button class="btn" data-dismiss="modal" aria-hidden="true">Close</button>
+        <button class="btn btn-primary add_tool_output_saveBtn">Save</button>
+    </div>
+</div>
+
+<script>
+var tool_output_table;
+
+jQuery(document).ready(function() {
+
+    $("#delete_tool_output").click(function(e) {
+        e.preventDefault();
+
+        //bootbox.options.onEscape =
+        bootbox.confirm('These items will be permanently deleted and cannot be recovered. Are you sure?', "Cancel", "Delete", function(confirmed) {
+            if(confirmed) {
+                var checks = dt_checkboxer_select_DT_RowIds(tool_output_table);
+                if (checks == '') { alert('Nothing selected'); return false; }
+                var data = "ids=" + checks;
+                url = "{{=URL('delete.json', user_signature=True)}}"
+                $.web2py.ajax_page( 'POST', url, data, 'undefined' );
+            }
+        });
+    });
+
+    jQuery(document).ready(function() {
+        jQuery("#t_tool_output_f_hosts_id").select2();
+    } );
+
+    jQuery("#add_tool_output_modal").on('show', function() {
+        jQuery("#add_tool_output_modal .modal-body").load("{{
+            if host:
+                =URL('tooloutput', 'add.load', args=[host.id])
+            else:
+                =URL('tooloutput', 'add.load')
+            pass
+            }}");
+    });
+
+    jQuery("#add_tool_output_modal .add_tool_output_saveBtn").on("click", function(event) {
+        ajax_form_submit('#tool_output_add_form');
+        jQuery('#add_tool_output_modal').modal('hide');
+    });
+
+    tool_output_table = jQuery('#tool_output_table').dataTable( {
+        "sDom": 'T<"clear">lfrtip',
+        "oTableTools": {
+            "sRowSelect": "multi",
+            "sSelectedClass": "row_selected",
+            "sSwfPath": "{{=URL('static', 'TableTools/swf/copy_csv_xls.swf')}}",
+            "aButtons": [
+                "select_all",
+                "select_none",
+                "copy",
+                "csv",
+                "print"
+            ]
+        },
+        "fnDrawCallback": function() {
+            jQuery('a#tool_output_image').fancybox();
+        },
+        "aoColumnDefs": [
+            { "bSortable": false, "aTargets": [ 0 ] }
+        ],
+        "aaSorting": [[ 1, "asc" ]],
+        "sAjaxSource": "{{=URL('list.json', args=request.args(0))}}",
+    } );
+
+    $.extend( $.fn.dataTableExt.oStdClasses, {
+        "sWrapper": "dataTables_wrapper form-inline",
+    } );
+
+} );
+</script>
