@@ -232,7 +232,7 @@ jQuery(document).ready(function() {
         e.preventDefault();
 
         dialog_mass_os.load("{{=URL(request.application, 'hosts','mass_os_refs.load', user_signature=True)}}", function() {
-            jQuery('#t_host_os_refs_f_os_id').chosen();
+            jQuery('#t_host_os_refs_f_os_id').select2();
         } );
 
         var idreq = dt_checkboxer_select_DT_RowIds(hosttable);

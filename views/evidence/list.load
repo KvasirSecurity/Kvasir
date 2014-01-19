@@ -60,7 +60,7 @@ jQuery(document).ready(function() {
     });
 
     jQuery(document).ready(function() {
-        jQuery("#t_evidence_f_hosts_id").chosen();
+        jQuery("#t_evidence_f_hosts_id").select2();
         jQuery('#t_evidence_f_other_type__row').hide();
         jQuery('#t_evidence_f_type').change(function() {
             if(jQuery('#t_evidence_f_type option:selected').val() == "Other") {

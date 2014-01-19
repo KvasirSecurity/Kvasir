@@ -1,7 +1,7 @@
 Kvasir License Agreement
 ========================
 
-Copyright (C) 2011-2013, Cisco Systems, Inc.
+Copyright (C) 2011-2014, Cisco Systems, Inc.
 
 All rights reserved.
 
@@ -47,19 +47,18 @@ Web2py - http://www.web2py.com
 BSD / MIT:
 
 JQuery - http://jquery.com/
-
 Modernizr - http://www.modernizr.com
 DataTables - http://www.datatables.net/
 TagCloud - https://code.google.com/p/JQuery1ry-tagcloud/
 FaceBox - https://googleithub.com/defunkt/facebox
 Sparklines - http://www.omnipotent.net/wwwjquery.sparkline/
 MarkitUp - http://markitup.jaysalvat.codeom/home/
-Chosen - http://harvesthq.github.com/chosen/
 
 Apache 2.0:
 
 MouseTrap - http://craig.is/killing/mice
 Bootstrap - http://twitter.github.com/bootstrap/
+Select2 - http://ivaynberg.github.io/select2/
 
 CCA-NC:
 
