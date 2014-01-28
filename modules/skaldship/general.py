@@ -263,7 +263,7 @@ def pagination(request, curr_host):
                                 _name="host_select", _onchange="window.location.href=$('#host_select').val()",
                                 **{'_data-placeholder':'Choose a host'}
                               ),
-                              SCRIPT('$("#host_select").select2({search_contains: true, enable_split_word_search: true});'),
+                              SCRIPT('$("#host_select").select2();'),
                          )
     pagination['host_number'] = "( %d/%d )" % (hostselected, len(hostlist))
 
