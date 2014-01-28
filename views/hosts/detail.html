@@ -109,41 +109,43 @@
             <li><a href="#netbios_info" data-toggle="tab">Net<u>B</u>IOS</a></li>
         </ul>
 
-    <div id="TabContent" class="tab-content">
-        <div class="tab-pane active" id="aa_list" >
-            {{=LOAD('vulns','aa_by_host.load',args=[host.record.id],ajax=False,target='aa_list')}}
-        </div>
-
-        <div class="tab-pane" id="service_list">
-            {{=LOAD('services','by_host.load',args=[host.record.id],ajax=False,target='service_list')}}
-        </div>
-
-        <div class="tab-pane" id="vulns_list">
-            {{=LOAD('vulns','vulndata_by_host.load',args=[host.record.id],ajax=False,target='vulns_list')}}
-        </div>
-
-        <div class="tab-pane" id="evidence_list">
-            {{=LOAD('evidence', 'list.load', args=[host.record.id], ajax=False,target='evidence_list')}}
-        </div>
-
-        <div class="tab-pane" id="os_list">
-            {{=LOAD('os','refs_by_host.load',args=[host.record.id],ajax=False,target='os_list')}}
-        </div>
-
-        <div class="tab-pane" id="accounts_list">
-            {{=LOAD('accounts', 'by_host.load', args=[host.record.id], ajax=False,target='accounts_list')}}
-        </div>
-
-        <div class="tab-pane" id="snmp_list">
-            {{=LOAD('snmp', 'by_host.load', args=[host.record.id], ajax=False,target='snmp_list')}}
-        </div>
-
-        <div class="tab-pane" id="netbios_info">
-            <div class="span8" id="netbios_form">
-                {{=LOAD('netbios', 'by_host.load', args=[host.record.id], ajax=True, target='netbios_form')}}
+        <div id="TabContent" class="tab-content">
+            <div class="tab-pane active" id="aa_list" >
+                {{=LOAD('vulns','aa_by_host.load',args=[host.record.id],ajax=False,target='aa_list')}}
             </div>
+
+            <div class="tab-pane" id="service_list">
+                {{=LOAD('services','by_host.load',args=[host.record.id],ajax=False,target='service_list')}}
+            </div>
+
+            <div class="tab-pane" id="vulns_list">
+                {{=LOAD('vulns','vulndata_by_host.load',args=[host.record.id],ajax=False,target='vulns_list')}}
+            </div>
+
+            <div class="tab-pane" id="evidence_list">
+                {{=LOAD('evidence', 'list.load', args=[host.record.id], ajax=False,target='evidence_list')}}
+            </div>
+
+            <div class="tab-pane" id="os_list">
+                {{=LOAD('os','refs_by_host.load',args=[host.record.id],ajax=False,target='os_list')}}
+            </div>
+
+            <div class="tab-pane" id="accounts_list">
+                {{=LOAD('accounts', 'by_host.load', args=[host.record.id], ajax=False,target='accounts_list')}}
+            </div>
+
+            <div class="tab-pane" id="snmp_list">
+                {{=LOAD('snmp', 'by_host.load', args=[host.record.id], ajax=False,target='snmp_list')}}
+            </div>
+
+            <div class="tab-pane" id="netbios_info">
+                <div class="span8" id="netbios_form">
+                    {{=LOAD('netbios', 'by_host.load', args=[host.record.id], ajax=True, target='netbios_form')}}
+                </div>
+            </div>
+
         </div>
-    </div>
+
     </div>
 
 </div>

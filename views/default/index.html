@@ -212,27 +212,57 @@ $(function () {
     </div>
 
   <div class="widget-box">
-       <div class="widget-title">
-        <h5>Asset Groups</h5>
-       </div>
         <div class="widget-content">
-            {{
-              count=db.t_hosts.f_asset_group.count()
-              =SQLTABLE(db().select(db.t_hosts.f_asset_group, count, groupby=db.t_hosts.f_asset_group), headers={'t_hosts.f_asset_group':'Asset Group', 'COUNT(t_hosts.f_asset_group)':'Count'}, _style='width:100%')
-            }}
+            <table class="table table-bordered table-hover">
+               <thead>
+                 <tr>
+                     <th>Asset Group Name</th>
+                     <th>Host Count</th>
+                 </tr>
+               </thead>
+               <tbody>
+               {{
+                  host_count=db.t_hosts.f_asset_group.count()
+                  for row in db().select(db.t_hosts.f_asset_group, host_count, groupby=db.t_hosts.f_asset_group):
+               }}
+                 <tr>
+                     <td>{{=row['t_hosts.f_asset_group']}}</td>
+                     <td>{{=row[host_count]}}</td>
+                 </tr>
+              {{pass}}
+              </tbody>
+            </table>
         </div>
       </div>
     </div>
   </div>
+
   <div class="widget-box">
         <div class="widget-title">
           <h5>Top Services</h5>
         </div>
         <div class="widget-content">
-            {{
-              count=db.t_services.f_proto.count()
-              =SQLTABLE(db().select(db.t_services.f_proto, db.t_services.f_number, db.t_services.f_name, count, groupby=db.t_services.f_proto|db.t_services.f_number|db.t_services.f_name,orderby=~count,limitby=(0,15)), headers={'t_services.f_proto':'Protocol', 't_services.f_number':'Number', 't_services.f_name':'Name', 'COUNT(t_services.f_proto)':'Count'}, _style='width:99%')
-            }}
+            <table class="table table-bordered table-hover">
+               <thead>
+                 <tr>
+                     <th>Protocol</th>
+                     <th>Name</th>
+                     <th>Count</th>
+                 </tr>
+               </thead>
+               <tbody>
+                {{
+                  svc_count=db.t_services.f_proto.count()
+                  for row in db().select(db.t_services.f_proto, db.t_services.f_number, db.t_services.f_name, svc_count, groupby=db.t_services.f_proto|db.t_services.f_number|db.t_services.f_name,orderby=~svc_count,limitby=(0,15)):
+                }}
+                 <tr>
+                     <td>{{="%s/%s" % (row['t_services.f_proto'], row['t_services.f_number'])}}</td>
+                     <td>{{=row['t_services.f_name']}}</td>
+                     <td>{{=row[svc_count]}}</td>
+                 </tr>
+                {{pass}}
+              </tbody>
+            </table>
         </div>
     </div>
 </div>
