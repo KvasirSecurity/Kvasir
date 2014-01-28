@@ -62,8 +62,8 @@
       {{=T('"update" is an optional expression like "field1=\'newvalue\'". You cannot update or delete the results of a JOIN')}}</p>
     <br/><br/>
     <h4>{{=T("%s selected", nrows)}}</h4>
-    {{if start>0:}}{{=A(T('previous 100 rows'),_href=URL('select',args=request.args[0],vars=dict(start=start-100)),_class="btn")}}{{pass}}
-    {{if stop<nrows:}}{{=A(T('next 100 rows'),_href=URL('select',args=request.args[0],vars=dict(start=start+100)),_class="btn")}}{{pass}}
+    {{if start>0:}}{{=A(T('previous %s rows') % step,_href=URL('select',args=request.args[0],vars=dict(start=start-step)),_class="btn")}}{{pass}}
+    {{if stop<nrows:}}{{=A(T('next %s rows') % step,_href=URL('select',args=request.args[0],vars=dict(start=start+step)),_class="btn")}}{{pass}}
     {{if rows:}}
        <div style="overflow: auto;" width="80%">
        {{linkto = lambda f, t, r: URL('update', args=[request.args[0], r, f]) if f else "#"}}
@@ -116,13 +116,15 @@
 
 
 {{elif request.function == 'ccache':}}
-<h2>{{T("Cache")}}</h2>
-<div class="list">
-
+<h2>{{=T("Cache")}}</h2>
   <div class="list-header">
-    <h3>{{T("Statistics")}}</h3>
+    <h3>{{=T("Statistics")}}</h3>
   </div>
 
+{{if request.env.web2py_runtime_gae:}}
+{{=BEAUTIFY(total)}}
+{{else:}}
+<div class="list">
   <div class="content">
     <h4>{{=T("Overview")}}</h4>
     <p>{{=T.M("Number of entries: **%s**", total['entries'])}}</p>
@@ -209,6 +211,8 @@
       <br />
     {{pass}}
   </div>
+
+{{pass}}
 
   <div class="list-header">
     <h3>{{=T("Manage Cache")}}</h3>
