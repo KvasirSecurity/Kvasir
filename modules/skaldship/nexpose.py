@@ -849,11 +849,10 @@ def process_xml(
                             d['f_services_id'] = svc_id
                             d['f_username'] = 'root'
                             d['f_password'] = 'calvin'
-                            d['f_description'] = realm
                             d['f_active'] = True
                             d['f_compromised'] = True
                             d['f_source'] = vulnid
-                            query = (db.t_accounts.f_services_id == svc_id) & (db.t_accounts.f_username == uid)
+                            query = (db.t_accounts.f_services_id == svc_id) & (db.t_accounts.f_username == 'root')
                             db.t_accounts.update_or_insert(query, **d)
                             db.commit()
 
