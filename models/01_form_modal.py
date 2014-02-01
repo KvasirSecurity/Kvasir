@@ -19,12 +19,76 @@ from gluon import current
 
 ##-------------------------------------------------------------------------
 
+def formstyle_bootstrap_modal(form, fields, **kwargs):
+    """"
+    Bootstrap format modal form layout
+    """
+    span = kwargs.get('span') or 'span8'
+    select_attributes = kwargs.get('select_attributes', '')
+    form.add_class('form-horizontal')
+    parent = FIELDSET()
+    for id, label, controls, help in fields:
+        _controls = DIV(controls, _class='controls')
+        # submit unflag by default
+        _submit = False
+
+        if isinstance(controls, INPUT):
+            controls.add_class(span)
+            if controls['_type'] == 'submit':
+                # flag submit button
+                _submit = True
+                controls['_class'] = 'btn btn-primary'
+            if controls['_type'] == 'file':
+                controls['_class'] = 'input-file'
+
+        # For password fields, which are wrapped in a CAT object.
+        if isinstance(controls, CAT) and isinstance(controls[0], INPUT):
+            controls[0].add_class(span)
+
+        if isinstance(controls, SELECT):
+            controls.add_class(span)
+
+        if isinstance(controls, TEXTAREA):
+            controls.add_class(span)
+
+        if isinstance(label, LABEL):
+            label['_class'] = 'control-label'
+            if help:
+                label.append(I(_class="icon-question-sign", _rel="tooltip", **{ '_data-content':help }))
+
+        if _submit:
+            # submit button has unwrapped label and controls, different class
+            parent.append(DIV(label, BUTTON("Close", _class="btn", **{'_data-dismiss':'modal', '_aria-hidden':True}), controls, _class='modal-footer', _id=id))
+            # unflag submit (possible side effect)
+            _submit = False
+        else:
+            # unwrapped label
+            _class = 'control-group'
+            parent.append(DIV(label, _controls, _class=_class, _id=id))
+
+    # append tooltip and chosen field attributes
+    if 'id' not in form.attributes:
+        form.attributes['_id'] = "%s-id" % (str(form.table))
+    script_data = """$(document).ready(function() {{
+    $("[rel=tooltip]").popover({{
+        placement: 'right',
+        trigger: 'hover',
+    }});
+    $('#{0:s} select').select2({{{1:s}}});
+    {2:s}
+}});""".format(form.attributes['_id'], select_attributes, kwargs.get('script', ''))
+    parent.append(SCRIPT(script_data))
+    return parent
+SQLFORM.formstyles['bootstrap-modal'] = formstyle_bootstrap_modal
+
+##-------------------------------------------------------------------------
+
 def formstyle_bootstrap_kvasir(form, fields, **kwargs):
     """
     Bootstrap format form layout for Kvasir
     """
     span = kwargs.get('span') or 'span8'
-    select_attributes = kwargs.get('select_attributes') or ''#"search_contains: true, enable_split_word_search: true"
+    select_attributes = kwargs.get('select_attributes', '')
     form.add_class('form-horizontal')
     parent = FIELDSET()
     for id, label, controls, help in fields:
