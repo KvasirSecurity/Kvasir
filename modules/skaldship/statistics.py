@@ -17,7 +17,8 @@ __version__ = "1.0"
 from StringIO import StringIO
 
 from gluon import current
-from skaldship.general import create_hostfilter_query, severity_mapping
+from skaldship.hosts import create_hostfilter_query
+from skaldship.general import severity_mapping
 
 import logging
 logger = logging.getLogger("web2py.app.kvasir")

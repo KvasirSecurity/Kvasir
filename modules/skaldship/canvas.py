@@ -18,7 +18,8 @@ from gluon import current
 import gluon.contrib.simplejson
 import sys, os, time, re, HTMLParser
 from StringIO import StringIO
-from skaldship.general import html_to_markmin, get_host_record, do_host_status
+from skaldship.general import html_to_markmin
+from skaldship.hosts import get_host_record, do_host_status
 import logging
 logger = logging.getLogger("web2py.app.kvasir")
 

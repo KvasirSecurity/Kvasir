@@ -773,7 +773,7 @@ def process_mass_password(pw_file=None, pw_type=None, message=None, proto=None, 
             logger.error("Error with line (%s): %s" % (line, e))
 
     # run through the ip_accts now to add/update them to the database
-    from skaldship.general import get_host_record
+    from skaldship.hosts import get_host_record
     for k,v in ip_dict.iteritems():
         for ip_acct in v:
             # build a query to find the service for this host/port combo

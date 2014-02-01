@@ -11,7 +11,7 @@
 ##--------------------------------------#
 
 import os
-from skaldship.general import get_host_record
+from skaldship.hosts import get_host_record
 from gluon.scheduler import Scheduler
 
 import logging
@@ -260,7 +260,7 @@ def do_host_status(records=[], query=None, asset_group=None, hosts=[]):
     Runs through the t_hosts table and updates the *_count entries.
     Can also run through a specific list of record IDs instead.
     """
-    from skaldship.general import do_host_status
+    from skaldship.hosts import do_host_status
 
     do_host_status(records=records, query=query, asset_group=asset_group, hosts=hosts)
     return True

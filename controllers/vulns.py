@@ -9,7 +9,8 @@
 ## Author: Kurt Grutzmacher <kgrutzma@cisco.com>
 ##--------------------------------------#
 
-from skaldship.general import cvss_metrics, host_title_maker, host_a_maker, get_host_record, severity_mapping, create_hostfilter_query
+from skaldship.hosts import host_title_maker, host_a_maker, get_host_record, create_hostfilter_query
+from skaldship.general import severity_mapping, cvss_metrics
 import logging
 logger = logging.getLogger("web2py.app.kvasir")
 crud.settings.formstyle = formstyle_bootstrap_kvasir

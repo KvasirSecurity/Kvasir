@@ -56,13 +56,15 @@ Now symbolically link Kvasir to the web2py application directory:
  * ln -s /opt/data/foowidgets/kvasir $WEB2PY_HOME/applications/foowdigets
  * ln -s /opt/data/barnapkins/kvasir $WEB2PY_HOME/applications/barnapkins
 
-Finally create unique databases and modify the models/db.py settings.database_uri:
+Create unique databases:
 
  * sudo su - postgres
  * createdb -O pguser foowidgets
  * createdb -O pguser barnapkins
- * settings.database_uri = 'postgres://pguser:pgpass@localhost:5432/foowidgets'
- * settings.database_uri = 'postgres://pguser:pgpass@localhost:5432/barnapkins'
+
+Copy the kvasir.yaml.sample to kvasir.yaml and change the defaults:
+
+ * db->kvasir->uri
 
 You're ready to go!
 

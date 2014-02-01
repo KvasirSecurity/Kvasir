@@ -244,10 +244,11 @@ def import_xml_scan():
     from skaldship.general import check_datadir
     import time
     import os
+    msf_settings = msf_get_config(session)
     try:
         # check to see if we have a Metasploit RPC instance configured and talking
         from MetasploitAPI import MetasploitAPI
-        msf_api = MetasploitAPI(host=auth.user.f_msf_pro_url, apikey=auth.user.f_msf_pro_key)
+        msf_api = MetasploitAPI(host=msf_settings['url'], apikey=msf_settings['key'])
         working_msf_api = msf_api.login()
     except:
         working_msf_api = False
@@ -292,7 +293,7 @@ def import_xml_scan():
         msf_workspaces.append( "None" )
         for w in msf_api.pro_workspaces().keys():
             msf_workspaces.append(w)
-        fields.append(Field('f_msf_workspace', type='string', label=T('MSF Pro Workspace'), requires=IS_EMPTY_OR(IS_IN_SET(msf_workspaces, zero=None))))
+        fields.append(Field('f_msf_workspace', type='string', label=T('MSF Pro Workspace'), requires=IS_EMPTY_OR(IS_IN_SET(msfworkspaces, zero=None))))
 
     fields.append(Field('f_include_list', type='text', label=T('Hosts to Only Include')))
     fields.append(Field('f_ignore_list', type='text', label=T('Hosts to Ignore')))
@@ -347,7 +348,7 @@ def import_xml_scan():
                 msf_workspace = None
         else:
             msf_workspace = None
-        msf_settings = {'workspace': msf_workspace, 'url': auth.user.f_msf_pro_url, 'key': auth.user.f_msf_pro_key}
+        msf_settings = {'workspace': msf_workspace, 'url': msf_settings['url'], 'key': msf_settings['key']}
 
         if form.vars.f_taskit:
             task = scheduler.queue_task(
@@ -364,7 +365,7 @@ def import_xml_scan():
                 ),
                 group_name=settings.scheduler_group_name,
                 sync_output=5,
-                timeout=3600   # 1 hour
+                timeout=settings.scheduler_timeout
             )
             if task.id:
                 redirect(URL('tasks', 'status', args=task.id))

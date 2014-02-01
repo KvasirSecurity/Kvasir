@@ -15,22 +15,10 @@
 ########################################
 auth.settings.extra_fields['auth_user']= [
     Field('f_host_detail', 'string', label=T('Host Detail Page'), default='detail'),
-    Field('f_launch_cmd', 'string', label=T('Launch Command'),
-          default="xterm -sb -sl 1500 -vb -T 'manual hacking: _IP_' -n 'manual hacking: _IP_' -e script _LOGFILE_"),
-          #default="gnome-terminal --profile=spa -t 'manual hacking: _IP_' -e script _LOGFILE_"),
     Field('f_show_size', 'string', label=T('Table Show Start'), default='50', requires=IS_IN_SET(('10', '50', '100', '200', '500', 'All'), multiple=False)),
     Field('f_host_detail_tab', 'string', label=T('First Tab on Host Detail'), default='Services', requires=IS_IN_SET(('Services', 'Vulnerabilities', 'Notes', 'Evidence', 'OS', 'Accounts', 'SNMP'), multiple=False)),
     Field('f_tabletools', 'boolean', label=T('Enable TableTools'), default=True),
     Field('f_scheduler_tasks', 'boolean', label=T('Default Background Tasks'), default=True),
-    Field('f_msf_pro_key', 'string', label=T('Metasploit Pro API Key')),
-    Field('f_msf_pro_url', 'string', default='https://localhost:3790/', label=T('Metasploit Pro URL')),
-    Field('f_nexpose_host', 'string', default='localhost', label=T('Nexpose Host')),
-    Field('f_nexpose_port', 'string', default='3780', label=T('Nexpose Port')),
-    Field('f_nexpose_user', 'string', default='nxadmin', label=T('Nexpose Username')),
-    Field('f_nexpose_pw', 'password', default='password', label=T('Nexpose Password')),
-    Field('f_nessus_host', 'string', default='https://localhost:8834/', label=T('Nessus URL')),
-    Field('f_nessus_user', 'string', default='admin', label=T('Nessus Username')),
-    Field('f_nessus_pw', 'password', default='password', label=T('Nessus Password')),
 ]
 auth.define_tables(username=True, fake_migrate=settings.fake_migrate, migrate=settings.migrate)   # creates all needed tables
 

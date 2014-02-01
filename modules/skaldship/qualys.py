@@ -35,7 +35,7 @@ def process_xml(
     import os, time, re, HTMLParser
     from StringIO import StringIO
     from MetasploitAPI import MetasploitAPI
-    from skaldship.general import html_to_markmin, get_host_record, do_host_status
+    from skaldship.hosts import html_to_markmin, get_host_record, do_host_status
     from skaldship.cpe import lookup_cpe
 
     parser = HTMLParser.HTMLParser()

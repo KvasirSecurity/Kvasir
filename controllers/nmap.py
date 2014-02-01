@@ -40,11 +40,13 @@ def import_xml_scan():
     """
     import time
     from skaldship.general import check_datadir
+    from skaldship.metasploit import msf_get_config
+    msf_settings = msf_get_config(session)
 
     try:
         # check to see if we have a Metasploit RPC instance configured and talking
         from MetasploitAPI import MetasploitAPI
-        msf_api = MetasploitAPI(host=auth.user.f_msf_pro_url, apikey=auth.user.f_msf_pro_key)
+        msf_api = MetasploitAPI(host=msf_settings['url'], apikey=msf_settings['key'])
         working_msf_api = msf_api.login()
     except:
         working_msf_api = False
@@ -105,7 +107,7 @@ def import_xml_scan():
                 msf_workspace = None
         else:
             msf_workspace = None
-        msf_settings = {'workspace': msf_workspace, 'url': auth.user.f_msf_pro_url, 'key': auth.user.f_msf_pro_key}
+        msf_settings = {'workspace': msf_workspace, 'url': msf_settings['url'], 'key': msf_settings['key']}
 
         if form.vars.f_taskit:
             task = scheduler.queue_task(
@@ -123,7 +125,7 @@ def import_xml_scan():
                 ),
                 group_name=settings.scheduler_group_name,
                 sync_output=5,
-                timeout=3600   # 1 hour
+                timeout=settings.scheduler_timeout
             )
             if task.id:
                 redirect(URL('tasks', 'status', args=task.id))
@@ -230,7 +232,7 @@ def nmap_scan():
             ),
             group_name=settings.scheduler_group_name,
             sync_output=5,
-            timeout=3600   # 1 hour
+            timeout=settings.scheduler_timeout
         )
 
         if task.id:

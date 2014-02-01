@@ -10,7 +10,7 @@
 ## Author: Kurt Grutzmacher <kgrutzma@cisco.com>
 ##--------------------------------------#
 
-from skaldship.general import get_host_record, host_title_maker, host_a_maker, create_hostfilter_query
+from skaldship.hosts import get_host_record, host_title_maker, host_a_maker, create_hostfilter_query
 from skaldship.passwords import process_password_file, process_cracked_file, process_mass_password, insert_or_update_acct
 import re
 import logging
