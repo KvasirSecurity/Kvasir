@@ -13,6 +13,7 @@
 """
 
 import socket
+import platform
 
 settings.title = 'Kvasir'
 settings.subtitle = 'Beware of evil dwarves'
@@ -42,10 +43,16 @@ settings.use_cvss = settings.kvasir_config.get('use_cvss', False)
 settings.password_upload_dir = settings.kvasir_config.get('password_upload_dir', 'data/passwords/misc')
 
 # Launch command
-settings.launch_command = settings.kvasir_config.get(
-    'launch_command',
-    "xterm -sb -sl 1500 -vb -T 'manual hacking: _IP_' -n 'manual hacking: _IP_' -e script _LOGFILE_"
-)
+settings.launch_command = settings.kvasir_config.get('launch_command', None)
+if not settings.launch_command:
+    # set default launch_command based on running OS
+    platform_system = platform.system()
+    if platform_system == 'Darwin':
+        settings.launch_command = "osascript terminal.scpt _IP_ _DATADIR_ _LOGFILE_"
+    elif platform_system == 'Linux':
+        settings.launch_command = "gnome-terminal --window -t 'manual hacking: _IP_' -e 'script _LOGFILE_'"
+    else:
+        settings.launch_command = "xterm -sb -sl 1500 -vb -T 'manual hacking: _IP_' -n 'manual hacking: _IP_' -e script _LOGFILE_"
 
 # Nmap
 nmap_config = settings.kvasir_config.get('nmap', {})
@@ -61,3 +68,9 @@ settings.shodanhq_apikey = settings.kvasir_config.get('shodanhq_api_key', '')
 # web2py scheduler
 settings.scheduler_group_name = settings.kvasir_config.get('scheduler_group_name', socket.gethostname())
 settings.scheduler_timeout = settings.kvasir_config.get('scheduler_timeout', 3600)   # 1 hour timeout default
+
+# pwnwiki.github.io
+settings.pwnwiki_path = settings.kvasir_config.get('pwnwiki_path', None)
+
+# exploitdb
+settings.exploitdb_path = settings.kvasir_config.get('exploitdb_path', None)

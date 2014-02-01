@@ -5,7 +5,7 @@
 # Lookup priority:
 #
 #  $HOME/.kvasir/kvasir.yaml
-#  $WEB2PY_HOME/applications/appname/kvasir.yaml
+#  $WEB2PY_HOME/applications/$APPNAME/kvasir.yaml
 #
 ##########################################################################################################
 
@@ -52,6 +52,16 @@ password_upload_dir: data/passwords/misc
 
 # ShodanHQ API Key (future WebAPI usage)
 shodanhq_api_key: none
+
+# pwnwiki path
+# download latest from https://github.com/pwnwiki/pwnwiki.github.io/archive/master.zip
+# or clone: git clone https://github.com/pwnwiki/pwnwiki.github.io
+pwnwiki_path: "/path/to/pwnwiki.github.io"
+
+# exploitdb archive path
+# download latest from https://github.com/offensive-security/exploit-database/archive/master.zip
+# or clone: git clone https://github.com/offensive-security/exploit-database
+exploitdb_path: "/path/to/exploit-database"
 
 # Web2py security_key should be unique and changed. It's used to encrypt passwords and generate CSRF tokens
 security_key: "sha512:36518081-c858-47ad-8832-a28d842f3052"
