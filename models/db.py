@@ -48,7 +48,7 @@ if request.env.web2py_runtime_gae:            # if running on Google App Engine
     # from google.appengine.api.memcache import Client
     # session.connect(request, response, db = MEMDB(Client()))
 else:                                         # else use a normal relational database
-    db = DAL(settings.database_uri, check_reserved=['all'], lazy_tables=False, pool_size=pool_size)
+    db = DAL(settings.database_uri, check_reserved=['all'], lazy_tables=True, pool_size=pool_size)
 
 auth = Auth(db)                      # authentication/authorization
 crud = Crud(db)                      # for CRUD helpers using auth

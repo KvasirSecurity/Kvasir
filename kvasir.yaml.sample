@@ -154,3 +154,5 @@ nexpose:
 metasploit:
   url: "https://localhost:3790/"
   api_key: undefined
+  user: msf
+  password: msf
