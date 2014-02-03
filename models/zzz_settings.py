@@ -74,3 +74,4 @@ settings.pwnwiki_path = settings.kvasir_config.get('pwnwiki_path', None)
 
 # exploitdb
 settings.exploitdb_path = settings.kvasir_config.get('exploitdb_path', None)
+

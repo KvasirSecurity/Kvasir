@@ -15,17 +15,23 @@ from gluon.storage import Storage
 settings = Storage()
 
 settings.kvasir_config = {}
-kv_cfg_filename = os.environ.get('KVASIR_CONFIG', 'kvasir.yaml')
-filename = os.path.join(os.environ.get('HOME'), '.kvasir', kv_cfg_filename)
+kv_cfg_filename = os.path.join(os.environ.get('HOME'), '.kvasir', 'kvasir.yaml')
 try:
-    settings.kvasir_config = yaml.load(open(filename, 'r'))
+    settings.kvasir_config = yaml.load(open(kv_cfg_filename, 'r'))
 except IOError, e:
+    kv_cfg_filename = os.environ.get('KVASIR_CONFIG', 'kvasir.yaml')
     try:
         settings.kvasir_config = yaml.load(open(kv_cfg_filename, 'r'))
     except IOError, e:
-        raise IOError('Unable to load %s file. Please place it in $HOME/.kvasir or your application directory' % kv_cfg_filename)
+        kv_cfg_filename = os.path.join('applications', request.application, 'kvasir.yaml')
+        try:
+            settings.kvasir_config = yaml.load(open(kv_cfg_filename, 'r'))
+        except IOError, e:
+            raise IOError('Unable to load kvasir.yaml configuration. Please place it in $HOME/.kvasir or your application directory')
 except yaml.parser.ParserError, e:
     raise yaml.parser.ParserError('Error parsing %s: %s' % (kv_cfg_filename, str(e)))
+
+settings.kv_yaml_file = kv_cfg_filename
 
 # Database settings
 if 'db' in settings.kvasir_config:

@@ -347,6 +347,9 @@ def vulndata_by_host():
     Returns a list of vulnerabilties based upon an host identifier
     (id, ipv4, ipv6)
     """
+    from skaldship.metasploit import msf_get_config
+    msf_settings = msf_get_config(session)
+
     record = get_host_record(request.args(0))
     if record is None:
         redirect(URL('default', 'error', vars={'msg': T('Host record not found')}))
@@ -374,7 +377,7 @@ def vulndata_by_host():
                                 exp_link = A(IMG(_align="absmiddle", _width=16, _height=16, _src=URL('static','images/exploitdb.ico')), ' exploitdb - ' + expl_data.f_name,_href='http://www.exploit-db.com/exploits/' + expl_data.f_title, _target="exploitdb_%s" % (expl_data.f_name))
                             elif expl_data.f_source == 'metasploit':
                                 if session.msf_workspace:
-                                    msf_uri = os.path.join(auth.user.f_msf_pro_url, 'workspaces', session.msf_workspace_num, 'tasks/new_module_run')
+                                    msf_uri = os.path.join(msf_settings['url'], 'workspaces', session.msf_workspace_num, 'tasks/new_module_run')
                                 else:
                                     msf_uri = 'http://www.metasploit.com/modules/'
                                 exp_link = A(IMG(_align="absmiddle", _width=16, _height=16, _src=URL('static','images/msf.gif')), ' metasploit - ' + expl_data.f_name,_href=os.path.join(msf_uri, expl_data.f_title), _target="msf_%s" % (expl_data.f_name))
@@ -699,7 +702,7 @@ def aa_by_host():
                         elif expl_data.f_source == 'metasploit':
                             metasploit += 1
                             if session.msf_workspace:
-                                msf_uri = auth.user.f_msf_pro_url + "/" + session.msf_workspace + "/modules/"
+                                msf_uri = msf_settings['url'] + "/" + session.msf_workspace + "/modules/"
                             else:
                                 msf_uri = 'http://www.metasploit.com/modules/'
                             exp_link = A(IMG(_align="absmiddle", _width=16, _height=16, _src=URL('static','images/msf.gif')), ' metasploit - ' + expl_data.f_name,_href=os.path.join(msf_uri, expl_data.f_title), _target="msf_%s" % (expl_data.f_name))

@@ -10,6 +10,7 @@
 ##--------------------------------------#
 
 from nxajax import NXAJAX, ScanTemplates
+from skaldship.nexpose import nexpose_get_config
 import logging
 from skaldship.log import log
 crud.settings.formstyle = formstyle_bootstrap_kvasir
@@ -36,9 +37,11 @@ def vulnlist():
     import os
     import time
 
+    nexpose_config = nexpose_get_config()
+
     vuln_class = VulnData()
-    vuln_class.host = auth.user.f_nexpose_host or 'localhost'
-    vuln_class.port = auth.user.f_nexpose_port or '3780'
+    vuln_class.host = nexpose_config['host']
+    vuln_class.port = nexpose_config['port']
 
     nx_vuln_fname = os.path.join(request.folder, 'data', 'nexpose_vuln_summary.xml')
     if os.path.exists(nx_vuln_fname):
@@ -52,7 +55,7 @@ def vulnlist():
         update_summary = True
 
     if update_summary:
-        if vuln_class.login(user_id=auth.user.f_nexpose_user, password=auth.user.f_nexpose_pw):
+        if vuln_class.login(user_id=nexpose_config['user'], password=nexpose_config['password']):
             # pull the list out
             vuln_class.populate_summary()
             fout = open(nx_vuln_fname, "wb+")
@@ -79,14 +82,15 @@ def import_vulnid():
     )
 
     response.title = "%s :: Import Nexpose VulnID" % settings.title
+    nexpose_config = nexpose_get_config()
 
     if form.process().accepted:
         from NexposeAPI import VulnData
         from skaldship.nexpose import vuln_parse
 
         nxvulns = VulnData()
-        nxvulns.host = auth.user.f_nexpose_host
-        nxvulns.port = auth.user.f_nexpose_port
+        nxvulns.host = nexpose_config['host']
+        nxvulns.port = nexpose_config['port']
 
         nexpose_ids = []
         if form.vars.nexid:
@@ -94,7 +98,7 @@ def import_vulnid():
         if form.vars.nexid_list:
             nexpose_ids.extend(form.vars.nexid_list.split('\r\n'))
 
-        res = nxvulns.login(user_id=auth.user.f_nexpose_user, password=auth.user.f_nexpose_pw)
+        res = nxvulns.login(user_id=nexpose_config['user'], password=nexpose_config['password'])
         if res:
             stats = {'added': 0, 'invalid':  0}
             for nexid in nexpose_ids:
@@ -164,12 +168,13 @@ def vuln_update():
         ),
     )
 
+    nexpose_config = nexpose_get_config()
     if form.process().accepted:
         nexpose_server = {
-            'host': auth.user.f_nexpose_host,
-            'port': auth.user.f_nexpose_port,
-            'user': auth.user.f_nexpose_user,
-            'pw': auth.user.f_nexpose_pw,
+            'host': nexpose_config['host'],
+            'port': nexpose_config['port'],
+            'user': nexpose_config['user'],
+            'pw': nexpose_config['password'],
         }
         task = scheduler.queue_task(
             import_all_nexpose_vulndata,
@@ -213,10 +218,11 @@ def scan_template():
         parse_templates = DIV(TAG(templates).elements('templateid'))
         return dict(form="", form2=formupload, html=parse_templates)
 
+    nexpose_config = nexpose_get_config()
     najax = NXAJAX(session.najaxsession)
-    najax.host = auth.user.f_nexpose_host
-    najax.port = auth.user.f_nexpose_port
-    if najax.login(user_id=auth.user.f_nexpose_user, password=auth.user.f_nexpose_pw):
+    najax.host = nexpose_config['host']
+    najax.port = nexpose_config['port']
+    if najax.login(user_id=nexpose_config['user'], password=nexpose_config['password']):
         log("Logged in to Nexpose API. Session cached.")
         session.najaxsession = najax.getsession()
         template_class = ScanTemplates()
@@ -242,6 +248,7 @@ def import_xml_scan():
     """
     from NexposeAPI import NexposeAPI, Sites, Report
     from skaldship.general import check_datadir
+    from skaldship.metasploit import msf_get_config
     import time
     import os
     msf_settings = msf_get_config(session)
@@ -264,15 +271,16 @@ def import_xml_scan():
         userlist.append( [ user.id, user.username ] )
 
     # check to see if nexpose is configured/active and get site listing
+    nexpose_config = nexpose_get_config()
     nxsitelist = []
-    if auth.user.f_nexpose_host is not None and auth.user.f_nexpose_user is not None:
+    if nexpose_config['host'] is not None and nexpose_config['user'] is not None:
         # see if the host is open/active first
-        if auth.user.f_nexpose_host is not None:
+        if nexpose_config['host'] is not None:
             sites = Sites()
-            sites.host = auth.user.f_nexpose_host
-            sites.port = auth.user.f_nexpose_port
+            sites.host = nexpose_config['host']
+            sites.port = nexpose_config['port']
             try:
-                if sites.login(user_id=auth.user.f_nexpose_user, password=auth.user.f_nexpose_pw):
+                if sites.login(user_id=nexpose_config['user'], password=nexpose_config['password']):
                     sites = sites.listings()
                     nxsitelist.append( [ 0, None ] )
                     for k,v in sites.iteritems():
@@ -293,7 +301,7 @@ def import_xml_scan():
         msf_workspaces.append( "None" )
         for w in msf_api.pro_workspaces().keys():
             msf_workspaces.append(w)
-        fields.append(Field('f_msf_workspace', type='string', label=T('MSF Pro Workspace'), requires=IS_EMPTY_OR(IS_IN_SET(msfworkspaces, zero=None))))
+        fields.append(Field('f_msf_workspace', type='string', label=T('MSF Pro Workspace'), requires=IS_EMPTY_OR(IS_IN_SET(msf_workspaces, zero=None))))
 
     fields.append(Field('f_include_list', type='text', label=T('Hosts to Only Include')))
     fields.append(Field('f_ignore_list', type='text', label=T('Hosts to Ignore')))
@@ -313,9 +321,9 @@ def import_xml_scan():
 
         if nexpose_site != '0':
             report = Report()
-            report.host = auth.user.f_nexpose_host
-            report.port = auth.user.f_nexpose_port
-            nx_loggedin = report.login(user_id=auth.user.f_nexpose_user, password=auth.user.f_nexpose_pw)
+            report.host = nexpose_config['host']
+            report.port = nexpose_config['port']
+            nx_loggedin = report.login(user_id=nexpose_config['user'], password=nexpose_config['password'])
             if nx_loggedin:
                 # have nexpose generate the adhoc report
                 check_datadir(request.folder)

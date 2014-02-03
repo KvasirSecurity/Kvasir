@@ -37,6 +37,23 @@ from lxml import etree
 
 ##-------------------------------------------------------------------------
 
+def nexpose_get_config():
+    """
+    Returns a dict of Nexpose configuration settings based on yaml or session
+    """
+
+    nexpose_config = current.globalenv['settings']['kvasir_config'].get('nexpose') or {}
+    config = {}
+    config['ignored_plugins'] = nexpose_config.get('ignored_plugins', [])
+    config['host'] = nexpose_config.get('host', '127.0.0.1')
+    config['port'] = nexpose_config.get('port', '3780')
+    config['user'] = nexpose_config.get('user', 'nxadmin')
+    config['password'] = nexpose_config.get('password', 'password')
+
+    return config
+
+##-------------------------------------------------------------------------
+
 def nx_xml_to_html(vulnxml):
     """Transforms a Nexpose <ContainerBlockElement> to HTML using XSLT"""
 

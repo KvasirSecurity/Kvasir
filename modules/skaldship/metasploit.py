@@ -21,7 +21,9 @@ from skaldship.hosts import get_host_record, do_host_status
 logger = logging.getLogger("web2py.app.kvasir")
 
 
-def msf_get_config():
+##-------------------------------------------------------------------------
+
+def msf_get_config(session={}):
     """
     Returns a dict of metasploit configuration settings based on yaml or session
     """
@@ -37,6 +39,8 @@ def msf_get_config():
 
     return config
 
+
+##-------------------------------------------------------------------------
 
 def process_pwdump_loot(loot_list=[], msf=None):
     """
