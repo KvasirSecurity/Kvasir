@@ -229,3 +229,17 @@ db.define_table('t_cpe_hardware',
     auth.signature,
     format='%(f_vendor)s %(f_product)s %(f_version)',
     fake_migrate=settings.fake_migrate, migrate=settings.migrate)
+
+########################################
+## ExploitDB files.csv
+## id,file,description,date,author,platform,type,port
+db.define_table('t_exploitdb',
+    Field('id', type='integer'),
+    Field('f_file', type='string', label=T('Filename')),
+    Field('f_description', type='string', label=T('Description')),
+    Field('f_date', type='string', label=T('Date')),
+    Field('f_author', type='string', label=T('Author')),
+    Field('f_platform', type='string', label=T('Platform')),
+    Field('f_type', type='string', label=T('Type')),
+    Field('f_port', type='string', label=T('Port')),
+    fake_migrate=settings.fake_migrate, migrate=settings.migrate)
