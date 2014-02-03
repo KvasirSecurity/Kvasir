@@ -44,7 +44,7 @@ except ImportError:
 
 def nessus_get_config(session={}):
     """
-    Returns a dict of metasploit configuration settings based on yaml or session
+    Returns a dict of Nessus configuration settings based on yaml or session
     """
 
     nessus_config = current.globalenv['settings']['kvasir_config'].get('nessus') or {}

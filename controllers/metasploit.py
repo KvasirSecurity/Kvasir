@@ -207,7 +207,7 @@ def bruteforce():
             'DS_MSSQL_WINDOWS_AUTH': form.vars.mssql_windows_auth
         }
         task = msf.start_bruteforce(args)
-        msfurl = os.path.join(auth.user.f_msf_pro_url, 'workspaces', msf_settings['workspace_num'], 'tasks', task['task_id'])
+        msfurl = os.path.join(msf_settings['url'], 'workspaces', msf_settings['workspace_num'], 'tasks', task['task_id'])
         redirect(msfurl)
     elif form.errors:
         response.flash = "Error in form"
@@ -328,7 +328,7 @@ def exploit():
             #'DS_ModuleFilter': form.vars.filter_by_os,
         }
         task = msf.start_exploit(args)
-        msfurl = os.path.join(auth.user.f_msf_pro_url, 'workspaces', msf_settings['workspace_num'], 'tasks', task['task_id'])
+        msfurl = os.path.join(msf_settings['url'], 'workspaces', msf_settings['workspace_num'], 'tasks', task['task_id'])
         redirect(msfurl)
     elif form.errors:
         response.flash = "Error in form"
@@ -753,7 +753,7 @@ def send_scanxml():
                   'DS_ImportTags': True,
                 })
         """
-        msfurl = os.path.join(auth.user.f_msf_pro_url, 'workspaces', msf_settings['workspace_num'], 'tasks', task['task_id'])
+        msfurl = os.path.join(msf_settings['url'], 'workspaces', msf_settings['workspace_num'], 'tasks', task['task_id'])
         redirect(msfurl)
     elif form.errors:
         response.flash = "Errors in your form"
