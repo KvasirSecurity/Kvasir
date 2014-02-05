@@ -61,7 +61,7 @@ pwnwiki_path: "/path/to/pwnwiki.github.io"
 # exploitdb archive path
 # download latest from https://github.com/offensive-security/exploit-database/archive/master.zip
 # or clone: git clone https://github.com/offensive-security/exploit-database
-exploitdb_path: "/path/to/exploit-database"
+exploitdb_path: "/usr/share/exploitdb"
 
 # Web2py security_key should be unique and changed. It's used to encrypt passwords and generate CSRF tokens
 security_key: "sha512:36518081-c858-47ad-8832-a28d842f3052"
