@@ -11,6 +11,7 @@
 ##--------------------------------------#
 
 import os
+import socket
 from skaldship.hosts import get_host_record
 from gluon.scheduler import Scheduler
 
