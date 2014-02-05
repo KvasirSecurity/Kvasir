@@ -747,18 +747,9 @@ def launch():
         response.flash = "No record sent to launch"
         return dict()
 
-    #db.scheduler_task.insert(
-    #    task_name='launch_%s' % (record),
-    #    function_name='launch_terminal',
-    #    args=gluon.contrib.simplejson.dumps([record, auth.user.f_launch_cmd]),
-    #    timeout = 86400, # 1 day
-    #    group_name = settings.scheduler_group_name,
-    #    sync_output = 5,
-    #)
-
     task = scheduler.queue_task(
         launch_terminal,
-        pargs=[record, auth.user.f_launch_cmd],
+        pargs=[record, settings.launch_command],
         group_name = settings.scheduler_group_name,
         immediate=True,
     )

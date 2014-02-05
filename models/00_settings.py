@@ -14,6 +14,35 @@
 
 import socket
 import platform
+import os
+
+try:
+    import yaml
+    from yaml.parser import ParserError
+except ImportError:
+    raise ImportError('PyYAML required. Please install it before continuing')
+
+from gluon.storage import Storage
+settings = Storage()
+
+settings.kvasir_config = {}
+kv_cfg_filename = os.path.join(os.environ.get('HOME'), '.kvasir', 'kvasir.yaml')
+try:
+    settings.kvasir_config = yaml.load(open(kv_cfg_filename, 'r'))
+except IOError, e:
+    kv_cfg_filename = os.environ.get('KVASIR_CONFIG', 'kvasir.yaml')
+    try:
+        settings.kvasir_config = yaml.load(open(kv_cfg_filename, 'r'))
+    except IOError, e:
+        kv_cfg_filename = os.path.join('applications', request.application, 'kvasir.yaml')
+        try:
+            settings.kvasir_config = yaml.load(open(kv_cfg_filename, 'r'))
+        except IOError, e:
+            raise IOError('Unable to load kvasir.yaml configuration. Please place it in $HOME/.kvasir or your application directory')
+except yaml.parser.ParserError, e:
+    raise yaml.parser.ParserError('Error parsing %s: %s' % (kv_cfg_filename, str(e)))
+
+settings.kv_yaml_file = kv_cfg_filename
 
 settings.title = 'Kvasir'
 settings.subtitle = 'Beware of evil dwarves'
@@ -42,6 +71,10 @@ settings.use_cvss = settings.kvasir_config.get('use_cvss', False)
 # Password upload default directory ($APPNAME/data/passwords/misc)
 settings.password_upload_dir = settings.kvasir_config.get('password_upload_dir', 'data/passwords/misc')
 
+# Scheduler
+settings.scheduler_group_name = settings.kvasir_config.get('scheduler_group_name', socket.gethostname())
+settings.scheduler_timeout = settings.kvasir_config.get('scheduler_timeout', 3600)   # 1 hour timeout default
+
 # Launch command
 settings.launch_command = settings.kvasir_config.get('launch_command', None)
 if not settings.launch_command:
@@ -64,10 +97,6 @@ del nmap_config
 
 # ShodanHQ
 settings.shodanhq_apikey = settings.kvasir_config.get('shodanhq_api_key', '')
-
-# web2py scheduler
-settings.scheduler_group_name = settings.kvasir_config.get('scheduler_group_name', socket.gethostname())
-settings.scheduler_timeout = settings.kvasir_config.get('scheduler_timeout', 3600)   # 1 hour timeout default
 
 # pwnwiki.github.io
 settings.pwnwiki_path = settings.kvasir_config.get('pwnwiki_path', None)
