@@ -249,6 +249,45 @@ def check_datadir(folder=None):
 
 ##-------------------------------------------------------------------------
 
+def exploitdb_update(indexfile):
+    """
+    Update the t_exploitdb table
+    """
+    if not indexfile:
+        return "No file sent to process"
+
+    import csv
+    db = current.globalenv['db']
+
+    db.t_exploitdb.truncate()
+    db.commit()
+
+    count = 0
+    reader = csv.DictReader(open(indexfile, 'rb'), delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
+    for line in reader:
+        db.t_exploitdb.insert(
+            f_eid=line['id'],
+            f_file=line['file'],
+            f_description=line['description'],
+            f_date=line['date'],
+            f_author=line['author'],
+            f_platform=line['platform'],
+            f_type=line['type'],
+            f_port=line['port'],
+        )
+        count += 1
+
+    db.commit()
+    if db(db.t_exploitdb).count() == 0:
+        message = 'Unable to load data'
+    else:
+        message = 'Load complete: %s records created' % (count)
+
+    return message
+
+
+##-------------------------------------------------------------------------
+
 if __name__ == "__main__":
     import doctest
     doctest.testmod()

@@ -328,3 +328,8 @@ div.controls .error_wrapper{
   font-family: "Helvetica Neue",Helvetica,Arial,sans-serif;
   font-weight: 100;
 }
+
+div#exploitdb_exploit {
+  background-color: #0f192a !important;
+  padding: 4px;
+}

@@ -374,8 +374,8 @@ def vulndata_by_host():
                         for expl_data in db(db.t_exploits.id == expl.f_exploit_id).select(cache=(cache.ram, 300)):
                             exp_link = expl_data.f_name
                             if expl_data.f_source == 'exploitdb':
-                                if settings.exploitdb_path:
-                                    exploitdb_href = URL('exploitdb', 'detail', args=expl_data.f_title)
+                                if db.t_exploitdb[expl_data.f_title]:
+                                    exploitdb_href = URL('exploitdb', 'detail.html', args=expl_data.f_title)
                                 else:
                                     exploitdb_href = "http://www.exploit-db.com/exploits/%s" % expl_data.f_title
                                 exp_link = A(IMG(_align="absmiddle", _width=16, _height=16, _src=URL('static','images/exploitdb.ico')), ' exploitdb - ' + expl_data.f_name,_href=exploitdb_href, _target="exploitdb_%s" % (expl_data.f_name))
@@ -702,7 +702,11 @@ def aa_by_host():
                         exp_link = expl_data.f_name
                         if expl_data.f_source == 'exploitdb':
                             exploitdb += 1
-                            exp_link = A(IMG(_align="absmiddle", _width=16, _height=16, _src=URL('static','images/exploitdb.ico')), ' exploitdb - ' + expl_data.f_name,_href='http://www.exploit-db.com/exploits/' + expl_data.f_title, _target="exploitdb_%s" % (expl_data.f_name))
+                            if db.t_exploitdb[expl_data.f_title]:
+                                exploitdb_href = URL('exploitdb', 'detail.html', args=expl_data.f_title)
+                            else:
+                                exploitdb_href = "http://www.exploit-db.com/exploits/%s" % expl_data.f_title
+                            exp_link = A(IMG(_align="absmiddle", _width=16, _height=16, _src=URL('static','images/exploitdb.ico')), ' exploitdb - ' + expl_data.f_name,_href=exploitdb_href, _target="exploitdb_%s" % (expl_data.f_name))
                         elif expl_data.f_source == 'metasploit':
                             metasploit += 1
                             if session.msf_workspace:

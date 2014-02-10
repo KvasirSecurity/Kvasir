@@ -234,7 +234,8 @@ db.define_table('t_cpe_hardware',
 ## ExploitDB files.csv
 ## id,file,description,date,author,platform,type,port
 db.define_table('t_exploitdb',
-    Field('id', type='integer'),
+    Field('id', 'id', represent=lambda id,row:SPAN(A(id, _href=URL('exploitdb', 'detail', args=id)))),
+    Field('f_eid', 'integer', label=T('ExploitDB ID')),
     Field('f_file', type='string', label=T('Filename')),
     Field('f_description', type='string', label=T('Description')),
     Field('f_date', type='string', label=T('Date')),
