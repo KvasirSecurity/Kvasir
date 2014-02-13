@@ -17,7 +17,7 @@
 
 __version__ = "1.0"
 from skaldship.hosts import get_host_record, create_hostfilter_query
-from skalship.general import cvss_metrics, vuln_data
+from skaldship.general import cvss_metrics, vuln_data
 
 import logging
 logger = logging.getLogger("web2py.app.kvasir")
