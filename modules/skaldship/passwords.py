@@ -149,6 +149,7 @@ def process_medusa(line):
     }
     """
     retval = {}
+
     try:
         data = line.split()
     except Exception, e:
@@ -713,6 +714,7 @@ def process_mass_password(pw_file=None, pw_type=None, message=None, proto=None, 
         message = pw_type
     for line in fIN:
         if line[0] == "#": continue
+        line = line.replace('\n', '')
         try:
             if pw_type == "Medusa":
                 mass_pw_data = process_medusa(line)
@@ -723,54 +725,53 @@ def process_mass_password(pw_file=None, pw_type=None, message=None, proto=None, 
             else:
                 mass_pw_data = {}
                 mass_pw_data['error'] = 'Invalid password file type provided'
-
-            if not mass_pw_data['error']:
-                # return { 'ip': ip, 'port': port, 'user': user, 'pass': pw, 'hash': ntlm, 'msg': msg }
-                ip = mass_pw_data.get('ip')
-                ip_accts = ip_dict.setdefault(ip, list())
-                if mass_pw_data.get('type') == 'smb':
-                    # we have an ntlm hash, split that instead of updating the password
-                    (lm, nt) = mass_pw_data['hash'].split(':')[0:2]
-                    ip_accts.append({
-                        'f_username': mass_pw_data.get('user'),
-                        'f_hash1': lm, 'f_hash1_type': 'LM',
-                        'f_hash2': nt, 'f_hash2_type': 'NT',
-                        'f_number': portnum, 'f_proto': proto,
-                        'f_password': mass_pw_data.get('pass'),
-                        'f_message': mass_pw_data.get('msg'),
-                        'f_source': message, 'f_compromised': True
-                    })
-                    ip_dict[ip] = ip_accts
-                elif mass_pw_data['hash']:
-                    # we have a hash, not a password
-                    if mass_pw_data['pass']:
-                        compromised = True
-                    else:
-                        compromised = False
-                    ip_accts.append({
-                        'f_number': portnum, 'f_proto': proto,
-                        'f_username': mass_pw_data.get('user'),
-                        'f_password': mass_pw_data.get('pass'),
-                        'f_hash1': mass_pw_data.get('hash'),
-                        'f_hash1_type': mass_pw_data.get('type'),
-                        'f_message': mass_pw_data.get('msg'),
-                        'f_source': message, 'f_compromised': compromised,
-                    })
-                    ip_dict[ip] = ip_accts
-                else:
-                    # otherwise append the relevant information
-                    ip_accts.append({
-                        'f_number': portnum, 'f_proto': proto,
-                        'f_username': mass_pw_data.get('user'),
-                        'f_password': mass_pw_data.get('pass'),
-                        'f_message': mass_pw_data.get('msg'),
-                        'f_source': message, 'f_compromised': True
-                    })
-                    ip_dict[ip] = ip_accts
-            else:
-                logger.error("Error with password process" % (mass_pw_data['error']))
         except Exception, e:
             logger.error("Error with line (%s): %s" % (line, e))
+            continue
+
+        if not mass_pw_data.get('error'):
+            # return { 'ip': ip, 'port': port, 'user': user, 'pass': pw, 'hash': ntlm, 'msg': msg }
+            ip = mass_pw_data.get('ip')
+            ip_accts = ip_dict.setdefault(ip, list())
+            if mass_pw_data.get('type') == 'smb':
+                # we have an ntlm hash, split that instead of updating the password
+                (lm, nt) = mass_pw_data['hash'].split(':')[0:2]
+                ip_accts.append({
+                    'f_username': mass_pw_data.get('user'),
+                    'f_hash1': lm, 'f_hash1_type': 'LM',
+                    'f_hash2': nt, 'f_hash2_type': 'NT',
+                    'f_number': portnum, 'f_proto': proto,
+                    'f_password': mass_pw_data.get('pass'),
+                    'f_message': mass_pw_data.get('msg'),
+                    'f_source': message, 'f_compromised': True
+                })
+                ip_dict[ip] = ip_accts
+            elif mass_pw_data.get('hash'):
+                # we have a hash, not a password
+                if mass_pw_data['pass']:
+                    compromised = True
+                else:
+                    compromised = False
+                ip_accts.append({
+                    'f_number': portnum, 'f_proto': proto,
+                    'f_username': mass_pw_data.get('user'),
+                    'f_password': mass_pw_data.get('pass'),
+                    'f_hash1': mass_pw_data.get('hash'),
+                    'f_hash1_type': mass_pw_data.get('type'),
+                    'f_message': mass_pw_data.get('msg'),
+                    'f_source': message, 'f_compromised': compromised,
+                })
+                ip_dict[ip] = ip_accts
+            else:
+                # otherwise append the relevant information
+                ip_accts.append({
+                    'f_number': portnum, 'f_proto': proto,
+                    'f_username': mass_pw_data.get('user'),
+                    'f_password': mass_pw_data.get('pass'),
+                    'f_message': mass_pw_data.get('msg'),
+                    'f_source': message, 'f_compromised': True
+                })
+                ip_dict[ip] = ip_accts
 
     # run through the ip_accts now to add/update them to the database
     from skaldship.hosts import get_host_record
@@ -830,3 +831,11 @@ def process_mass_password(pw_file=None, pw_type=None, message=None, proto=None, 
                 added += 1
             db.commit()
     return "Completed: %s/Added, %s/Updated, %s/New Hosts" % (added, updated, new_hosts)
+
+
+def _doctest():
+    import doctest
+    doctest.testmod()
+
+if __name__ == "__main__":
+    _doctest()

@@ -877,21 +877,23 @@ def import_mass_password():
     check_datadir(request.folder)
 
     form=SQLFORM.factory(
-        Field('f_filename', 'upload', uploadfolder=os.path.join(request.folder, settings.password_upload_dir), label=T('Password file')),
-        Field('f_ftype', 'string', label=T('File Type'), default="Medusa", requires=IS_IN_SET(('Medusa', 'Hydra', 'Metasploit Creds CSV'))),
+        Field('f_filename', 'upload', uploadfolder=os.path.join(request.folder, settings.password_upload_dir),
+              label=T('Password file'), requires=IS_NOT_EMPTY(error_message=T('Filename required'))),
+        Field('f_ftype', 'string', label=T('File Type'), default="Medusa",
+              requires=IS_IN_SET(('Medusa', 'Hydra', 'Metasploit Creds CSV'))),
         Field('f_proto', 'string', label=T('Protocol'), default='tcp', requires=IS_IN_SET(('tcp', 'udp', 'info'))),
-        Field('f_number', 'string', label=T('Port Number'), requires=IS_NOT_EMPTY()),
+        Field('f_number', 'integer', label=T('Port Number'), requires=IS_INT_IN_RANGE(0, 65536)),
         Field('f_message', 'string', label=T('Message to add')),
         Field('f_add_hosts', 'boolean', label=T('Add Hosts'), comment=T('Add missing hosts to the database')),
         buttons=buttons, _action=URL('accounts', 'import_mass_password'), _id='import_mass_password',
     )
 
-    if request.vars.f_filename is not None:
-        orig_filename = request.vars.f_filename.filename
     if form.errors:
         response.flash = 'Error in form'
         return TABLE(*[TR(k, v) for k, v in form.errors.items()])
     elif form.accepts(request.vars, session):
+        if request.vars.f_filename is not None:
+            orig_filename = request.vars.f_filename.filename
         filename = os.path.join(request.folder, settings.password_upload_dir, form.vars.f_filename)
         logger.info("Processing password file: %s" % (filename))
         resp_text = process_mass_password(
