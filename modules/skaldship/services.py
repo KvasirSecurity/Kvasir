@@ -6,7 +6,7 @@ __version__ = "1.0"
 ##--------------------------------------#
 ## Kvasir
 ##
-## (c) 2010-2013 Cisco Systems, Inc.
+## (c) 2010-2014 Cisco Systems, Inc.
 ##
 ## Services utility module
 ##
@@ -16,8 +16,75 @@ __version__ = "1.0"
 """
 
 from gluon import current
+from skaldship.log import log
 
 
+##-------------------------------------------------------------------------
+class Services:
+    """
+    Kvasir Services class. Provides basic functions to add, update, return service data
+    """
+    def __init__(self):
+        self.db = current.globalenv['db']
+        self.svc_db = self.db.t_services
+        self.services = {}      # cached dict of services
+
+
+    ##---------------------------------------------------------------------
+    def _get_record(self, proto, port, svcname, host_id):
+        """
+        Returns a unique single record based on specific data
+        """
+        if not proto or not port or not host_id:
+            return None
+
+        query = (self.svc_db.f_proto==proto) & (self.svc_db.f_number==port) & (self.svc_db.f_hosts_id == host_id)
+        record = self.db(query).select().first()
+        if record.id not in self.services:
+            self.services[record.id] = record
+
+        return record
+
+
+    ##---------------------------------------------------------------------
+    def _update_or_insert(self, proto, port, svcname, host_id):
+        """
+        Our own update_or_insert routine
+        """
+        if not proto or not port or not host_id:
+            return None
+
+        svc_id = self.svc_db.update_or_insert(
+            f_proto=proto, f_number=port, f_status=svcname, f_hosts_id=host_id
+        )
+        self.db.commit()
+        if not svc_id:
+            record = self._get_record(proto, port, svcname, host_id)
+            if record:
+                return record.id
+            else:
+                return None
+
+        return svc_id
+
+
+    ##---------------------------------------------------------------------
+    def get_id(self, proto, port, svcname, host_id, create_or_update=False):
+        """
+        Returns the record identifier of a service based upon strict criteria.
+        """
+
+        if create_or_update:
+            return self._update_or_insert(proto, port, svcname, host_id)
+
+        record = self._get_record(proto, port, svcname, host_id)
+        if record:
+            return record.id
+
+        return None
+
+
+##-------------------------------------------------------------------------
 def pagination_services(request, curr_service):
     # Pagination! Send it the db, request and current host record, get back
     # a dictionary to put into the view.
