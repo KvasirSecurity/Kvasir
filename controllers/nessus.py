@@ -87,7 +87,7 @@ def import_scan():
     fields.append(Field('f_ignore_list', type='text', label=T('Hosts to Ignore')))
     fields.append(Field('f_update_hosts', type='boolean', label=T('Update Host Information'), default=False))
     fields.append(Field('f_taskit', type='boolean', default=auth.user.f_scheduler_tasks, label=T('Run in background task')))
-    form = SQLFORM.factory(*fields, table_name='nessus_xml')
+    form = SQLFORM.factory(*fields, table_name='nessus_scan')
 
     # form processing
     if form.errors:

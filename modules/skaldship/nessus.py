@@ -289,14 +289,14 @@ class NessusVulns:
             pluginID = rpt_item.get('pluginID')
             f_title = rpt_item.findtext('plugin_name', '')
             f_riskscore = rpt_item.get('risk_factor', '')
-            f_cvss_score = rpt_item.findtext('cvss_base_score', 0.0)
-            f_cvss_i_score = rpt_item.findtext('cvss_temporal_score', 0.0)
+            f_cvss_score = float(rpt_item.findtext('cvss_base_score', 0.0))
+            f_cvss_i_score = float(rpt_item.findtext('cvss_temporal_score', 0.0))
             f_description = rpt_item.findtext('description')
             f_solution = rpt_item.findtext('solution')
             f_dt_published = rpt_item.findtext('plugin_publication_date')
             f_dt_added = rpt_item.findtext('plugin_publication_date')
             f_dt_modified = rpt_item.findtext('plugin_modification_date')
-            severity = rpt_item.get('severity', '0')
+            severity = int(rpt_item.get('severity', 0))
             cvss_vectors = rpt_item.findtext('cvss_vector') # CVSS2#AV:N/AC:M/Au:N/C:P/I:P/A:P
         else:
             # CSV data, parse it as such
@@ -316,7 +316,7 @@ class NessusVulns:
             f_dt_published = rpt_item.get('Plugin Publication Date')
             f_dt_added = rpt_item.get('Plugin Publication Date')
             f_dt_modified = rpt_item.get('Plugin Modification Date')
-            severity = rpt_item.get('Severity', '0')
+            severity = rpt_item.get('Severity', 0)
             cvss_vectors = rpt_item.get('CVSS Vector') # CVSS2#AV:N/AC:M/Au:N/C:P/I:P/A:P
             sf_re = SF_RE.search(extradata['plugin_output'])
             if sf_re:
@@ -324,8 +324,18 @@ class NessusVulns:
             else:
                 fname = None
 
-        extradata['pluginID'] = pluginID
+            # CSV DictReader sets fields to '' so force float/int if nothing set
+            if not f_cvss_score:
+                f_cvss_score = 0.0
+            if not f_cvss_i_score:
+                f_cvss_i_score = 0.0
+            if not severity:
+                severity = 0
+            if not extradata['port']:
+                extradata['port'] = 0
 
+        # set t_vulndata.f_vulnid based on pluginID if no filename is found
+        extradata['pluginID'] = pluginID
         if fname:
             fname = fname.rstrip('.nasl')
             f_vulnid = IS_SLUG()("%s-%s" % (fname, pluginID))[0]     # slugify it
@@ -378,7 +388,7 @@ class NessusVulns:
 
         # Nessus only has 5 severity levels: 0, 1, 2, 3 and 4 .. We go to 11. Assign 0:0, 1:3, 2:5, 3:8, 4:10
         sevmap = {'0': 0, '1': 3 , '2': 5, '3': 8, '4': 10}
-        vulndata['f_severity'] = sevmap[severity]
+        vulndata['f_severity'] = sevmap[str(severity)]
 
         if cvss_vectors:
             vulndata['f_cvss_av'] = cvss_vectors[9]
@@ -489,6 +499,7 @@ def process_scanfile(
     nessus_hosts = NessusHosts(engineer, asset_group, ip_include_list, ip_ignore_list, update_hosts)
     nessus_vulns = NessusVulns()
     services = Services()
+    svcs = db.t_services
 
     for host in nessus_iterator:
         if not nessus_csv_type:
@@ -611,8 +622,9 @@ def process_scanfile(
             #### Banners
             if pluginID == '10092':
                 # FTP Server Detection
+                RE_10092 = re.compile('The remote FTP banner is :\n\n(.*)', re.DOTALL)
                 try:
-                    d['f_banner'] = re.findall('The remote FTP banner is :\n    \n    (.*)', plugin_output)[0]
+                    d['f_banner'] = RE_10092.findall(plugin_output)[0]
                     svcs[svc_id].update(**d)
                     db.commit()
                 except Exception, e:

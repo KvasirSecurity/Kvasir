@@ -296,8 +296,8 @@ def vulncloud():
             count = db(db.t_service_vulns.f_vulndata_id == row.id).count()
 
             if count > 0:
-                if settings.use_cvs:
-                    severity = float(row.f_cvss_score)
+                if settings.use_cvss:
+                    severity = int(row.f_cvss_score)
                 else:
                     severity = int(row.f_severity)
 
