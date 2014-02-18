@@ -329,8 +329,21 @@ class NessusVulns:
                 f_cvss_score = 0.0
             if not f_cvss_i_score:
                 f_cvss_i_score = 0.0
+
+            # Severity may be not set, set it to zero then
             if not severity:
                 severity = 0
+            # Severity may also be a word, lets map them to numbers
+            severity_map = {
+                'Critical': 4,
+                'High': 3,
+                'Medium': 2,
+                'Low': 1,
+                'Info': 0,
+            }
+            if isinstance(severity, str):
+                severity = severity_map[severity]
+
             if not extradata['port']:
                 extradata['port'] = 0
 

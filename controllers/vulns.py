@@ -283,7 +283,7 @@ def vulndata_list():
             # sSearch global search box
             query = db.t_vulndata.f_vulnid.like("%%%s%%" % request.vars.sSearch) | db.t_vulndata.f_title.like("%%%s%%" % request.vars.sSearch)
         else:
-            query = db.t_vulndata.f_active == True
+            query = db.t_vulndata.id > 0
         #query &= (db.t_service_vulns.f_vulndata_id == db.t_vulndata.id)
 
         #total_count = db.t_vulndata.id.count()
