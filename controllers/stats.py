@@ -276,9 +276,9 @@ def vulncloud():
         q = (svc_vulns.f_vulndata_id == vd.id)
         if request.args(0) is not None:
             try:
-                minsev = int(request.args(0))
+                minsev = float(request.args(0))
             except:
-                minsev = 8
+                minsev = 8.0
 
             q &= (vd.f_cvss_score >= minsev)
             if settings.use_cvss:

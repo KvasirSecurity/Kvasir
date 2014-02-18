@@ -484,7 +484,7 @@ def process_scanfile(
         nessus_csv_type = 'Centralized'
         log(" [*] CSV file is from Centralized management system")
     else:
-        nessus_csv = False
+        nessus_csv_type = False
         try:
             nessus_xml = etree.parse(filename)
             log(" [*] XML file identified")
