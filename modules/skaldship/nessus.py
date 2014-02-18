@@ -317,7 +317,7 @@ class NessusVulns:
             f_dt_added = rpt_item.get('Plugin Publication Date')
             f_dt_modified = rpt_item.get('Plugin Modification Date')
             severity = rpt_item.get('Severity', 0)
-            cvss_vectors = rpt_item.get('CVSS Vector') # CVSS2#AV:N/AC:M/Au:N/C:P/I:P/A:P
+            cvss_vectors = rpt_item.get('CVSS Vector') # AV:N/AC:L/Au:N/C:P/I:P/A:N
             sf_re = SF_RE.search(extradata['plugin_output'])
             if sf_re:
                 fname = sf_re.groups()[0]
@@ -404,12 +404,14 @@ class NessusVulns:
         vulndata['f_severity'] = sevmap[str(severity)]
 
         if cvss_vectors:
-            vulndata['f_cvss_av'] = cvss_vectors[9]
-            vulndata['f_cvss_ac'] = cvss_vectors[14]
-            vulndata['f_cvss_au'] = cvss_vectors[19]
-            vulndata['f_cvss_c'] = cvss_vectors[23]
-            vulndata['f_cvss_i'] = cvss_vectors[29]
-            vulndata['f_cvss_a'] = cvss_vectors[31]
+            if cvss_vectors.startswith("CVSS2"):
+                cvss_vectors = cvss_vectors[6:]
+            vulndata['f_cvss_av'] = cvss_vectors[3]
+            vulndata['f_cvss_ac'] = cvss_vectors[8]
+            vulndata['f_cvss_au'] = cvss_vectors[13]
+            vulndata['f_cvss_c'] = cvss_vectors[17]
+            vulndata['f_cvss_i'] = cvss_vectors[21]
+            vulndata['f_cvss_a'] = cvss_vectors[25]
         else:
             vulndata['f_cvss_av'] = ''
             vulndata['f_cvss_ac'] = ''
