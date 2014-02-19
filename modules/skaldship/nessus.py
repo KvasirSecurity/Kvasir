@@ -347,6 +347,14 @@ class NessusVulns:
             if not extradata['port']:
                 extradata['port'] = 0
 
+            # CSV puts N/A for date fields but we need them to be None or real datetimes...
+            if f_dt_published == "N/A":
+                f_dt_published = None
+            if f_dt_added == "N/A":
+                f_dt_added = None
+            if f_dt_modified == "N/A":
+                f_dt_modified = None
+
         # set t_vulndata.f_vulnid based on pluginID if no filename is found
         extradata['pluginID'] = pluginID
         if fname:
@@ -490,14 +498,16 @@ def process_scanfile(
     fIN.seek(0)
     if line.startswith('Plugin'):
         import csv
+        csv.field_size_limit(sys.maxsize)           # field size must be increased
         nessus_iterator = csv.DictReader(fIN)
         nessus_csv_type = 'Standalone'
         log(" [*] CSV file is from Standalone scanner")
     elif line.startswith('"Plugin"'):
         import csv
+        csv.field_size_limit(sys.maxsize)           # field size must be increased
         nessus_iterator = csv.DictReader(fIN)
-        nessus_csv_type = 'Centralized'
-        log(" [*] CSV file is from Centralized management system")
+        nessus_csv_type = 'SecurityCenter'
+        log(" [*] CSV file is from SecurityCenter")
     else:
         nessus_csv_type = False
         try:
