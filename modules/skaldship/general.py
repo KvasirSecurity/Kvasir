@@ -35,7 +35,7 @@ def severity_mapping(sevnum='1', totype='color'):
     Convert a severity number (1-10) to a name (Info, Low, Medium, High)
     or color
     """
-    severitymap = [ (0, 'informational', 'grey'),
+    severitymap = [ (0, 'Informational', 'grey'),
                     (1, 'Informational', 'grey'),
                     (2, 'Informational', 'grey'),
                     (3, 'Low', 'green'),

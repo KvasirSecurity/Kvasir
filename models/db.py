@@ -11,12 +11,14 @@ if 'db' in settings.kvasir_config:
     settings.fake_migrate = settings.kvasir_config.get('db').get('fake_migrate', False)
     settings.database_uri = settings.kvasir_config.get('db').get('kvasir').get('uri')
     pool_size = settings.kvasir_config.get('db').get('kvasir').get('pool_size', 10)
+    lazy_tables = settings.kvasir_config.get('db').get('lazy_tables', False)
     #settings.msfdb_uri = settings.kvasir_config.get('db').get('msf').get('uri')
 else:
     settings.migrate = True
     settings.fake_migrate = False
     settings.database_uri = 'sqlite://kvasir.sqlite'
     pool_size = 5
+    lazy_tables = False
 
 if request.env.web2py_runtime_gae:            # if running on Google App Engine
     db = DAL('gae')                           # connect to Google BigTable
@@ -26,7 +28,7 @@ if request.env.web2py_runtime_gae:            # if running on Google App Engine
     # from google.appengine.api.memcache import Client
     # session.connect(request, response, db = MEMDB(Client()))
 else:                                         # else use a normal relational database
-    db = DAL(settings.database_uri, check_reserved=['all'], lazy_tables=True, pool_size=pool_size)
+    db = DAL(settings.database_uri, check_reserved=['all'], lazy_tables=lazy_tables, pool_size=pool_size)
 
 auth = Auth(db)                      # authentication/authorization
 crud = Crud(db)                      # for CRUD helpers using auth

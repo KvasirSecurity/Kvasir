@@ -1,12 +1,12 @@
 # -*- coding: utf-8 -*-
 
-__version__ = "1.0"
+__version__ = "1.1"
 
 """
 ##--------------------------------------#
 ## Kvasir
 ##
-## (c) 2010-2013 Cisco Systems, Inc.
+## (c) 2010-2014 Cisco Systems, Inc.
 ##
 ## Nessus Utilities for Kvasir
 ##
@@ -23,6 +23,7 @@ except ImportError:
     from StringIO import StringIO
 from skaldship.hosts import get_host_record, do_host_status
 from skaldship.exploits import connect_exploits
+from skaldship.services import Services
 from gluon.validators import IS_SLUG
 from skaldship.log import log
 import logging
@@ -94,26 +95,34 @@ class NessusHosts:
 
     def parse(self, host_properties):
         """
-        Parse out the <HostProperties> xml content. There can be a number of
-        <tag> entries that are either useful to us in t_hosts or other areas.
-        These are processed and returned as dictionary entries in 'hostdata'
+        Parse out the <HostProperties> xml content or CSV line.
+
+        There can be a number of <tag> entries that are either useful to us in
+        t_hosts or other areas. These are processed and returned as dictionary
+        entries in 'hostdata'
 
         Args:
-            host_properties: A <HostProperties> section from .nessus
+            host_properties: A <HostProperties> section from .nessus or a CSV line
 
         Returns:
             t_hosts.id, { hostdata }
         """
         from gluon.validators import IS_IPADDRESS
-        if not etree.iselement(host_properties):
-            logging.error("Invalid HostProperties value received")
-            return None, {}
-
         hostdata = {}
-        for tag in host_properties.findall('tag'):
-            hostdata[tag.get('name')] = tag.text
+        if etree.iselement(host_properties):
+            for tag in host_properties.findall('tag'):
+                hostdata[tag.get('name')] = tag.text
+            ipaddr = hostdata.get('host-ip')
+        else:
+            # with CSV each line has all the hostdata fields so we set them here for use later
+            ipaddr = host_properties.get('IP Address')
+            if not ipaddr:
+                # Scanner CSV, use Host
+                ipaddr = host_properties.get('Host')
+            hostdata['mac-address'] = host_properties.get('MAC Address', '')
+            hostdata['host-fqdn'] = host_properties.get('DNS Name', '')
+            hostdata['netbios-name'] = host_properties.get('NetBIOS Name', '')
 
-        ipaddr = hostdata.get('host-ip')
         if (ipaddr not in self.ip_include and self.ip_include) or (ipaddr in self.ip_exclude):
             log("Host in exclude or not in include list, skipping")
             self.stats['skipped'] += 1
@@ -252,49 +261,131 @@ class NessusVulns:
         entered into the database and populates the local dict
 
         Args:
-            rpt_item: A ReportItem field (etree._Element)
+            rpt_item: A ReportItem field (etree._Element or CSV line)
 
         Returns:
             t_vulndata.id: integer field of db.t_vulndata[id]
             vulndata: A dictionary of fields for t_vulndata
             extradata: A dictionary of extra data fields such as references
         """
-        if not etree.iselement(rpt_item):
-            log("Invalid plugin data received: %s" % type(rpt_item), logging.ERROR)
-            return (None, {}, {})
+        # TODO: Check validity of XML or CSV
+        # if not etree.iselement(rpt_item):
+        #    log("Invalid plugin data received: %s" % type(rpt_item), logging.ERROR)
+        #    return (None, {}, {})
 
         # extract specific parts of ReportItem
         extradata = {}
-        extradata['proto'] = rpt_item.get('protocol', 'info')
-        extradata['port'] = rpt_item.get('port', 0)
-        extradata['svcname'] = rpt_item.findtext('svc_name', '')
-        extradata['plugin_output'] = rpt_item.findtext('plugin_output', '')
-        extradata['exploit_available'] = rpt_item.findtext('exploit_available', 'false')
 
-        pluginID = rpt_item.get('pluginID')
-        fname = rpt_item.findtext('fname', '')
+        SF_RE = re.compile('Source File: (\w+).nasl')
+        if etree.iselement(rpt_item):
+            # XML element, parse it as such
+            is_xml = True
+            extradata['proto'] = rpt_item.get('protocol', 'info')
+            extradata['port'] = rpt_item.get('port', 0)
+            extradata['svcname'] = rpt_item.findtext('svc_name', '')
+            extradata['plugin_output'] = rpt_item.findtext('plugin_output', '')
+            extradata['exploit_available'] = rpt_item.findtext('exploit_available', 'false')
+            fname = rpt_item.findtext('fname', '')
+            pluginID = rpt_item.get('pluginID')
+            f_title = rpt_item.findtext('plugin_name', '')
+            f_riskscore = rpt_item.get('risk_factor', '')
+            f_cvss_score = float(rpt_item.findtext('cvss_base_score', 0.0))
+            f_cvss_i_score = float(rpt_item.findtext('cvss_temporal_score', 0.0))
+            f_description = rpt_item.findtext('description')
+            f_solution = rpt_item.findtext('solution')
+            f_dt_published = rpt_item.findtext('plugin_publication_date')
+            f_dt_added = rpt_item.findtext('plugin_publication_date')
+            f_dt_modified = rpt_item.findtext('plugin_modification_date')
+            severity = int(rpt_item.get('severity', 0))
+            cvss_vectors = rpt_item.findtext('cvss_vector') # CVSS2#AV:N/AC:M/Au:N/C:P/I:P/A:P
+        else:
+            # CSV data, parse it as such
+            is_xml = False
+            extradata['proto'] = rpt_item.get('Protocol', 'info')
+            extradata['port'] = rpt_item.get('Port', 0)
+            extradata['svcname'] = ''  # TODO: Look this up in etc/services
+            extradata['plugin_output'] = rpt_item.get('Plugin Text', rpt_item.get('Plugin Output', ''))
+            extradata['exploit_available'] = rpt_item.get('Exploit?', 'false')
+            pluginID = rpt_item.get('Plugin', rpt_item.get('Plugin ID'))
+            f_title = rpt_item.get('Plugin Name', rpt_item.get('Name', ''))
+            f_riskscore = rpt_item.get('Risk Factor', '')
+            f_cvss_score = rpt_item.get('CVSS Base Score', rpt_item.get('CVSS', 0.0))
+            f_cvss_i_score = rpt_item.get('CVSS Temporal Score', 0.0)
+            f_description = rpt_item.get('Description')
+            f_solution = rpt_item.get('Solution')
+            f_dt_published = rpt_item.get('Plugin Publication Date')
+            f_dt_added = rpt_item.get('Plugin Publication Date')
+            f_dt_modified = rpt_item.get('Plugin Modification Date')
+            severity = rpt_item.get('Severity', 0)
+            cvss_vectors = rpt_item.get('CVSS Vector') # AV:N/AC:L/Au:N/C:P/I:P/A:N
+            sf_re = SF_RE.search(extradata['plugin_output'])
+            if sf_re:
+                fname = sf_re.groups()[0]
+            else:
+                fname = None
+
+            # CSV DictReader sets fields to '' so force float/int if nothing set
+            if not f_cvss_score:
+                f_cvss_score = 0.0
+            if not f_cvss_i_score:
+                f_cvss_i_score = 0.0
+
+            # Severity may be not set, set it to zero then
+            if not severity:
+                severity = 0
+            # Severity may also be a word, lets map them to numbers
+            severity_map = {
+                'Critical': 4,
+                'High': 3,
+                'Medium': 2,
+                'Low': 1,
+                'Info': 0,
+            }
+            if isinstance(severity, str):
+                severity = severity_map[severity]
+
+            if not extradata['port']:
+                extradata['port'] = 0
+
+            # CSV puts N/A for date fields but we need them to be None or real datetimes...
+            if f_dt_published == "N/A":
+                f_dt_published = None
+            if f_dt_added == "N/A":
+                f_dt_added = None
+            if f_dt_modified == "N/A":
+                f_dt_modified = None
+
+        # set t_vulndata.f_vulnid based on pluginID if no filename is found
         extradata['pluginID'] = pluginID
         if fname:
             fname = fname.rstrip('.nasl')
-            vulnid = IS_SLUG()("%s-%s" % (fname, pluginID))[0]     # slugify it
+            f_vulnid = IS_SLUG()("%s-%s" % (fname, pluginID))[0]     # slugify it
         else:
-            vulnid = pluginID
+            f_vulnid = pluginID
 
         # references with multiple values
         for refdata in self.ref_types:
             extradata[refdata] = []
-            for i in rpt_item.findall(refdata):
-                extradata[refdata].append(i.text)
+            if is_xml:
+                for i in rpt_item.findall(refdata):
+                    extradata[refdata].append(i.text)
+            else:
+                if rpt_item.get(refdata):
+                    extradata[refdata].append(rpt_item.get(refdata))
 
         # single value references
         for refdata in self.single_refs:
-            extradata[refdata] = [rpt_item.findtext(refdata)]
+            if is_xml:
+                extradata[refdata] = [rpt_item.findtext(refdata)]
+            else:
+                if rpt_item.get(refdata):
+                    extradata[refdata] = rpt_item.get(refdata)
 
         # check local dict, else check t_vulndata
         if pluginID in self.vulns:
             return self.vulns[pluginID][0], self.vulns[pluginID][1], extradata
         else:
-            vuln_row = self.db(self.db.t_vulndata.f_vulnid == vulnid).select(cache=(self.cache.ram, 180)).first()
+            vuln_row = self.db(self.db.t_vulndata.f_vulnid == f_vulnid).select(cache=(self.cache.ram, 180)).first()
             if vuln_row:
                 # exists in t_vulndata, return it
                 vuln_id = vuln_row.id
@@ -303,32 +394,32 @@ class NessusVulns:
 
         # vulnerability-specific data
         vulndata = {
-            'f_vulnid': vulnid,
-            'f_title': rpt_item.findtext('plugin_name', ''),
-            'f_riskscore': rpt_item.get('risk_factor', ''),
-            'f_cvss_score': rpt_item.findtext('cvss_base_score', 0.0),
-            'f_cvss_i_score': rpt_item.findtext('cvss_temporal_score', 0.0),
-            'f_description': rpt_item.findtext('description'),
-            'f_solution': rpt_item.findtext('solution'),
-            'f_dt_published': rpt_item.findtext('plugin_publication_date'),
-            'f_dt_added': rpt_item.findtext('plugin_publication_date'),
-            'f_dt_modified': rpt_item.findtext('plugin_modification_date'),
+            'f_vulnid': f_vulnid,
+            'f_title': f_title,
+            'f_riskscore': f_riskscore,
+            'f_cvss_score': f_cvss_score,
+            'f_cvss_i_score': f_cvss_i_score,
+            'f_description': f_description,
+            'f_solution': f_solution,
+            'f_dt_published': f_dt_published,
+            'f_dt_added': f_dt_added,
+            'f_dt_modified': f_dt_modified,
             'f_source': 'Nessus',
         }
 
         # Nessus only has 5 severity levels: 0, 1, 2, 3 and 4 .. We go to 11. Assign 0:0, 1:3, 2:5, 3:8, 4:10
         sevmap = {'0': 0, '1': 3 , '2': 5, '3': 8, '4': 10}
-        severity = rpt_item.get('severity', 0)
-        vulndata['f_severity'] = sevmap[severity]
+        vulndata['f_severity'] = sevmap[str(severity)]
 
-        cvss_vectors = rpt_item.findtext('cvss_vector') # CVSS2#AV:N/AC:M/Au:N/C:P/I:P/A:P
         if cvss_vectors:
-            vulndata['f_cvss_av'] = cvss_vectors[9]
-            vulndata['f_cvss_ac'] = cvss_vectors[14]
-            vulndata['f_cvss_au'] = cvss_vectors[19]
-            vulndata['f_cvss_c'] = cvss_vectors[23]
-            vulndata['f_cvss_i'] = cvss_vectors[29]
-            vulndata['f_cvss_a'] = cvss_vectors[31]
+            if cvss_vectors.startswith("CVSS2"):
+                cvss_vectors = cvss_vectors[6:]
+            vulndata['f_cvss_av'] = cvss_vectors[3]
+            vulndata['f_cvss_ac'] = cvss_vectors[8]
+            vulndata['f_cvss_au'] = cvss_vectors[13]
+            vulndata['f_cvss_c'] = cvss_vectors[17]
+            vulndata['f_cvss_i'] = cvss_vectors[21]
+            vulndata['f_cvss_a'] = cvss_vectors[25]
         else:
             vulndata['f_cvss_av'] = ''
             vulndata['f_cvss_ac'] = ''
@@ -339,23 +430,23 @@ class NessusVulns:
 
         vuln_id = self.db.t_vulndata.update_or_insert(**vulndata)
         if not vuln_id:
-            vuln_id = self.db(self.db.t_vulndata.f_vulnid == vulnid).select(cache=(self.cache.ram, 180)).first().id
+            vuln_id = self.db(self.db.t_vulndata.f_vulnid == f_vulnid).select(cache=(self.cache.ram, 180)).first().id
 
         if vuln_id:
             self.stats['processed'] += 1
             self.vulns[pluginID] = [vuln_id, vulndata]
             self.db.commit()
-            log(" [-] Adding vulnerability to vuln database: %s" % vulnid)
+            log(" [-] Adding vulnerability to vuln database: %s" % f_vulnid)
             # add/update vulnerability references
             self.db_vuln_refs(vuln_id, vulndata, extradata)
         else:
-            log(" [!] Error inserting/finding vulnerability in database: %s" % vulnid, logging.ERROR)
+            log(" [!] Error inserting/finding vulnerability in database: %s" % f_vulnid, logging.ERROR)
 
         return vuln_id, vulndata, extradata
 
 
 ##-------------------------------------------------------------------------
-def process_xml(
+def process_scanfile(
     filename=None,
     asset_group=None,
     engineer=None,
@@ -365,7 +456,10 @@ def process_xml(
     update_hosts=False,
     ):
     """
-    Process a Nessus XML Report file
+    Process a Nessus XML or CSV Report file. There are two types of CSV output, the first
+    is very basic and is generated by a single Nessus instance. The second comes from the
+    centralized manager. I forget what it's called but it packs more data. If you have a
+    standalone scanner, always export/save as .nessus.
 
     Args:
         filename: A local filename to process
@@ -398,54 +492,62 @@ def process_xml(
 
     log(" [*] Processing Nessus scan file %s" % filename)
 
-    try:
-        nessus_xml = etree.parse(filename)
-    except etree.ParseError, e:
-        msg = " [!] Invalid Nessus scan file (%s): %s " % (filename, e)
-        log(msg, logging.ERROR)
-        return msg
+    fIN = open(filename, "rb")
+    # check to see if file is a CSV file, if so set nessus_csv to True
+    line = fIN.readline()
+    fIN.seek(0)
+    if line.startswith('Plugin'):
+        import csv
+        csv.field_size_limit(sys.maxsize)           # field size must be increased
+        nessus_iterator = csv.DictReader(fIN)
+        nessus_csv_type = 'Standalone'
+        log(" [*] CSV file is from Standalone scanner")
+    elif line.startswith('"Plugin"'):
+        import csv
+        csv.field_size_limit(sys.maxsize)           # field size must be increased
+        nessus_iterator = csv.DictReader(fIN)
+        nessus_csv_type = 'SecurityCenter'
+        log(" [*] CSV file is from SecurityCenter")
+    else:
+        nessus_csv_type = False
+        try:
+            nessus_xml = etree.parse(filename)
+            log(" [*] XML file identified")
+        except etree.ParseError, e:
+            msg = " [!] Invalid Nessus scan file (%s): %s " % (filename, e)
+            log(msg, logging.ERROR)
+            return msg
 
-    root = nessus_xml.getroot()
-
-    hosts = root.findall("Report/ReportHost")
-    log(" [-] Parsing %d hosts" % (len(hosts)))
+        root = nessus_xml.getroot()
+        nessus_iterator = root.findall("Report/ReportHost")
 
     nessus_hosts = NessusHosts(engineer, asset_group, ip_include_list, ip_ignore_list, update_hosts)
     nessus_vulns = NessusVulns()
+    services = Services()
     svcs = db.t_services
 
-    for host in hosts:
-        (host_id, hostdata) = nessus_hosts.parse(host.find('HostProperties'))
+    for host in nessus_iterator:
+        if not nessus_csv_type:
+            (host_id, hostdata) = nessus_hosts.parse(host.find('HostProperties'))
+        else:
+            (host_id, hostdata) = nessus_hosts.parse(host)
 
         if not host_id:
             # no host_id returned, it was either skipped or errored out
             continue
 
-        # parse the <ReportItem> sections where plugins, ports and output are all in
-
-        for rpt_item in host.iterfind('ReportItem'):
-            (vuln_id, vulndata, extradata) = nessus_vulns.parse(rpt_item)
-            if not vuln_id:
-                # no vulnerability id
-                continue
-
+        # Time to parse the plugin data. This is where CSV and XML diverge.
+        def _plugin_parse(host_id, vuln_id, vulndata, extradata):
             port = extradata['port']
             proto = extradata['proto']
             svcname = extradata['svcname']
             plugin_output = extradata['plugin_output']
             pluginID = extradata['pluginID']
 
-            svc_id = svcs.update_or_insert(
-                f_proto=proto, f_number=port, f_status=svcname, f_hosts_id=host_id
+            svc_id = services.get_id(
+                proto=proto, port=port, svcname=svcname, host_id=host_id,
+                create_or_update=True
             )
-            db.commit()
-            if not svc_id:
-                query = (svcs.f_proto==proto) & (svcs.f_number==port) & (svcs.f_hosts_id == host_id)
-                try:
-                    svc_id = db(query).select(cache=(cache.ram, 60)).first().id
-                except:
-                    log("Could not find service record! query = %s" % str(query), logging.ERROR)
-                    continue
 
             # create t_service_vulns entry for this pluginID
             svc_vuln = {}
@@ -482,7 +584,7 @@ def process_xml(
             d = {}
 
             if pluginID in nessus_config.get('ignored_plugins'):
-                continue
+                return
 
             nessus_vulns.stats['added'] += 1
             #### SNMP
@@ -545,8 +647,9 @@ def process_xml(
             #### Banners
             if pluginID == '10092':
                 # FTP Server Detection
+                RE_10092 = re.compile('The remote FTP banner is :\n\n(.*)', re.DOTALL)
                 try:
-                    d['f_banner'] = re.findall('The remote FTP banner is :\n    \n    (.*)', plugin_output)[0]
+                    d['f_banner'] = RE_10092.findall(plugin_output)[0]
                     svcs[svc_id].update(**d)
                     db.commit()
                 except Exception, e:
@@ -575,6 +678,20 @@ def process_xml(
                             f_os_id=os_id
                         )
                         db.commit()
+
+        if not nessus_csv_type:
+            rpt_items = []
+
+            # Parse the XML <ReportItem> sections where plugins, ports and output are all in
+            for rpt_item in host.iterfind('ReportItem'):
+                (vuln_id, vulndata, extradata) = nessus_vulns.parse(rpt_item)
+                if not vuln_id:
+                    # no vulnerability id
+                    continue
+                _plugin_parse(host_id, vuln_id, vulndata, extradata)
+        else:
+            (vuln_id, vulndata, extradata) = nessus_vulns.parse(host)
+            _plugin_parse(host_id, vuln_id, vulndata, extradata)
 
     if msf_settings.get('workspace'):
         try:

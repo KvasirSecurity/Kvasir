@@ -1,0 +1,27 @@
+{{extend 'layout.html'}}
+
+<div class="row-fluid">
+    <div class="span8">
+        <div class="widget-box">
+            <div class="widget-title">
+              <span class="icon">
+                <i class="icon-edit"></i>
+              </span>
+              <h5>{{=response.title or request.application}}</h5>
+            </div>
+            <div class="widget-content">
+                {{=form}}
+            </div>
+        </div>
+    </div>
+    <div class="alert alert-info span4">
+        <p>Nessus scan files with the extension <strong>.nessus</strong> are best used for importing. When exporting
+        from the Nessus Standalone GUI always select the <strong>Nessus</strong> format if Kvasir is not configured
+        or able to talk directly to the console.</p>
+
+        <p>If CSV is the only format available Kvasir will support it. Should this export come from the Standalone
+        scanner the data will be very limited. CSV output from the centralized management console is much better.</p>
+    </div>
+</div>
+
+{{include 'loading.html'}}

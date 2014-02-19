@@ -276,9 +276,9 @@ def vulncloud():
         q = (svc_vulns.f_vulndata_id == vd.id)
         if request.args(0) is not None:
             try:
-                minsev = int(request.args(0))
+                minsev = float(request.args(0))
             except:
-                minsev = 8
+                minsev = 8.0
 
             q &= (vd.f_cvss_score >= minsev)
             if settings.use_cvss:
@@ -296,8 +296,8 @@ def vulncloud():
             count = db(db.t_service_vulns.f_vulndata_id == row.id).count()
 
             if count > 0:
-                if settings.use_cvs:
-                    severity = float(row.f_cvss_score)
+                if settings.use_cvss:
+                    severity = int(row.f_cvss_score)
                 else:
                     severity = int(row.f_severity)
 

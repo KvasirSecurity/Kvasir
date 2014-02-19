@@ -113,7 +113,10 @@ def db_statistics():
 
     # get host count of those with a sev >= 8
     statistics['high_vuln_host_count'] = 0
-    maxhostsev = vd.f_severity.max()
+    if current.globalenv['settings'].use_cvss:
+        maxhostsev = vd.f_cvss_score.max()
+    else:
+        maxhostsev = vd.f_severity.max()
     q = (svulns.f_services_id == db.t_services.id) & (vd.id == svulns.f_vulndata_id)
     for rec in db(q).select(maxhostsev, svcs.f_hosts_id, orderby=svcs.f_hosts_id, groupby=svcs.f_hosts_id):
         if rec[maxhostsev] >= 8:
@@ -133,7 +136,10 @@ def db_statistics():
     statistics['services'] = db(svcs).count()
     statistics['service_vulns'] = db(svulns).count()
     statistics['services_with_vulns'] = len(db(svulns).select(svulns.f_services_id,groupby=svulns.f_services_id))
-    statistics['services_with_high_vulns'] = db((svulns.f_vulndata_id == vd.id) & (vd.f_severity >= 8)).count()
+    if current.globalenv['settings'].use_cvss:
+        statistics['services_with_high_vulns'] = db((svulns.f_vulndata_id == vd.id) & (vd.f_cvss_score >= 8)).count()
+    else:
+        statistics['services_with_high_vulns'] = db((svulns.f_vulndata_id == vd.id) & (vd.f_severity >= 8)).count()
     #statistics['services_with_high_vulns'] = len(db(vd.f_severity >= 8).select(
     #    svulns.f_services_id, svulns.f_vulndata_id, vd.id,
     #    left=svulns.on(vd.id == svulns.f_vulndata_id), groupby=svulns.f_services_id|svulns.f_vulndata_id|vd.id
@@ -188,11 +194,14 @@ def graphs_index():
     graph = {}
 
     host_by_sev = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
-    maxhostsev = db.t_vulndata.f_severity.max()
+    if current.globalenv['settings'].use_cvss:
+        maxhostsev = db.t_vulndata.f_cvss_score.max()
+    else:
+        maxhostsev = db.t_vulndata.f_severity.max()
 
     q = (db.t_service_vulns.f_services_id == db.t_services.id) & (db.t_vulndata.id == db.t_service_vulns.f_vulndata_id)
     for rec in db(q).select(maxhostsev, db.t_services.f_hosts_id, orderby=db.t_services.f_hosts_id, groupby=db.t_services.f_hosts_id):
-        host_by_sev[rec[maxhostsev]] += 1
+        host_by_sev[int(rec[maxhostsev])] += 1
 
     graph['top_host_sev_count'] = ''
     cnt = 0
@@ -203,8 +212,17 @@ def graphs_index():
 
     vuln_by_sev = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
     count = db.t_vulndata.id.count()
-    for rec in db(db.t_vulndata.id == db.t_service_vulns.f_vulndata_id).select(db.t_vulndata.f_severity,count, orderby=db.t_vulndata.f_severity, groupby=db.t_vulndata.f_severity):
-        vuln_by_sev[rec.t_vulndata.f_severity] = rec[count]
+    if current.globalenv['settings'].use_cvss:
+        rows = db(db.t_vulndata.id == db.t_service_vulns.f_vulndata_id).select(
+            db.t_vulndata.f_cvss_score, count, orderby=db.t_vulndata.f_cvss_score, groupby=db.t_vulndata.f_cvss_score)
+    else:
+        rows = db(db.t_vulndata.id == db.t_service_vulns.f_vulndata_id).select(
+            db.t_vulndata.f_severity, count, orderby=db.t_vulndata.f_severity, groupby=db.t_vulndata.f_severity)
+    for rec in rows:
+        if current.globalenv['settings'].use_cvss:
+            vuln_by_sev[int(rec.t_vulndata.f_cvss_score)] += rec[count]
+        else:
+            vuln_by_sev[rec.t_vulndata.f_severity] = rec[count]
 
     graph['vuln_by_sev_count'] = ''
     graph['vuln_by_sev_count_raw'] = vuln_by_sev

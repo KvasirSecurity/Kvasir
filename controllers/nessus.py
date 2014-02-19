@@ -21,9 +21,9 @@ def index():
     return dict()
 
 @auth.requires_login()
-def import_xml_scan():
+def import_scan():
     """
-    Upload/import Nexpose XML Scan file via scheduler task
+    Upload and import Nexpose Scan file
     """
     msf_settings = msf_get_config(session)
     try:
@@ -71,7 +71,7 @@ def import_xml_scan():
     if len(nessusreports) > 1:
         fields.append(Field('f_nessus_report', type='integer', label=T('Nessus Report'), requires=IS_IN_SET(nessusreports, zero=None)))
 
-    fields.append(Field('f_filename', 'upload', uploadfolder=filedir, label=T('Nessus XML File')))
+    fields.append(Field('f_filename', 'upload', uploadfolder=filedir, label=T('Nessus Scan File')))
     fields.append(Field('f_engineer', type='integer', label=T('Engineer'), default=auth.user.id, requires=IS_IN_SET(userlist)))
     fields.append(Field('f_asset_group', type='string', label=T('Asset Group'), requires=IS_NOT_EMPTY()))
 
@@ -87,22 +87,31 @@ def import_xml_scan():
     fields.append(Field('f_ignore_list', type='text', label=T('Hosts to Ignore')))
     fields.append(Field('f_update_hosts', type='boolean', label=T('Update Host Information'), default=False))
     fields.append(Field('f_taskit', type='boolean', default=auth.user.f_scheduler_tasks, label=T('Run in background task')))
-    form = SQLFORM.factory(*fields, table_name='nessus_xml')
+    form = SQLFORM.factory(*fields, table_name='nessus_scan')
 
     # form processing
     if form.errors:
         response.flash = 'Error in form'
     elif form.accepts(request.vars, session):
+        # if no Nessus servers configured or valid, set report_name to 0
         if nessusreports == [[0, None]]:
             report_name = '0'
         else:
-            try:
-                (server, report_name) = form.vars.f_nessus_report.split(':')
-            except ValueError, e:
-                logger.error("Invalid report name sent: %s" % report_name)
-                return dict(form=form)
+            if form.vars.f_nessus_report != "0":
+                # If a nessus report is selected, try to parse it to set report_name
+                try:
+                    (server, report_name) = form.vars.f_nessus_report.split(':')
+                except ValueError, e:
+                    msg = "Invalid report name sent: %s" % (form.vars.f_nessus_report)
+                    response.flash = msg
+                    logging.error(msg)
+                    return dict(form=form)
+            else:
+                # set report_name to 0 if no f_nessus_report sent
+                report_name = '0'
 
         if report_name != '0':
+            # download a report from a Nessus server
             filename = os.path.join(filedir, "nessus-%s-%s.xml" % (form.vars.f_asset_group, int(time.time())))
             check_datadir(request.folder)
             fout = open(filename, "w")
@@ -162,9 +171,9 @@ def import_xml_scan():
             else:
                 response.flash = "Error submitting job: %s" % (task.errors)
         else:
-            from skaldship.nessus import process_xml
+            from skaldship.nessus import process_scanfile
             logger.info("Starting Nessus Report Import")
-            process_xml(
+            response.flash = process_scanfile(
                 filename=filename,
                 asset_group=form.vars.f_asset_group,
                 engineer=form.vars.f_engineer,

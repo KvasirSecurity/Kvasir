@@ -18,6 +18,7 @@
 db:
   migrate: True           # if multiple web2py instances are used with 1 database, only 1 user needs True
   fake_migrate: False     # only True if absolutely necessary
+  lazy_tables: false      # set this to True after setup is complete for faster db access
   kvasir:
     # any web2py supported URI connection string is acceptable - additional libraries may be required
     # see ttp://web2py.com/books/default/chapter/29/06#Connection-strings
