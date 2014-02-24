@@ -33,6 +33,8 @@ optparser.add_option("-p", "--password", dest="password",
     action="store", default=None, help="Password")
 optparser.add_option("-P", "--prompt", dest="prompt",
     action="store_true", default=False, help="Prompt for password")
+optparser.add_option("-n", "--nochange", dest="nochange",
+    action="store_true", default=False, help="Do not change the user information (useful for batch operations)")
 
 (options, params) = optparser.parse_args()
 
@@ -49,6 +51,8 @@ if not user:
 user_row = db(db.auth_user.username == user).select().first()
 if user_row:
     # user exists, update password
+    if nochange:
+        sys.exit("Not changing user...\n")
     ask_update = raw_input("User exists, update password? [y/N]: ")
     if ask_update not in ['Y', 'y'] :
         sys.exit("Ok, leaving user as-is...\n")
