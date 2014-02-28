@@ -46,10 +46,10 @@ task = scheduler.queue_task(
   scanner_import,
   pvars=dict(
     scanner='nmap',
-    filename=filename,
+    filename=options.filename,
     addnoports=False,
-    asset_group=group,
-    engineer=engineer,
+    asset_group=options.group,
+    engineer=options.engineer,
     msf_settings=msf_settings,
     ip_ignore_list=[],
     ip_include_list=[],
