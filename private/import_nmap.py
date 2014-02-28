@@ -19,9 +19,11 @@ __version__ = "1.0"
 ##--------------------------------------#
 """
 
-import sys
+import sys,time
 import getpass
 from optparse import OptionParser, OptionGroup
+from skaldship.general import check_datadir
+from skaldship.metasploit import msf_get_config
 
 ##--------------------------------------------------------------------
 
