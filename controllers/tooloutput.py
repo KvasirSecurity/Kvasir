@@ -84,7 +84,7 @@ def delete():
 @auth.requires_login()
 def download():
     import gluon.contenttype as cc
-    f_output =request.args[0]
+    f_output = request.args[0]
 
     row=db(db.t_tool_output.f_output==f_output).select(
         db.t_tool_output.f_data, db.t_tool_output.f_filename, db.t_tool_output.f_output).first()
@@ -99,6 +99,42 @@ def download():
         return row.f_data
     else:
         return ""
+
+@auth.requires_login()
+def view():
+    import mimetypes
+    row = db.t_tool_output[request.args[0]]
+
+    if not row:
+        return redirect(URL('default', 'error', vars={'msg': T('Record not found')}))
+
+    mtype = mimetypes.guess_type(row.f_filename)
+    contents = "Binary or unknown file type. Download to view."
+    if mtype[0]:
+        contents = row.f_data
+    extension = row.f_filename[row.f_filename.rfind('.')+1:]
+    shBrushes = {
+      'sh':   ['shBrushBash.js', 'bash'],
+      'c':    ['shBrushCpp.js', 'c'],
+      'cs':   ['shBrushCSharp.js', 'csharp'],
+      'css':  ['shBrushCss.js', 'css'],
+      'java': ['shBrushJava.js', 'java'],
+      'js':   ['shBrushJScript.js', 'javascript'],
+      'pl':   ['shBrushPerl.js', 'perl'],
+      'php':  ['shBrushPhp.js', 'php'],
+      'py':   ['shBrushPython.js', 'python'],
+      'rb':   ['shBrushRuby.js', 'ruby'],
+      'sql':  ['shBrushSql.js', 'sql'],
+      'vb':   ['shBrushVb.js', 'vb'],
+      'xml':  ['shBrushXml.js', 'xml'],
+      'html': ['shBrushXml.js', 'html'],
+      'htm':  ['shBrushXml.js', 'html'],
+    }
+    shJsFile = shBrushes.get(extension, ['shBrushPlain.js', 'plain'])
+
+    response.title = "%s :: %s :: %s" % (settings.title, row.f_filename, row.f_type)
+    return dict(note=row.f_note, output=row.f_output, contents=contents, shJsFile=shJsFile)
+
 
 @auth.requires_login()
 def list():
@@ -157,8 +193,14 @@ def list():
                     atxt[cnt] = "%sb" % (r._extra['(LENGTH(t_tool_output.f_data) + 1)'])
                     cnt += 1
                 else:
-                    atxt[cnt] = A(r.t_tool_output.f_filename, _target="tool_output_other_%s" % (r.t_tool_output.id), _id="tool_output_other",
-                                  _href=URL('download', args=[r.t_tool_output.f_output])).xml()
+                    a = SPAN(
+                        A(r.t_tool_output.f_filename, _target="tool_output_other_%s" % (r.t_tool_output.id),
+                          _id="tool_output_other", _href=URL('view.html', args=[r.t_tool_output.id])),
+                        " ",
+                        A(I(" ", _class="icon-download"), _class="btn btn-mini",
+                          _href=URL('download', args=r.t_tool_output.f_output))
+                    )
+                    atxt[cnt] = a.xml()
                     cnt += 1
                     atxt[cnt] = "%sb" % (r._extra['(LENGTH(t_tool_output.f_data) + 1)'])
                     cnt += 1

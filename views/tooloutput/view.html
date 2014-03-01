@@ -1,0 +1,28 @@
+{{extend 'layout.html'}}
+
+<div id="header">
+    <a class="btn btn-mini" href="{{=URL('download', args=output)}}"><i class="icon-download"></i> Download</a>
+</div>
+
+<div id="note">
+    <h3>Note</h3>
+    <pre>
+    {{=note}}
+    </pre>
+</div>
+
+<div id="data">
+    <h3>Output</h3>
+    <script type="syntaxhighlighter" class="brush: {{=shJsFile[1]}}; toolbar: false;"><![CDATA[
+{{=contents}}]]>
+    </script>
+</div>
+
+<script type="text/javascript" src="{{=URL('static', 'syntaxhighlighter/scripts/shCore.js')}}"></script>
+<script type="text/javascript" src="{{=URL('static/syntaxhighlighter/scripts', shJsFile[0])}}"></script>
+<link type="text/css" rel="stylesheet" href="{{=URL('static', 'syntaxhighlighter/styles/shCore.css')}}"/>
+<link type="text/css" rel="stylesheet" href="{{=URL('static', 'syntaxhighlighter/styles/shThemeMidnight.css')}}"/>
+
+<script type="text/javascript">
+    SyntaxHighlighter.all();
+</script>
