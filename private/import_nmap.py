@@ -31,10 +31,6 @@ optparser = OptionParser(version=__version__)
 
 optparser.add_option("-f", "--filename", dest="filename",
   action="store", default=None, help="Nmap XML filename")
-optparser.add_option("-g", "--group", dest="group",
-  action="store", default=None, help="Asset group for imported hosts")
-optparser.add_option("-e", "--engineer", dest="engineer",
-  action="store", default=None, help="Name of importing engineer")
   
 (options, params) = optparser.parse_args()
 
@@ -42,26 +38,33 @@ msf_settings = msf_get_config(session)
 
 msf_settings = {'workspace': None, 'url': msf_settings['url'], 'key': msf_settings['key']}
 
-task = scheduler.queue_task(
-  scanner_import,
-  pvars=dict(
+task_vars = dict(
     scanner='nmap',
     filename=options.filename,
     addnoports=False,
-    asset_group=options.group,
-    engineer=options.engineer,
+    asset_group="automatic",
+    engineer="1",
     msf_settings=msf_settings,
     ip_ignore_list=[],
     ip_include_list=[],
     update_hosts=True
-  ),
+  )
+
+task = scheduler.queue_task(
+  scanner_import,
+  pvars=task_vars,
   group_name=settings.scheduler_group_name,
   sync_output=5,
-  timeout=settings.scheduler_timeout
+  timeout=settings.scheduler_timeout,
+  immediate=True
 )
 
+db.commit()
+
 if task.id:
-  exit('Success.')
+  print task_vars
+  print task
+  exit('Success (%s).' % task.id)
 else:
   exit('Error submitting job: %s' % (task.errors))
   
