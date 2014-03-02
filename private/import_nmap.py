@@ -29,7 +29,7 @@ from skaldship.metasploit import msf_get_config
 optparser = OptionParser(version=__version__)
 
 optparser.add_option("-f", "--filename", dest="filename",
-  action="store", default=None, help="Nmap XML filename")
+	action="store", default=None, help="Nmap XML filename")
 optparser.add_option("-g", "--group", dest="asset_group",
 	action="store", default="default", help="Asset group to assign hosts (default: 'default')")
 optparser.add_option("-e", "--engineer", dest="engineer",
