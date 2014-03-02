@@ -35,9 +35,11 @@ optparser.add_option("-g", "--group", dest="asset_group",
 optparser.add_option("-e", "--engineer", dest="engineer",
 	action="store", default=getpass.getuser(), help="User to import data.")
 optparser.add_option("-n", "--noports", dest="noports",
-  action="store_true", default=False, help="Add hosts without ports.")
+ 	action="store_true", default=False, help="Add hosts without ports.")
 optparser.add_option("-u", "--update", dest="update_hosts",
 	action="store_true", default=False, help="Update hosts.")
+optparser.add_option("-m", "--msfidx", dest="msfidx",
+	action="store", default=0, help="Metasploit workspace index")
   
 (options, params) = optparser.parse_args()
 
@@ -48,7 +50,26 @@ if rows.count() != 1:
 
 msf_settings = msf_get_config(session)
 
-msf_settings = {'workspace': None, 'url': msf_settings['url'], 'key': msf_settings['key']}
+msf_workspaces = [ None ]
+
+try:
+	# check to see if we have a Metasploit RPC instance configured and talking
+	from MetasploitAPI import MetasploitAPI
+	msf_api = MetasploitAPI(host=msf_settings['url'], apikey=msf_settings['key'])
+	working_msf_api = msf_api.login()
+except:
+	working_msf_api = False
+
+if working_msf_api:
+	for w in msf_api.pro_workspaces().keys():
+		msf_workspaces.append(w)
+
+try:
+	msf_workspace = msf_workspaces[int(options.msfidx)]
+except IndexError:
+	exit("An invalid workspace index has been provided. Aborting.")
+
+msf_settings = {'workspace': msf_workspace, 'url': msf_settings['url'], 'key': msf_settings['key']}
 
 task_vars = dict(
     scanner='nmap',
