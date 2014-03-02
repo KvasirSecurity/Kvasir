@@ -22,7 +22,6 @@ __version__ = "1.0"
 import sys,time
 import getpass
 from optparse import OptionParser, OptionGroup
-from skaldship.general import check_datadir
 from skaldship.metasploit import msf_get_config
 
 ##--------------------------------------------------------------------
@@ -31,8 +30,21 @@ optparser = OptionParser(version=__version__)
 
 optparser.add_option("-f", "--filename", dest="filename",
   action="store", default=None, help="Nmap XML filename")
+optparser.add_option("-g", "--group", dest="asset_group",
+	action="store", default="default", help="Asset group to assign hosts (default: 'default')")
+optparser.add_option("-e", "--engineer", dest="engineer",
+	action="store", default=getpass.getuser(), help="User to import data.")
+optparser.add_option("-n", "--noports", dest="noports",
+  action="store_true", default=False, help="Add hosts without ports.")
+optparser.add_option("-u", "--update", dest="update_hosts",
+	action="store_true", default=False, help="Update hosts.")
   
 (options, params) = optparser.parse_args()
+
+rows = db(db.auth_user.username==options.engineer)
+
+if rows.count() != 1:
+	exit("An error was encountered when selecting a user. Please try with a valid user name.")
 
 msf_settings = msf_get_config(session)
 
@@ -41,13 +53,13 @@ msf_settings = {'workspace': None, 'url': msf_settings['url'], 'key': msf_settin
 task_vars = dict(
     scanner='nmap',
     filename=options.filename,
-    addnoports=False,
-    asset_group="automatic",
-    engineer="1",
+    addnoports=options.noports,
+    asset_group=options.asset_group,
+    engineer="%s" % rows.select().first().id,
     msf_settings=msf_settings,
     ip_ignore_list=[],
     ip_include_list=[],
-    update_hosts=True
+    update_hosts=options.update_hosts
   )
 
 task = scheduler.queue_task(
@@ -59,11 +71,8 @@ task = scheduler.queue_task(
   immediate=True
 )
 
-db.commit()
-
 if task.id:
-  print task_vars
-  print task
+  db.commit()
   exit('Success (%s).' % task.id)
 else:
   exit('Error submitting job: %s' % (task.errors))
