@@ -34,7 +34,9 @@ optparser.add_option("-p", "--password", dest="password",
 optparser.add_option("-P", "--prompt", dest="prompt",
     action="store_true", default=False, help="Prompt for password")
 optparser.add_option("-n", "--nochange", dest="nochange",
-    action="store_true", default=False, help="Do not change the user information (useful for batch operations)")
+    action="store_true", default=False, help="Do not change the user information")
+optparser.add_option("-f", "--force", dest="forcechange",
+    action="store_true", default=False, help="Force the change of user information without prompt")
 
 (options, params) = optparser.parse_args()
 
