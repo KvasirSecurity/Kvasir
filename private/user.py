@@ -55,9 +55,10 @@ if user_row:
     # user exists, update password
     if nochange:
         sys.exit("Not changing user...\n")
-    ask_update = raw_input("User exists, update password? [y/N]: ")
-    if ask_update not in ['Y', 'y'] :
-        sys.exit("Ok, leaving user as-is...\n")
+    if not forcechange:
+        ask_update = raw_input("User exists, update password? [y/N]: ")
+        if ask_update not in ['Y', 'y'] :
+            sys.exit("Ok, leaving user as-is...\n")
 
 if not options.password or options.prompt:
     password = getpass.getpass("Password: ")
