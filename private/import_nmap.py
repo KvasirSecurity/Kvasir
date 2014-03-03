@@ -84,21 +84,16 @@ task_vars = dict(
   )
 
 task = scheduler.queue_task(
-  scanner_import,
-  pvars=task_vars,
-  group_name=settings.scheduler_group_name,
-  sync_output=5,
-  timeout=settings.scheduler_timeout,
-  immediate=True
+    scanner_import,
+    pvars=task_vars,
+    group_name=settings.scheduler_group_name,
+    sync_output=5,
+    timeout=settings.scheduler_timeout,
+    immediate=True
 )
 
 if task.id:
-  db.commit()
-  exit('Success (%s).' % task.id)
+    db.commit()
+    exit('Success (%s).' % task.id)
 else:
-  exit('Error submitting job: %s' % (task.errors))
-  
-  
-  
-
-
+    exit('Error submitting job: %s' % (task.errors))
