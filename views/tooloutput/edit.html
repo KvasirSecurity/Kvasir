@@ -1,0 +1,17 @@
+{{extend 'layout.html'}}
+
+<div class="row-fluid">
+    <div class="span8">
+        <div class="widget-box">
+            <div class="widget-title">
+                <span class="icon">
+                 <i class="icon-edit"></i>
+                </span>
+                <h5>{{=response.title or settings.title}}</h5>
+            </div>
+            <div class="widget-content">
+                {{=form}}
+            </div>
+        </div>
+    </div>
+</div>

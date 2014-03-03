@@ -49,6 +49,7 @@ response.menu = [
               (T('List Evidence'), False, URL(_a,'evidence','list'), []),
               (T('List Notes'), False, URL(_a,'notes','list'), []),
               (T('List SNMP'), False, URL(_a,'snmp','list'), []),
+              (T('List Tool Output'), False, URL(_a,'tooloutput','list'), []),
               (T('CSV Hostname Update'), False, URL(_a,'hosts','csv_hostupdate'), []),
           ]),
      ]),

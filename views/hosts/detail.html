@@ -107,6 +107,7 @@
             <li><a href="#accounts_list" data-toggle="tab">Accoun<u>t</u>s</a></li>
             <li><a href="#snmp_list" data-toggle="tab">SN<u>M</u>P</a></li>
             <li><a href="#netbios_info" data-toggle="tab">Net<u>B</u>IOS</a></li>
+            <li><a href="#tool_output" data-toggle="tab">Tool O<u>u</u>tput</a></li>
         </ul>
 
         <div id="TabContent" class="tab-content">
@@ -142,6 +143,10 @@
                 <div class="span8" id="netbios_form">
                     {{=LOAD('netbios', 'by_host.load', args=[host.record.id], ajax=True, target='netbios_form')}}
                 </div>
+            </div>
+
+            <div class="tab-pane" id="tool_output">
+                {{=LOAD('tooloutput', 'list.load', args=[host.record.id], ajax=False, target='tool_output')}}
             </div>
 
         </div>
@@ -215,6 +220,7 @@ $(document).ready(function() {
     Mousetrap.bind(['t','T','6'], function() { jQuery('#tabs-ul a[href="#accounts_list"]').tab('show'); });
     Mousetrap.bind(['m','M','7'], function() { jQuery('#tabs-ul a[href="#snmp_list"]').tab('show'); });
     Mousetrap.bind(['b','B','8'], function() { jQuery('#tabs-ul a[href="#netbios_info"]').tab('show'); });
+    Mousetrap.bind(['u','U','9'], function() { jQuery('#tabs-ul a[href="#tool_output"]').tab('show'); });
 
     Mousetrap.bind(['c','C'], function() {
        jQuery('#t_hosts_f_confirmed')
