@@ -396,7 +396,7 @@ def customer_xml():
                         new_vuln_xml.set('title', vulndata.f_title)
                         new_vuln_xml.set('severity', str(vulndata.f_severity))
                         new_vuln_xml.set('pci_sev', str(vulndata.f_pci_sev))
-                        new_vuln_xml.set('cvss_score', vulndata.f_cvss_score)
+                        new_vuln_xml.set('cvss_score', str(vulndata.f_cvss_score))
                         new_vuln_xml.set('cvss_metric', cvss_metrics(vulndata))
                         description = etree.SubElement(new_vuln_xml, 'description')
                         description.text = etree.CDATA(unicode(MARKMIN(vulndata.f_description).xml(), 'utf-8'))
