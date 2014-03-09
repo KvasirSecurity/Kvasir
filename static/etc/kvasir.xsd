@@ -152,8 +152,7 @@
                       </xs:complexType>
                     </xs:element>
                   </xs:sequence>
-                  <xs:attribute name="ipv4" type="xs:string" />
-                  <xs:attribute name="ipv6" type="xs:string" />
+                  <xs:attribute name="ipaddr" type="xs:string" />
                   <xs:attribute name="macaddr" type="xs:string" />
                   <xs:attribute name="hostname" type="xs:string" />
                   <xs:attribute name="netbios" type="xs:string" />

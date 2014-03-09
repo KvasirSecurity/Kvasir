@@ -28,10 +28,8 @@ def index():
 def add():
     if request.vars.has_key('id'):
         host_id = db.t_hosts[request.vars.id] or redirect(URL('default', 'error', vars={'msg': T('Host record not found')}))
-    elif request.vars.has_key('ipv4'):
-        host_id = db(db.t_hosts.f_ipv4 == request.vars.ipv4) or redirect(URL('default', 'error', vars={'msg': T('Host record not found')}))
-    elif request.vars.has_key('ipv6'):
-        host_id = db(db.t_hosts.f_ipv6 == request.vars.ipv6) or redirect(URL('default', 'error', vars={'msg': T('Host record not found')}))
+    elif request.vars.has_key('ipaddr'):
+        host_id = db(db.t_hosts.f_ipaddr == request.vars.ipaddr) or redirect(URL('default', 'error', vars={'msg': T('Host record not found')}))
     else:
         host_id = None
 

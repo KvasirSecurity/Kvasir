@@ -782,7 +782,7 @@ def process_mass_password(pw_file=None, pw_type=None, message=None, proto=None, 
     for k,v in ip_dict.iteritems():
         for ip_acct in v:
             # build a query to find the service for this host/port combo
-            query = (db.t_hosts.f_ipv4 == k) & (db.t_services.f_hosts_id == db.t_hosts.id)
+            query = (db.t_hosts.f_ipaddr == k) & (db.t_services.f_hosts_id == db.t_hosts.id)
             query &= (db.t_services.f_proto==ip_acct['f_proto']) & (db.t_services.f_number==ip_acct['f_number'])
             svc = db(query).select(db.t_services.id, cache=(cache.ram, 60)).first()
             if svc is None:
@@ -792,7 +792,7 @@ def process_mass_password(pw_file=None, pw_type=None, message=None, proto=None, 
                     # add host to the database, unfortunately all we know is the IP address so it's pretty bare.
                     # assign it to the current user and asset group of "new_hosts_medusa"
                     fields = {
-                        'f_ipv4': k,
+                        'f_ipaddr': k,
                         'f_engineer': user_id,
                         'f_asset_group': 'new_hosts_medusa',
                     }

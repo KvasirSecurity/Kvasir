@@ -142,14 +142,14 @@ Accepts: hostfilter=(type, value)"""
     query = create_hostfilter_query(hostfilter, query)
 
     data = db(query).select(cache=(cache.ram,120))
-    return [(host.id, host.f_ipv4, host.f_ipv6, host.f_macaddr, host.f_hostname,
+    return [(host.id, host.f_ipaddr, host.f_macaddr, host.f_hostname,
              host.f_netbios_name, db.auth_user[host.f_engineer].username, host.f_asset_group,
              host.f_confirmed) for host in data]
 
 ##-------------------------------------------------------------------------
 
 @service.jsonrpc
-def host_add(f_ipv4, f_ipv6, f_macaddr, f_hostname, f_netbios_name, f_engineer, f_asset_group, f_confirmed=False):
+def host_add(f_ipaddr, f_macaddr, f_hostname, f_netbios_name, f_engineer, f_asset_group, f_confirmed=False):
     """Adding a host
 
 Accepts: ipv4, ipv6, macaddr, hostname, netbios name, engineer name (must exist), asset group, confirmed
@@ -157,15 +157,14 @@ Accepts: ipv4, ipv6, macaddr, hostname, netbios name, engineer name (must exist)
 Returns: (True/False, Record id or error message)
 """
 
-    if f_ipv4 is None and f_ipv6 is None:
+    if f_ipaddr is None:
         return (False, "No IPv4 or IPv6 address provided.")
 
     if  db(db.auth_user.username == f_engineer).count() == 0:
         return (False, "Engineer not found in user database")
 
     try:
-        record_id = db.insert(f_ipv4 = f_ipv4,
-                              f_ipv6 = f_ipv6,
+        record_id = db.insert(f_ipaddr = f_ipaddr,
                               f_macaddr = f_macaddr,
                               f_hostname = f_hostname,
                               f_netbios_name = f_netbios_name,
@@ -181,12 +180,12 @@ Returns: (True/False, Record id or error message)
 ##-------------------------------------------------------------------------
 
 @service.jsonrpc
-def host_del(hostrec = [], ipv4recs = [], ipv6recs = []):
+def host_del(hostrec = [], ipaddresses = []):
     """Delete a host or group of hosts.
 
 Accepts: dictionary of host record IDs, IPv4 or IPv6 addresses
 
-Returns: (hostrecs deleted, ipv4 deleted, ipv6 deleted)
+Returns: (hostrecs deleted, ip addresses deleted)
 """
 
     errors = []
@@ -199,23 +198,15 @@ Returns: (hostrecs deleted, ipv4 deleted, ipv6 deleted)
             errors.append(e)
         db.commit()
 
-    ipv4_deleted = []
-    for ipv4 in ipv4recs:
-        host_id = db(db.t_hosts.f_ipv4 == ipv4).select(cache=(cache.ram,120)).first()
+    ipaddr_deleted = []
+    for ip in ipaddresses:
+        host_id = db(db.t_hosts.f_ipaddr == ip).select(cache=(cache.ram,120)).first()
         if host_id is not None:
             del db.t_hosts[host_id]
-            ipv4_deleted.append(ipv4)
+            ipaddr_deleted.append(ip)
             db.commit()
 
-    ipv6_deleted = []
-    for ipv6 in ipv6recs:
-        host_id = db(db.t_hosts.f_ipv6 == ipv6).select(cache=(cache.ram,120)).first()
-        if host_id is not None:
-            del db.t_hosts[host_id]
-            ipv6_deleted.append(ipv6)
-            db.commit()
-
-    return (hostrec_deleted, ipv4_deleted, ipv6_deleted, errors)
+    return (hostrec_deleted, ipaddr_deleted, errors)
 
 ##-------------------------------------------------------------------------
 
@@ -232,7 +223,7 @@ Returns: Host record information
     if record is None:
         return (False, "Host record not found")
 
-    return (True, record.id, record.f_ipv4, record.f_ipv6, record.f_macaddr,
+    return (True, record.id, record.f_ipaddr, record.f_macaddr,
             record.f_hostname, record.f_netbios_name, record.f_engineer,
             record.f_asset_group, record.f_confirmed)
 
@@ -246,7 +237,7 @@ def host_details(hostrec):
     if record is None:
         return (False, "Not record not found")
 
-    host = (record.id, record.f_ipv4, record.f_ipv6, record.f_macaddr,
+    host = (record.id, record.f_ipaddr, record.f_macaddr,
             record.f_hostname, record.f_netbios_name, record.f_asset_group, record.f_confirmed)
 
     host_points = {}
@@ -407,7 +398,7 @@ def service_list(svc_rec=None, host_rec=None, hostfilter=(None, None)):
 
 Accepts: Service id, host record (ipv4, ipv6 or id) or hostfilter
 
-Returns: [ service_id, host_id, ipv4, ipv6, hostname, proto, number, status, name, banner, [ vuln list ...] ]
+Returns: [ service_id, host_id, ipaddr, hostname, proto, number, status, name, banner, [ vuln list ...] ]
 """
     if svc_rec is not None:
         if type(svc_rec) is type(int):
@@ -426,8 +417,8 @@ Returns: [ service_id, host_id, ipv4, ipv6, hostname, proto, number, status, nam
 
     data = db(query).select(cache=(cache.ram,120))
 
-    return [(svc.t_services.id, svc.t_services.f_hosts_id, svc.t_hosts.f_ipv4,
-             svc.t_hosts.f_ipv6, svc.t_hosts.f_hostname, svc.t_services.f_proto,
+    return [(svc.t_services.id, svc.t_services.f_hosts_id, svc.t_hosts.f_ipaddr,
+             svc.t_hosts.f_hostname, svc.t_services.f_proto,
              svc.t_services.f_number, svc.t_services.f_status, svc.t_services.f_name,
              svc.t_services.f_banner) for svc in data]
 
@@ -439,7 +430,7 @@ def service_list_only(host_rec=None, hostfilter=(None, None)):
 
 Accepts: Service id, host record (ipv4, ipv6 or id) or hostfilter
 
-Returns: [ service_id, host_id, ipv4, ipv6, hostname, proto, number, status, name, banner, [ vuln list ...] ]
+Returns: [ service_id, host_id, ipaddr, hostname, proto, number, status, name, banner, [ vuln list ...] ]
 """
     if host_rec is not None:
         host_rec = get_host_record(host_rec)
@@ -462,7 +453,7 @@ def service_info(svc_rec=None, ipaddr=None, proto=None, port=None):
     """Returns the information about a service from either a svc_record id or
 ip address/port combo. If a port doesn't exist it will add it if insert=True
 
-Returns: [ service_id, host_id, ipv4, ipv6, hostname, proto, number, status, name, banner ]
+Returns: [ service_id, host_id, ipaddr, hostname, proto, number, status, name, banner ]
 """
     if svc_rec:
         rows = db(db.t_services.id == svc_rec).select()
@@ -487,7 +478,7 @@ Returns: [ service_id, host_id, ipv4, ipv6, hostname, proto, number, status, nam
     retval = []
     for row in rows:
         retval.append([
-            row.id, host_rec.f_ipv4, host_rec.f_ipv6, host_rec.f_hostname,
+            row.id, host_rec.f_ipaddr, host_rec.f_hostname,
             row.f_proto, row.f_number, row.f_status,
             row.f_name, row.f_banner
         ])
@@ -633,7 +624,7 @@ def service_report_list(service_id=None, service_port=None, hostfilter=(None, No
             ))
             #vuln_list.append((vuln.t_vulndata.f_vulnid, vuln.t_vulndata.f_title, vuln.t_vulndata.f_severity, vuln.t_vulndata.f_cvss_score))
         port_list = port_dict.setdefault(port_info, [])
-        port_dict[port_info].append((port.t_hosts.f_ipv4, port.t_services.f_banner, vuln_list))
+        port_dict[port_info].append((port.t_hosts.f_ipaddr, port.t_services.f_banner, vuln_list))
 
     return port_dict
 
@@ -679,8 +670,8 @@ Returns: (True/False, Service info ...)
 def service_vuln_iptable(hostfilter=(None, None)):
     """Returns a dict of services. Contains a list of IPs with (vuln, sev)
 
-    '0/info': { 'host_id1': [ (ipv4, ipv6, hostname), ( (vuln1, 5), (vuln2, 10) ... ) ] },
-              { 'host_id2': [ (ipv4, ipv6, hostname), ( (vuln1, 5) ) ] }
+    '0/info': { 'host_id1': [ (ipaddr, hostname), ( (vuln1, 5), (vuln2, 10) ... ) ] },
+              { 'host_id2': [ (ipaddr, hostname), ( (vuln1, 5) ) ] }
 
 """
 
@@ -701,10 +692,10 @@ def service_vuln_iptable(hostfilter=(None, None)):
             svc_rec = db.t_services(row.t_service_vulns.f_services_id)
             port_txt = "%s/%s" % (svc_rec.f_number, svc_rec.f_proto)
             host_rec = get_host_record(svc_rec.f_hosts_id)
-            ip_info = ip_dict.setdefault(host_rec.f_ipv4, [])
+            ip_info = ip_dict.setdefault(host_rec.f_ipaddr, [])
             if row.t_vulndata.f_vulnid not in map(lambda x: x[0], ip_info):
                 ip_info.append((row.t_vulndata.f_vulnid, row.t_vulndata.f_severity, row.t_vulndata.f_cvss_score))
-            ip_dict[host_rec.f_ipv4] = ip_info
+            ip_dict[host_rec.f_ipaddr] = ip_info
 
         for k,v in ip_dict.iteritems():
             service_dict.setdefault(port_txt, dict())
@@ -722,7 +713,7 @@ def accounts_list(svc_rec=None, hostfilter=(None, None), compromised=False):
 
 Accepts: Service id, hostfilter, compromised
 
-Returns: [ service_id, ipv4, ipv6, hostname, account info... ]
+Returns: [ service_id, ipaddr, hostname, account info... ]
 """
 
     query = (db.t_accounts.f_services_id==db.t_services.id)
@@ -738,8 +729,8 @@ Returns: [ service_id, ipv4, ipv6, hostname, account info... ]
 
     data = []
     for acct in accounts:
-        data.append([acct.t_accounts.f_services_id, acct.t_hosts.f_ipv4,
-                     acct.t_hosts.f_ipv6, acct.t_hosts.f_hostname,
+        data.append([acct.t_accounts.f_services_id, acct.t_hosts.f_ipaddr,
+                     acct.t_hosts.f_hostname,
                      acct.t_accounts.id, acct.t_accounts.f_username,
                      acct.t_accounts.f_fullname, acct.t_accounts.f_password,
                      acct.t_accounts.f_compromised, acct.t_accounts.f_hash1,
@@ -752,16 +743,6 @@ Returns: [ service_id, ipv4, ipv6, hostname, account info... ]
                      acct.t_accounts.f_description,
                      acct.t_services.f_proto, acct.t_services.f_number,
                    ])
-        '''
-        data.append([svc.id, hostrec.f_ipv4, hostrec.f_ipv6, hostrec.f_hostname,
-                     acct.id, acct.f_username, acct.f_fullname, acct.f_password,
-                     acct.f_compromised, acct.f_hash1, acct.f_hash1_type, acct.f_hash2,
-                     acct.f_hash2_type, acct.f_source, acct.f_uid, acct.f_gid,
-                     acct.f_level, acct.f_domain, acct.f_message, acct.f_lockout,
-                     acct.f_duration, acct.f_active, acct.f_description,
-                     svc.f_proto, svc.f_number,
-                   ])
-        '''
     return data
 
 '''
@@ -785,7 +766,7 @@ def accounts_compromised(service_rec=None, host_rec=None, account_rec=None):
 
     for rec in db(query).select(cache=(cache.ram,120)):
         hostrec = db(db.t_hosts.id == rec.t_services.f_hosts_id).select(cache=(cache.ram,120)).first()
-        data.append([rec.t_services.id, hostrec.f_ipv4, hostrec.f_ipv6, hostrec.f_hostname,
+        data.append([rec.t_services.id, hostrec.f_ipaddr, hostrec.f_hostname,
                      rec.t_accounts.id, rec.t_accounts.f_username, rec.t_accounts.f_fullname,
                      rec.t_accounts.f_password, rec.t_accounts.f_compromised, rec.t_accounts.f_hash1,
                      rec.t_accounts.f_hash1_type, rec.t_accounts.f_hash2, rec.t_accounts.f_hash2_type,
@@ -847,7 +828,7 @@ def accounts_info(account_rec=None):
     svc_rec = db.t_services[acct.f_services_id]
     hostrec = db.t_hosts[svc_rec.f_hosts_id]
 
-    return (True, hostrec.f_ipv4, hostrec.f_ipv6, hostrec.f_hostname,
+    return (True, hostrec.f_ipaddr, hostrec.f_hostname,
             svc_rec.f_proto, svc_rec.f_number,
             acct.id, acct.f_username, acct.f_fullname, acct.f_password,
             acct.f_compromised, acct.f_hash1, acct.f_hash1_type, acct.f_hash2,
@@ -984,11 +965,11 @@ A compromised account is when the Password is not None"""
     query = create_hostfilter_query(hostfilter, query, 't_services')
     data = {}
     for acct in db(query).select(cache=(cache.ram,120)):
-        ipv4 = db.t_hosts[acct.t_services.f_hosts_id].f_ipv4
-        data.setdefault(ipv4, {'discovered':0, 'compromised':0})
-        data[ipv4]['discovered'] += 1
+        ipaddr = db.t_hosts[acct.t_services.f_hosts_id].f_ipaddr
+        data.setdefault(ipaddr, {'discovered':0, 'compromised':0})
+        data[ipaddr]['discovered'] += 1
         if acct.t_accounts.f_password is not None:
-            data[ipv4]['compromised'] += 1
+            data[ipaddr]['compromised'] += 1
 
     return data
 
@@ -1018,7 +999,7 @@ def snmp_list(snmpstring=None, hostfilter=(None, None)):
 
 Accepts: Record id, IPv4, IPv6 or Hostname - if not found return nothing
 
-Returns: [ [ record_id, ipv4, ipv6, hostname, community, access, version ] ... ]
+Returns: [ [ record_id, ipaddr, hostname, community, access, version ] ... ]
 """
     query = (db.t_snmp.id > 0)
     query = create_hostfilter_query(hostfilter, query, 't_snmp')
@@ -1028,7 +1009,7 @@ Returns: [ [ record_id, ipv4, ipv6, hostname, community, access, version ] ... ]
 
     data = []
     for snmp in db(query).select(cache=(cache.ram,120)):
-        data.append([snmp.t_snmp.id, snmp.t_hosts.f_ipv4, snmp.t_hosts.f_ipv6, snmp.t_hosts.f_hostname,
+        data.append([snmp.t_snmp.id, snmp.t_hosts.f_ipaddr, snmp.t_hosts.f_hostname,
                      snmp.t_snmp.f_community, snmp.t_snmp.f_access, snmp.t_snmp.f_version])
 
     return data
@@ -1216,10 +1197,10 @@ If ip_list_only is false then adds proof and status
         query &= (db.t_service_vulns.f_vulndata_id == vuln_id)
 
     for row in db(query).select(cache=(cache.ram, 60)):
-        if row.t_hosts.f_ipv4 not in data and ip_list_only:
-            data.append(row.t_hosts.f_ipv4, row.t_hosts.f_ipv6, row.t_hosts.f_hostname)
+        if row.t_hosts.f_ipaddr not in data and ip_list_only:
+            data.append(row.t_hosts.f_ipaddr, row.t_hosts.f_hostname)
         else:
-            data.append((row.t_hosts.f_ipv4, row.t_hosts.f_ipv6, row.t_hosts.f_hostname, markmin2html(row.t_service_vulns.f_proof), markmin2html(row.t_service_vulns.f_status)))
+            data.append((row.t_hosts.f_ipaddr, row.t_hosts.f_hostname, markmin2html(row.t_service_vulns.f_proof), markmin2html(row.t_service_vulns.f_status)))
 
     return data
 
@@ -1229,9 +1210,9 @@ If ip_list_only is false then adds proof and status
 def vuln_service_list(vuln_name = None, vuln_id = None, hostfilter=(None, None)):
     """Returns a list of services and IPs vulnerability has been found on:
 
-'vuln-id': {'port1': [ (ipv4, ipv6, hostname ),
-                       (ipv4, ipv6, hostname ) ]},
-           {'port2': [ (ipv4, ipv6, hostname ) ]}
+'vuln-id': {'port1': [ (ipaddr, hostname ),
+                       (ipaddr, hostname ) ]},
+           {'port2': [ (ipaddr, hostname ) ]}
 
 """
 
@@ -1254,7 +1235,7 @@ def vuln_service_list(vuln_name = None, vuln_id = None, hostfilter=(None, None))
     for row in db(query).select(cache=(cache.ram,120)):
         port = "%s/%s" % (row.t_services.f_number, row.t_services.f_proto)
         host_rec = get_host_record(row.t_services.f_hosts_id)
-        host_list = [(host_rec.f_ipv4, host_rec.f_ipv6, host_rec.f_hostname)]
+        host_list = [(host_rec.f_ipaddr, host_rec.f_hostname)]
         vulnid = db.t_vulndata[row.t_service_vulns.f_vulndata_id].f_vulnid
 
         port_dict = data.setdefault(vulnid, {})
@@ -1307,7 +1288,7 @@ def os_list(hostfilter=(None, None)):
 
 Accepts: hostfilter
 
-Returns: [ ( ipv4, ipv6, hostname, os records... ) ... ]
+Returns: [ ( ipaddr, hostname, os records... ) ... ]
 """
     data = []
     query = (db.t_host_os_refs.f_hosts_id == db.t_hosts.id)
@@ -1315,8 +1296,7 @@ Returns: [ ( ipv4, ipv6, hostname, os records... ) ... ]
 
     for os_ref_rec in db(query).select(cache=(cache.ram,120)):
         os_rec = db.t_os[os_ref_rec.t_host_os_refs.f_os_id]
-        data.append([os_ref_rec.t_hosts.f_ipv4,
-                     os_ref_rec.t_hosts.f_ipv6,
+        data.append([os_ref_rec.t_hosts.f_ipaddr,
                      os_ref_rec.t_hosts.f_hostname,
                      os_ref_rec.t_host_os_refs.f_certainty,
                      os_ref_rec.t_host_os_refs.f_class,
@@ -1353,8 +1333,7 @@ def os_report_list(hostfilter=(None, None)):
         if highest[0] > 0:
             os_rec = db.t_os(highest[1].t_host_os_refs.f_os_id)
             data.append([row.t_hosts.id,
-                         row.t_hosts.f_ipv4,
-                         row.t_hosts.f_ipv6,
+                         row.t_hosts.f_ipaddr,
                          row.t_hosts.f_hostname,
                          highest[1].t_host_os_refs.f_certainty,
                          highest[1].t_host_os_refs.f_class,
@@ -1382,7 +1361,7 @@ def netbios_list(hostfilter=(None, None)):
     query = create_hostfilter_query(hostfilter, query, 't_netbios')
 
     for rec in db(query).select(cache=(cache.ram,120)):
-        data.append((rec.t_hosts.f_ipv4, rec.t_hosts.f_ipv6, rec.t_hosts.f_hostname,
+        data.append((rec.t_hosts.f_ipaddr, rec.t_hosts.f_hostname,
                      rec.t_netbios.f_type, rec.t_netbios.f_advertised_names,
                      rec.t_netbios.f_domain, rec.t_netbios.f_lockout_limit,
                      rec.t_netbios.f_lockout_duration, rec.t_netbios.f_shares))
@@ -1411,7 +1390,7 @@ def netbios_domain_members(domain=None, hostfilter=(None, None)):
     q = (db.t_netbios.f_domain == domain) & (db.t_netbios.f_hosts_id == db.t_hosts.id)
     q = create_hostfilter_query(hostfilter, q, 't_netbios')
     for rec in db(q).select(cache=(cache.ram,120)):
-        data.append(rec.t_hosts.f_ipv4)
+        data.append(rec.t_hosts.f_ipaddr)
     return data
 
 ##-------------------------------------------------------------------------
@@ -1424,7 +1403,7 @@ def netbios_domain_controllers(domain=None, hostfilter=(None, None)):
     q = create_hostfilter_query(hostfilter, q, 't_netbios')
     for rec in db(q).select(cache=(cache.ram,120)):
         if rec.t_netbios.f_type == "PDC" or rec.t_netbios.f_type == "BDC":
-            data.append(rec.t_hosts.f_ipv4)
+            data.append(rec.t_hosts.f_ipaddr)
     return data
 
 ##-------------------------------------------------------------------------

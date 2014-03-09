@@ -86,7 +86,7 @@ def bruteforce():
                 host_rec = get_host_record(host_rec)
             if not host_rec:
                 return None
-            return host_rec.get('f_ipv4') or host_rec.get('f_ipv6')
+            return host_rec.get('f_ipaddr')
         target_ips = '\n'.join([host_to_ip(x) for x in host_records.split('|')])
     else:
         target_ips = ''
@@ -234,7 +234,7 @@ def exploit():
                 host_rec = get_host_record(host_rec)
             if not host_rec:
                 return None
-            return host_rec.get('f_ipv4') or host_rec.get('f_ipv6')
+            return host_rec.get('f_ipaddr')
         target_ips = '\n'.join([host_to_ip(x) for x in host_records.split('|')])
     else:
         target_ips = ''

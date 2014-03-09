@@ -18,7 +18,7 @@ response.menu = [
          (T('Services'), False, '',
           [
               (T('List All'), False, URL(_a,'services','list'), []),
-              (T('All w/ Vulns'), False, URL(_a,'vulns','service_vulns_list'), []),
+              #(T('All w/ Vulns'), False, URL(_a,'vulns','service_vulns_list'), []),  # TODO: service_vulns_list
               (T('IPs w/ Port'), False, URL(_a,'services','hosts_with_port'), []),
               (T('Add'), False, URL(_a,'services','add'), []),
           ]),

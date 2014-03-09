@@ -30,9 +30,7 @@ def add_or_update(hostfields, update=False):
         log(" [!] Hostfields is not a dictionary", logging.ERROR)
         return None
 
-    host_rec = db(db.t_hosts.f_ipv4 == hostfields.get('f_ipv4'))
-    if not host_rec:
-        host_rec = db(db.t_hosts.f_ipv4 == hostfields.get('f_ipv6'))
+    host_rec = db(db.t_hosts.f_ipaddr == hostfields.get('f_ipaddr'))
 
     if not host_rec:
         try:
@@ -71,14 +69,8 @@ def get_host_record(argument):
     if record:
         return record
     else:
-        if IS_IPADDRESS(is_ipv4=True)(argument)[1] == None:
-            host_rec = db(db.t_hosts.f_ipv4 == argument).select().first()
-            if host_rec:
-                record = db.t_hosts(host_rec['id'])
-            else:
-                record = None
-        elif IS_IPADDRESS(is_ipv6=True)(argument)[1] == None:
-            host_rec = db(db.t_hosts.f_ipv6 == request.args(0)).select().first()
+        if IS_IPADDRESS()(argument)[1] == None:
+            host_rec = db(db.t_hosts.f_ipaddr == argument).select().first()
             if host_rec:
                 record = db.t_hosts(host_rec['id'])
             else:
@@ -228,6 +220,14 @@ def create_hostfilter_query(fdata, q=None, dbname=None):
             q &= db.t_hosts.f_asset_group.contains(f_value)
         else:
             q &= db.t_hosts.f_asset_group == f_value
+    elif f_type == "range":
+        q &= (db.t_hosts.f_ipaddr.contains(f_value))
+    elif f_type == "ipaddr_list":
+        if len(f_value) > 0:
+            ip_q = (db.t_hosts.f_ipaddr == f_value[0])
+        for host in f_value[1:]:
+            ip_q |= (db.t_hosts.f_ipaddr == host)
+        q &= ip_q
 
     return q
 
@@ -243,15 +243,12 @@ def host_title_maker(record):
     if record is None:
         return "Unknown"
 
-    hostinfo = []
-    if record.f_ipv4:
-        hostinfo.append(record.f_ipv4)
-    if record.f_ipv6:
-        hostinfo.append(record.f_ipv6)
+    if record.f_ipaddr:
+        hostinfo = record.f_ipaddr
     if record.f_hostname:
-        hostinfo.append(record.f_hostname)
+        hostinfo = "%s (%s)" % (record.f_ipaddr, record.f_hostname)
 
-    return " :: ".join(hostinfo)
+    return hostinfo
 
 
 ##-------------------------------------------------------------------------

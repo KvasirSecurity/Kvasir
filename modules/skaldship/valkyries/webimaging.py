@@ -109,8 +109,7 @@ def do_screenshot(services=None):
             invalid_count += 1
             continue
 
-        # go with ipv6 if defined, else pick the ipv4 address
-        ipaddr = svc_rec.f_hosts_id.f_ipv6 or svc_rec.f_hosts_id.f_ipv4
+        ipaddr = svc_rec.f_hosts_id.f_ipaddr
         port = "%s%s" % (svc_rec.f_number, svc_rec.f_proto[0])
         check_datadir(current.globalenv['request'].folder)
         folder = os.path.join(current.globalenv['request'].folder, "data/screenshots")

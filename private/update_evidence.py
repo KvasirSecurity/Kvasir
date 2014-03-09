@@ -23,6 +23,7 @@ import sys, os, glob
 import hashlib, re
 from optparse import OptionParser, OptionGroup
 from skaldship.hosts import get_host_record
+from gluon.validators import IS_IPADDRESS
 
 IPV4_REGEX = re.compile("^(?P<ipv4>((25[0-5]|2[0-4]\d|1\d\d|[1-9]\d|\d)\.){3}(25[0-5]|2[0-4]\d|1\d\d|[1-9]\d|\d))")
 
@@ -55,18 +56,18 @@ def md5_content(content):
 
 ##--------------------------------------------------------------------
 
-def update_db(f_type=None, record=None, data=None, filename=None, ipv4_addr=None):
+def update_db(f_type=None, record=None, data=None, filename=None, ipaddr=None):
     """Adds or updates an existing record id"""
 
     if record is None:
         # inserting a new record into the database
-        if ipv4_addr is None:
+        if ipaddr is None:
             print "ERROR: No IPv4 address provided"
             return False
 
-        host_id = get_host_record(ipv4_addr)
+        host_id = get_host_record(ipaddr)
         if not host_id:
-            print "ERROR: IPv4 address %s is not a host in the database" % (ipv4_addr)
+            print "ERROR: %s is not a host in the database" % (ipaddr)
             return False
 
         try:
@@ -95,7 +96,7 @@ def update_db(f_type=None, record=None, data=None, filename=None, ipv4_addr=None
 
 ##--------------------------------------------------------------------
 
-def get_ipv4(filename):
+def get_ipaddr(filename):
     ipv4_addr = IPV4_REGEX.match(filename)
     if ipv4_addr:
         return ipv4_addr.group('ipv4')
@@ -105,7 +106,7 @@ def get_ipv4(filename):
 ##--------------------------------------------------------------------
 
 
-def Run(directory=None, filename=None, f_type=None, ipv4_addr=None):
+def Run(directory=None, filename=None, f_type=None, ipaddr=None):
 
     print "======================================================================="
     print "\nAdding %s files to the Evidence database\n" % (f_type)
@@ -134,9 +135,9 @@ def Run(directory=None, filename=None, f_type=None, ipv4_addr=None):
         for glob_result in glob.glob(dir_glob):
             (file_path, filename) = os.path.split(glob_result)
 
-            ipv4_addr = get_ipv4(filename)
-            if ipv4_addr is None:
-                print "No IPv4 address provided or found in the filename: %s" % (filename)
+            ipaddr = get_ipaddr(filename)
+            if ipaddr is None:
+                print "No IP address provided or found in the filename: %s" % (filename)
                 print "For files the IP address must be the first part of the name."
                 print "Example: 192.168.1.0-description.png"
                 continue
@@ -157,15 +158,15 @@ def Run(directory=None, filename=None, f_type=None, ipv4_addr=None):
                     continue
             else:
                 print "%s is NOT in database, adding it..." % (filename)
-                res = update_db(f_type, None, data, filename, ipv4_addr)
+                res = update_db(f_type, None, data, filename, ipvaddr)
 
     elif filename is not None:
         (dir_path, filename) = os.path.split(filename)
 
-        if ipv4_addr is None:
-            ipv4_addr = get_ipv4(filename)
-            if ipv4_addr is None:
-                print "No IPv4 address provided or found in the filename: %s" % (filename)
+        if ipaddr is None:
+            ipaddr = get_ipaddr(filename)
+            if ipaddr is None:
+                print "No IP address provided or found in the filename: %s" % (filename)
                 print "For files the IP address must be the first part of the name."
                 print "Example: 192.168.1.0-description.png"
                 return
@@ -179,10 +180,10 @@ def Run(directory=None, filename=None, f_type=None, ipv4_addr=None):
         db_row = db(db.t_evidence.f_filename == filename).select(db.t_evidence.f_filename, db.t_evidence.id, db.t_evidence.f_data).first()
         if db_row is None:
             print "%s is NOT in database, adding it..." % (filename)
-            res = update_db(f_type, None, data, filename, ipv4_addr)
+            res = update_db(f_type, None, data, filename, ipaddr)
         else:
             print "%s is in the database, updating database..." % (filename)
-            res = update_db(f_type, db_row.id, data, filename, ipv4_addr)
+            res = update_db(f_type, db_row.id, data, filename, ipaddr)
 
     return
 
@@ -195,8 +196,8 @@ optparser.add_option("-t", "--type", dest="f_type",
     action="store", default=None, help="Evidence type ([S]creenshot, Session[L]og)")
 
 file_group = OptionGroup(optparser, "File-based Options")
-file_group.add_option("-i", "--ipv4", dest="ipv4",
-    action="store", default=None, help="IPv4 Address (if only a filename)")
+file_group.add_option("-i", "--ip", dest="ipaddr",
+    action="store", default=None, help="IP Address (if only a filename)")
 file_group.add_option("-f", "--file", dest="filename",
     action="store", default=None, help="Filename to insert/update")
 optparser.add_option_group(file_group)
@@ -220,4 +221,4 @@ elif f_type in ["Screenshot", "s", "S"]:
 else:
     sys.exit("\nMust provide an evidence type")
 
-Run(options.directory, options.filename, f_type, options.ipv4)
+Run(options.directory, options.filename, f_type, options.ipaddr)

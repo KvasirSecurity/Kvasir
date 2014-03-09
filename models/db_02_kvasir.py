@@ -18,8 +18,7 @@ from skaldship.hosts import host_title_maker
 ########################################
 db.define_table('t_hosts',
     Field('id','id', represent=lambda i, row:SPAN(A(i,_id="host_detail_%s" % (i),_href=URL('hosts', 'detail',args=i)))),
-    Field('f_ipv4', type='string', length=15, unique=True, requires=IS_EMPTY_OR(IS_IPV4()), label=T('IPv4 Address')),
-    Field('f_ipv6', type='string', label=T('IPv6 Address'), requires=IS_EMPTY_OR(IS_IPV6())),
+    Field('f_ipaddr', type='string', unique=True, requires=IS_IPADDRESS(), label=T('IP Address')),
     Field('f_macaddr', type='string', label=T('MAC Address')),
     Field('f_hostname', type='string', label=T('Hostname')),
     Field('f_uptime', type='string', label=T('Uptime')),
@@ -78,7 +77,7 @@ db.define_table('t_services',
     Field('f_name', type='string', label=T('Service Name'), widget=autocomplete_bootstrap),
     Field('f_banner', type='text', label=T('Banner')),
     Field('f_hosts_id', type='reference t_hosts', label=T('Host'), represent=lambda id,row:XML(host_title_maker(db.t_hosts[id]))),
-    format=lambda r:XML("%s :: %s/%s" % (db.t_hosts[r.f_hosts_id.id].f_ipv4, r.f_proto, r.f_number)),
+    format=lambda r:XML("%s :: %s/%s" % (db.t_hosts[r.f_hosts_id.id].f_ipaddr, r.f_proto, r.f_number)),
     fake_migrate=settings.fake_migrate, migrate=settings.migrate)
 
 ########################################

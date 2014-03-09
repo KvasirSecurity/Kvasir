@@ -627,10 +627,8 @@ def process_xml(
 
         ip = node.attrib['address']
 
-        if IS_IPADDRESS(is_ipv4=True)(ip):
-            nodefields['f_ipv4'] = ip
-        elif IS_IPADDRESS(is_ipv6=True)(ip):
-            nodefields['f_ipv6'] = ip
+        if IS_IPADDRESS()(ip):
+            nodefields['f_ipaddr'] = ip
         else:
             log(" [!] Invalid IP Address: %s" % ip, logging.ERROR)
 
@@ -645,7 +643,7 @@ def process_xml(
             nodefields['f_hostname'] = node.find('names/name').text
 
         # check to see if IP exists in DB already
-        query = (db.t_hosts.f_ipv4 == ip) | (db.t_hosts.f_ipv6 == ip)
+        query = (db.t_hosts.f_ipaddr == ip)
         host_rec = db(query).select().first()
         if host_rec is None:
             host_id = db.t_hosts.insert(**nodefields)
@@ -654,20 +652,12 @@ def process_xml(
             log(" [-] Adding IP: %s" % ip)
         elif update_hosts:
             db.commit()
-            if 'f_ipv4' in nodefields:
-                db(db.t_hosts.f_ipv4 == nodefields['f_ipv4']).update(**nodefields)
-                db.commit()
-                host_id = get_host_record(nodefields['f_ipv4'])
-                host_id = host_id.id
-                hoststats['updated'] += 1
-                log(" [-] Updating IP: %s" % ip)
-            else:
-                db(db.t_hosts.f_ipv6 == nodefields['f_ipv6']).update(**nodefields)
-                db.commit()
-                host_id = get_host_record(nodefields['f_ipv6'])
-                host_id = host_id.id
-                hoststats['updated'] += 1
-                log(" [-] Updating IP: %s" % ip)
+            db(db.t_hosts.f_ipaddr == nodefields['f_ipaddr']).update(**nodefields)
+            db.commit()
+            host_id = get_host_record(nodefields['f_ipaddr'])
+            host_id = host_id.id
+            hoststats['updated'] += 1
+            log(" [-] Updating IP: %s" % ip)
         else:
             hoststats['skipped'] += 1
             db.commit()

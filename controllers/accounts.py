@@ -116,7 +116,7 @@ def accounts_grid():
     query = (db.t_accounts.id > 0) & (db.t_accounts.f_services_id== db.t_services.id)
     query = create_hostfilter_query(session.hostfilter, query, 't_services')
     columns = [
-        db.t_hosts.f_ipv4, db.t_hosts.f_hostname, db.t_services.f_proto, db.t_services.f_number,
+        db.t_hosts.f_ipaddr, db.t_hosts.f_hostname, db.t_services.f_proto, db.t_services.f_number,
         db.t_accounts.f_fullname, db.t_accounts.f_domain, db.t_accounts.f_password,
         db.t_accounts.f_hash1_type, db.t_accounts.f_hash1, db.t_accounts.f_hash2_type,
         db.t_accounts.f_hash2, db.t_accounts.f_uid, db.t_accounts.f_gid,
@@ -141,7 +141,7 @@ def csv():
         q &= (db.t_accounts.f_username == request.vars.username)
 
     accts = db(q).select(
-        db.t_hosts.f_ipv4, db.t_services.f_proto, db.t_services.f_number,
+        db.t_hosts.f_ipaddr, db.t_services.f_proto, db.t_services.f_number,
         db.t_accounts.f_services_id, db.t_accounts.id, db.t_accounts.f_username,
         db.t_accounts.f_password, db.t_accounts.f_compromised,
         db.t_accounts.f_hash1, db.t_accounts.f_hash1_type,
@@ -196,9 +196,7 @@ def list():
                 ["source", db.t_accounts.f_source],
                 ["desc", db.t_accounts.f_description],
                 ["msg", db.t_accounts.f_message],
-                ["ip", db.t_hosts.f_ipv4],
-                ["ipv4", db.t_hosts.f_ipv4],
-                ["ipv6", db.t_hosts.f_ipv6],
+                ["ip", db.t_hosts.f_ipaddr],
                 ["hostname", db.t_hosts.f_hostname],
             ]
 
@@ -223,8 +221,7 @@ def list():
                     db.t_accounts.f_source.like("%%%s%%" % request.vars.sSearch) | \
                     db.t_accounts.f_message.like("%%%s%%" % request.vars.sSearch) | \
                     db.t_accounts.f_description.like("%%%s%%" % request.vars.sSearch) | \
-                    db.t_hosts.f_ipv4.like("%%%s%%" % request.vars.sSearch) | \
-                    db.t_hosts.f_ipv6.like("%%%s%%" % request.vars.sSearch) | \
+                    db.t_hosts.f_ipaddr.like("%%%s%%" % request.vars.sSearch) | \
                     db.t_hosts.f_hostname.like("%%%s%%" % request.vars.sSearch)
 
             #total_count = db.t_vulndata.id.count()
@@ -233,7 +230,7 @@ def list():
             # and datatables starts at 1 so we have to subtract 1 from iSortCol_0
             cols = (
                 db.t_accounts.f_compromised,
-                db.t_hosts.f_ipv4,
+                db.t_hosts.f_ipaddr,
                 db.t_services.f_number,
                 db.t_accounts.f_username,
                 db.t_accounts.f_fullname,
@@ -258,8 +255,7 @@ def list():
                 rows=db(query).select(
                     db.t_accounts.ALL,
                     db.t_hosts.id,
-                    db.t_hosts.f_ipv4,
-                    db.t_hosts.f_ipv6,
+                    db.t_hosts.f_ipaddr,
                     db.t_hosts.f_hostname,
                     db.t_services.f_proto,
                     db.t_services.f_number,
@@ -270,8 +266,7 @@ def list():
                 rows=db(query).select(
                     db.t_accounts.ALL,
                     db.t_hosts.id,
-                    db.t_hosts.f_ipv4,
-                    db.t_hosts.f_ipv6,
+                    db.t_hosts.f_ipaddr,
                     db.t_hosts.f_hostname,
                     db.t_services.f_proto,
                     db.t_services.f_number,
@@ -282,8 +277,7 @@ def list():
             rows=db(query).select(
                 db.t_accounts.ALL,
                 db.t_hosts.id,
-                db.t_hosts.f_ipv4,
-                db.t_hosts.f_ipv6,
+                db.t_hosts.f_ipaddr,
                 db.t_hosts.f_hostname,
                 db.t_services.f_proto,
                 db.t_services.f_number,
@@ -293,8 +287,7 @@ def list():
         #rows=db(q).select(
         #    db.t_accounts.ALL,
         #    db.t_hosts.id,
-        #    db.t_hosts.f_ipv4,
-        #    db.t_hosts.f_ipv6,
+        #    db.t_hosts.f_ipaddr,
         #    db.t_hosts.f_hostname,
         #    db.t_services.f_proto,
         #    db.t_services.f_number,
@@ -533,7 +526,7 @@ def check_john_pot():
 def by_host():
     """
     Returns a list of services + serviceinfo based upon an host identifier
-    (id, ipv4, ipv6)
+    (id, ipaddr)
     """
     record = get_host_record(request.args(0))
     if record is None:
@@ -687,7 +680,7 @@ def duplicate_on_hosts():
     query &= (db.t_services.f_hosts_id == db.t_hosts.id)
 
     columns = [
-        db.t_hosts.f_ipv4, db.t_hosts.f_hostname, db.t_services.f_proto, db.t_services.f_number,
+        db.t_hosts.f_ipaddr, db.t_hosts.f_hostname, db.t_services.f_proto, db.t_services.f_number,
         db.t_accounts.f_username, db.t_accounts.f_domain, db.t_accounts.f_compromised,
         db.t_accounts.f_password, db.t_accounts.f_hash1_type, db.t_accounts.f_hash1,
         db.t_accounts.f_hash2_type, db.t_accounts.f_hash2, db.t_accounts.f_uid,

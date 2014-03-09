@@ -98,8 +98,7 @@ t_cpe_hardware
 	f_language
 t_hosts
 	id
-	f_ipv4
-	f_ipv6
+	f_ipaddr
 	f_macaddr
 	f_hostname
 	f_netbios_name

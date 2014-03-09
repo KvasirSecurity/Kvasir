@@ -51,18 +51,17 @@ def launch_terminal(record=None, launch_cmd=None):
 
     import string, os, subprocess
     import time
+    from gluon.validators import IS_IPADDRESS
 
     # if no launch command use the default
     if not launch_cmd:
         launch_cmd = "xterm -sb -sl 1500 -vb -T 'manual hacking: _IP_' -n 'manual hacking: _IP_' -e 'script _LOGFILE_'"
 
     # check ip address
-    if record.f_ipv6 is None or len(record.f_ipv6) == 0:
-        ip = record.f_ipv4
-        logip = record.f_ipv4
-    else:
-        ip = record.f_ipv6
-        logip = record.f_ipv6.replace(":", "_")
+    ip = record.f_ipaddr
+    logip = ip
+    if IS_IPADDRESS(is_ipv6=True)(ip)[0] == None:
+        logip = ip.replace(":", "_")
 
     logdir = "session-logs"
     logfilename = "%s-%s.log" % (logip, time.strftime("%Y%m%d%H%M%S", time.localtime(time.time())))

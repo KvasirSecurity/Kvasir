@@ -115,11 +115,8 @@ def process_xml(
 
     for node in nodes:
         nodefields = {}
-        ip = node.get('value')
-        if RE_IPV4.match(ip):
-            nodefields['f_ipv4'] = ip
-        else:
-            nodefields['f_ipv6'] = ip
+        ipaddr = node.get('value')
+        nodefields['f_ipaddr'] = ipaddr
 
         nodefields['f_hostname'] = node.get('hostname')
         nodefields['f_netbios_name'] = node.findtext('NETBIOS_HOSTNAME')
@@ -155,10 +152,8 @@ def process_xml(
         nodefields['f_confirmed'] = False
 
         # check to see if IPv4/IPv6 exists in DB already
-        if nodefields.has_key('f_ipv4'):
-            host_rec = db(db.t_hosts.f_ipv4 == nodefields['f_ipv4']).select().first()
-        elif nodefields.has_key('f_ipv6'):
-            host_rec = db(db.t_hosts.f_ipv6 == nodefields['f_ipv6']).select().first()
+        if nodefields.has_key('f_ipaddr'):
+            host_rec = db(db.t_hosts.f_ipaddr == nodefields['f_ipaddr']).select().first()
         else:
             logging.warn("No IP Address found in record. Skipping")
             continue
@@ -170,10 +165,7 @@ def process_xml(
             print(" [-] Adding %s" % (ipaddr))
         elif host_rec is not None and update_hosts:
             db.commit()
-            if iptype == 'ipv4':
-                host_id = db(db.t_hosts.f_ipv4 == nodefields['f_ipv4']).update(**nodefields)
-            elif iptype == 'ipv6':
-                host_id = db(db.t_hosts.f_ipv6 == nodefields['f_ipv6']).update(**nodefields)
+            host_id = db(db.t_hosts.f_ipaddr == nodefields['f_ipaddr']).update(**nodefields)
             db.commit()
             host_id = get_host_record(ipaddr)
             host_id = host_id.id
