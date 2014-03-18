@@ -214,12 +214,26 @@ def get_oreally_404(rfolder):
 ##-------------------------------------------------------------------------
 
 def html_to_markmin(html):
-    """Replace HTML with Markmin"""
+    """
+    Replace HTML with Markmin, converting unicode to references first
 
+    >>> html_to_markmin('<p class="foo"><b>Bold</b><i>Italics</i><ol><li>Item 1</li><li><a href="http://kvasir.io">Kvasir</a></li></ol><br>')
+    "**Bold**''Italics''\n- Item 1\n- [[Kvasir http://kvasir.io]]\n\n\n\n"
+    >>> html_to_markmin(u'<p>asdfsadf</p>')
+    'asdfsadf\n\n'
+    >>> html_to_markmin(u'<p>\ufffdq\ufffd</p>')
+    '\xef\xbf\xbdq\xef\xbf\xbd\n\n'
+    >>> html_to_markmin('[[ a link http://url.com]]')
+    '[[a link http://url.com]]'
+    """
     if html is None:
         return ''
     from gluon.html import markmin_serializer, TAG
-    return TAG(html).flatten(markmin_serializer).lstrip(' ')
+    html = html.encode('ascii', 'xmlcharrefreplace')    # cleanup unicode
+    html = TAG(html).flatten(markmin_serializer)        # turn to markmin
+    html = html.replace('[[ ', '[[')                      # fix bad url
+    html = html.replace(' ]]', ']]')                      # fix bad url
+    return html
 
 ##-------------------------------------------------------------------------
 

@@ -56,15 +56,20 @@ def nexpose_get_config():
 
 def nx_xml_to_html(vulnxml):
     """Transforms a Nexpose <ContainerBlockElement> to HTML using XSLT"""
-
     import os
     d = os.path.join(current.globalenv['request'].folder, "modules/skaldship/stylesheets/nexpose.xsl")
     vuln_xslt = etree.XML("".join(open(d, "r").readlines()))
-
     transform = etree.XSLT(vuln_xslt)
+
+    if isinstance(vulnxml, (str, unicode)):
+        # convert to stringio for etree parsing
+        from StringIO import StringIO
+        vulnxml = StringIO(vulnxml)
+
     vulnxml = etree.parse(vulnxml)
     result = transform(vulnxml)
-    vulnhtml = etree.tostring(result, xml_declaration=False)
+    vulnhtml = etree.tostring(result, xml_declaration=False, encoding=unicode)
+
     return clean_html(vulnhtml)
 
 
@@ -72,7 +77,7 @@ def nx_xml_to_html(vulnxml):
 
 def clean_html(htmldata):
     """Cleans up the HTML using lxml.html clean_html for now."""
-
+    import re
     try:
         from lxml.html.clean import clean_html
     except ImportError:
@@ -85,7 +90,8 @@ def clean_html(htmldata):
     newdata = newdata.replace('\n', ' ')
     newdata = newdata.replace('<div>', '')
     newdata = newdata.replace('</div>', '')
-    #newdata = re.compile('\s*\n\s*').sub('\n', newdata)
+    newdata = newdata.replace('\t', '')         # tabs? not needed, no never
+    newdata = re.sub(' +', ' ', newdata)
 
     return newdata
 
@@ -710,7 +716,7 @@ def process_xml(
                     try:
                         unames = re.search("Found user\(s\): (?P<unames>.+?) </li>", infotext).group('unames')
                     except AttributeError, e:
-                        log(" [!] Error with regex for usernames: %s" % infotext, logging.ERROR)
+                        # regex not found
                         continue
                     for uname in unames.split():
                         # add account
@@ -720,12 +726,9 @@ def process_xml(
                         db.t_accounts.update_or_insert(**d)
                         db.commit()
 
-                try:
-                    proof = nx_xml_to_html(StringIO(etree.tostring(test, xml_declaration=False, encoding=unicode)))
-                except Exception, e:
-                    log(" [!] Error parsing test data: %s" % str(e), logging.ERROR)
-                    continue
-
+                test_str = etree.tostring(test, xml_declaration=False, encoding=unicode)
+                test_str = test_str.encode('ascii', 'xmlcharrefreplace')
+                proof = nx_xml_to_html(StringIO(test_str))
                 proof = html_to_markmin(proof)
 
                 if vulnid == 'cifs-insecure-acct-lockout-limit':
@@ -836,7 +839,9 @@ def process_xml(
                             log(" [!] Unknown vulnid, Skipping! (id: %s)" % vulnid, logging.ERROR)
                             continue
 
-                        proof = nx_xml_to_html(StringIO(etree.tostring(test, xml_declaration=False, encoding=unicode)))
+                        test_str = etree.tostring(test, xml_declaration=False, encoding=unicode)
+                        test_str = test_str.encode('ascii', 'xmlcharrefreplace')
+                        proof = nx_xml_to_html(StringIO(test_str))
                         proof = html_to_markmin(proof)
 
                         # Check for SNMP strings
