@@ -53,9 +53,9 @@ if not user:
 user_row = db(db.auth_user.username == user).select().first()
 if user_row:
     # user exists, update password
-    if nochange:
+    if options.nochange:
         sys.exit("Not changing user...\n")
-    if not forcechange:
+    if not options.forcechange:
         ask_update = raw_input("User exists, update password? [y/N]: ")
         if ask_update not in ['Y', 'y'] :
             sys.exit("Ok, leaving user as-is...\n")
