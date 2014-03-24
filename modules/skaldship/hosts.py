@@ -152,7 +152,7 @@ def create_hostfilter_query(fdata=[(None, None), False], q=None, dbname=None):
                 user_id = db(db.auth_user.username.lower() == f_value).select(cache=(cache.ram,120)).first()
             q = q & (db.t_hosts.f_engineer == user_id)
     elif f_type == "assetgroup":
-        logger.debug("assetgroup filter: %s" % (f_value))
+        #logger.debug("assetgroup filter: %s" % (f_value))
         if "%" in f_value:
             q &= (db.t_hosts.f_asset_group.contains(f_value))
         else:
