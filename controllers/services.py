@@ -322,11 +322,19 @@ def list():
             # Append A tags around services with HTTP Ports
             if r.t_services.f_number in HTTP_PORTS and r.t_services.f_proto == "tcp" or r.t_services.f_name == "HTTP":
                 atxt['5'] = A(r.t_services.f_number,
+<<<<<<< HEAD
                               _href=URL('default', 'redirect', extension='html', vars={'url': "http://%s:%s/" % (host_rec.f_ipaddr, r.t_services.f_number)}),
                               _target="%s-tcp-%s" % (host_rec.f_ipaddr, r.t_services.f_number)).xml()
             elif r.t_services.f_number in HTTPS_PORTS and r.t_services.f_proto == "tcp" or r.t_services.f_name == "HTTPS":
                 atxt['5'] = A(r.t_services.f_number,
                               _href=URL('default', 'redirect', extension='html', vars={'url': "https://%s:%s/" % (host_rec.f_ipaddr, r.t_services.f_number)}),
+=======
+                              _href=URL('default', 'redirect', extension='html', vars={'url': "http://%s:%s/" % (host_rec.f_ipv4, r.t_services.f_number)}),
+                              _target="%s-tcp-%s" % (host_rec.f_ipaddr, r.t_services.f_number)).xml()
+            elif r.t_services.f_number in HTTPS_PORTS and r.t_services.f_proto == "tcp" or r.t_services.f_name == "HTTPS":
+                atxt['5'] = A(r.t_services.f_number,
+                              _href=URL('default', 'redirect', extension='html', vars={'url': "https://%s:%s/" % (host_rec.f_ipv4, r.t_services.f_number)}),
+>>>>>>> cd0e9b3... Adds redirect page w/delay, pwnwiki link and fixes
                               _target="%s-tcp-%s" % (host_rec.f_ipaddr, r.t_services.f_number)).xml()
             else:
                 atxt['5'] = r.t_services.f_number
