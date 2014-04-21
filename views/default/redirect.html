@@ -1,0 +1,83 @@
+{{extend 'layout.html'}}
+
+<div class="row-fluid">
+    <div class="span8">
+        <div class="widget-box">
+            <div class="widget-title">
+              <span class="icon">
+                <i class="icon-road"></i>
+              </span>
+              <h5>{{=response.title or request.application}}</h5>
+            </div>
+            <div class="widget-content">
+                <div class="alert alert-error alert-block">
+                    <p><strong>WARNING!</strong></p>
+                    <p>Redirecting to an external site may have unknown HTML or Javascript code. Visiting it
+                    may place your browser and Kvasir data at risk. It is recommended to use your browser's private
+                    isolation mode (Private, Incognito, etc) when viewing external pages.</p>
+                </div>
+                <div class="alert alert-info alert-block">
+                    <p>Redirect to <a rel="noreferrer" href="{{=redirect_url}}">{{=redirect_url}}</a>
+                        <button id="btn-countdown" class="btn btn-mini btn-warning">
+                            <span id="countdown-status">Pause</span> (<span id="countdown">{{=settings.redirect_timer}}</span>)
+                        </button>
+                    </p>
+                </div>
+                {{if pwnwiki:}}
+                <div>
+                    <p>A local copy of the PwnWiki can be used instead:</p>
+                    <ul>
+                        <li><a target="_blank" rel="noreferrer" href="https://github.com/pwnwiki/pwnwiki.github.io/">
+                            Clone the repository</a> or pull the archive
+                            (<a target="_blank" rel="noreferrer" href="https://github.com/pwnwiki/pwnwiki.github.io/archive/master.zip">download
+                            zip</a>) of the repo</li>
+                        <li>Start a seprate local webserver that points to the repository directory. E.g.: python -m SimpleHTTPServer</li>
+                        <li>Change the pwnwiki_path setting in your kvasir.yaml file to the new URL</li>
+                    </ul>
+                </div>
+                {{pass}}
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<script>
+    var time_left = {{=settings.redirect_timer}};
+    var cinterval;
+    var paused = false;
+
+    $("#btn-countdown").click(function () {
+        if (time_left > 0) {
+            paused = !paused;
+            if (paused) {
+                $('#countdown-status').text('Continue');
+                $('#btn-countdown').removeClass('btn-warning').addClass('btn-danger');
+            } else {
+                $('#countdown-status').text('Pause');
+                $('#btn-countdown').removeClass('btn-danger').addClass('btn-warning');
+            }
+        }
+    });
+
+    function coutdown(){
+        if (paused) {
+            return;
+        } else {
+            time_left--;
+            $('#countdown').text(time_left);
+            if(time_left == 0) {
+                window.location.replace("{{=redirect_url}}");
+                clearInterval(cinterval);
+            }
+        }
+    }
+
+    if (time_left > 0) {
+        cinterval = setInterval('coutdown()', 1000);
+    } else {
+        var elem = document.getElementById('btn-countdown');
+        elem.parentNode.removeChild(elem);
+    }
+
+</script>

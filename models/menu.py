@@ -83,6 +83,7 @@ response.menu = [
          (T('Update DB Fields'),URL(_a,'default','update_dynamic_fields')==URL(),URL(_a,'default','update_dynamic_fields'),[]),
          (T('IP Calculator'), False, URL(_a, 'default', 'ip_calc'), []),
          (T('Exploit Database (local)'), False, URL(_a, 'exploitdb', 'index'), []),
+         (T('PwnWiki'), False, URL(_a, 'default', 'redirect', vars={'url':settings.pwnwiki_path, 'pwnwiki': True}), []),
      ]),
     (T('Statistics'), False, '',
     [

@@ -1,5 +1,8 @@
 {{extend 'layout.html'}}
 
+{{from skaldship.nexpose import nexpose_get_config}}
+{{nexpose_config = nexpose_get_config()}}
+
 <div class="row-fluid">
     <div class="span8">
         <div class="widget-box">
@@ -19,11 +22,11 @@
         provided.</p>
         <dl>
             <dt>Server</dt>
-            <dd>{{=auth.user.f_nexpose_host}}</dd>
+            <dd>{{=nexpose_config['host']}}</dd>
             <dt>Port</dt>
-            <dd>{{=auth.user.f_nexpose_port}}</dd>
+            <dd>{{=nexpose_config['port']}}</dd>
             <dt>Username</dt>
-            <dd>{{=auth.user.f_nexpose_user}}</dd>
+            <dd>{{=nexpose_config['user']}}</dd>
         </dl>
     </div>
 </div>
