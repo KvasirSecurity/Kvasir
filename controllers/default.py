@@ -309,3 +309,9 @@ def ip_calc():
     response.files.append(URL(request.application, 'static', 'js/teredo_calc.js'))
     response.title = "%s :: IP Calculators" % (settings.title)
     return dict()
+
+def redirect():
+    redirect_url = request.vars.get('url', '')
+    pwnwiki = request.vars.get('pwniki', False)
+    response.title = "%s :: Redirecting to %s" % (settings.title, redirect_url)
+    return dict(redirect_url=redirect_url, pwnwiki=pwnwiki)

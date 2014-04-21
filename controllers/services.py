@@ -178,6 +178,7 @@ def edit():
 
 @auth.requires_login()
 def list():
+    from skaldship.general import severity_mapping
     response.title = "%s :: Services" % (settings.title)
 
     # if no filter is set then we blank it out
@@ -272,16 +273,6 @@ def list():
         nolimit = db(q).count()
 
         aaData = []
-        colormap = [ (1, 'grey'),
-                     (2, 'grey'),
-                     (3, 'grey'),
-                     (4, 'blue'),
-                     (5, 'blue'),
-                     (6, 'magenta'),
-                     (7, 'magenta'),
-                     (8, 'magenta'),
-                     (9, 'red'),
-                     (10, 'red') ]
 
         # datatable formatting is specific
         # gather all the vulndata and exploits into a big row
@@ -338,11 +329,11 @@ def list():
             # Append A tags around services with HTTP Ports
             if r.t_services.f_number in HTTP_PORTS and r.t_services.f_proto == "tcp" or r.t_services.f_name == "HTTP":
                 atxt['5'] = A(r.t_services.f_number,
-                              _href="http://%s:%s/" % (host_rec.f_ipv4, r.t_services.f_number),
+                              _href=URL('default', 'redirect', extension='html', vars={'url': "http://%s:%s/" % (host_rec.f_ipv4, r.t_services.f_number)}),
                               _target="%s-tcp-%s" % (host_rec.f_ipv4, r.t_services.f_number)).xml()
             elif r.t_services.f_number in HTTPS_PORTS and r.t_services.f_proto == "tcp" or r.t_services.f_name == "HTTPS":
                 atxt['5'] = A(r.t_services.f_number,
-                              _href="https://%s:%s/" % (host_rec.f_ipv4, r.t_services.f_number),
+                              _href=URL('default', 'redirect', extension='html', vars={'url': "https://%s:%s/" % (host_rec.f_ipv4, r.t_services.f_number)}),
                               _target="%s-tcp-%s" % (host_rec.f_ipv4, r.t_services.f_number)).xml()
             else:
                 atxt['5'] = r.t_services.f_number
@@ -351,7 +342,7 @@ def list():
             atxt['7'] = len(vulnlist)
             vulntxt = []
             for vuln in vulnlist:
-                color = colormap[vuln[1]-1][1]
+                color = severity_mapping(vuln[1])[2]
                 vulntxt.append(A(vuln[0], _id="vuln", _target="vulninfo_by_vulnid_%s" % (vuln[0]), _href=URL('vulns', 'vulninfo_by_vulnid', args=[vuln[0]], extension='html'),
                                  _style="color:"+color).xml())
             atxt['8'] = " :: ".join(vulntxt)

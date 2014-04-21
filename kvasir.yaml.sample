@@ -57,12 +57,21 @@ shodanhq_api_key: none
 # pwnwiki path
 # download latest from https://github.com/pwnwiki/pwnwiki.github.io/archive/master.zip
 # or clone: git clone https://github.com/pwnwiki/pwnwiki.github.io
-pwnwiki_path: "/path/to/pwnwiki.github.io"
+# start a separate webserver (python -m SimpleHTTPServer) and replace or leave github url
+pwnwiki_path: "https://pwnwiki.github.io"
 
 # exploitdb archive path
 # download latest from https://github.com/offensive-security/exploit-database/archive/master.zip
 # or clone: git clone https://github.com/offensive-security/exploit-database.git
 exploitdb_path: "/usr/share/exploitdb"
+
+# redirection timer
+# links to external resources will go through a staging page. This page includes a countdown timer for automatic
+# redirection. The length of the timer is set here and defaults to 10 seconds.
+# >0 = seconds before redirection
+#  0 = immediate redirection
+# -1 = no redirection
+redirect_timer: 10
 
 # Web2py security_key should be unique and changed. It's used to encrypt passwords and generate CSRF tokens
 security_key: "sha512:36518081-c858-47ad-8832-a28d842f3052"

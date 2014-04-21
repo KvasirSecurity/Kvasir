@@ -381,9 +381,9 @@ def pagination(request, curr_host):
         hostindex=hostindex+1
 
     if hostprev == "#":
-        hostprevstyle="display:none";
+        hostprevstyle="display:none"
     if hostnext == "#":
-        hostnextstyle="display:none";
+        hostnextstyle="display:none"
 
     pagination = {}
     pagination['previous'] = A("(p)",_id="prevhostlink" ,_class="button", _href=hostprev, _style=hostprevstyle, _title=hostprevtitle)

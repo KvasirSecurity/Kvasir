@@ -99,8 +99,10 @@ del nmap_config
 settings.shodanhq_apikey = settings.kvasir_config.get('shodanhq_api_key', '')
 
 # pwnwiki.github.io
-settings.pwnwiki_path = settings.kvasir_config.get('pwnwiki_path', None)
+settings.pwnwiki_path = settings.kvasir_config.get('pwnwiki_path', 'http://pwnwiki.io/')
 
 # exploitdb
 settings.exploitdb_path = settings.kvasir_config.get('exploitdb_path', None)
 
+# redirect_timer
+settings.redirect_timer = settings.kvasir_config.get('redirect_timer', 10)

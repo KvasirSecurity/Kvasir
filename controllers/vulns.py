@@ -377,14 +377,14 @@ def vulndata_by_host():
                                 if db.t_exploitdb[expl_data.f_title]:
                                     exploitdb_href = URL('exploitdb', 'detail.html', args=expl_data.f_title)
                                 else:
-                                    exploitdb_href = "http://www.exploit-db.com/exploits/%s" % expl_data.f_title
+                                    exploitdb_href = URL('default', 'redirect', extension='html', vars={'url': 'http://www.exploit-db.com/exploits/%s' % expl_data.f_title})
                                 exp_link = A(IMG(_align="absmiddle", _width=16, _height=16, _src=URL('static','images/exploitdb.ico')), ' exploitdb - ' + expl_data.f_name,_href=exploitdb_href, _target="exploitdb_%s" % (expl_data.f_name))
                             elif expl_data.f_source == 'metasploit':
                                 if session.msf_workspace:
-                                    msf_uri = os.path.join(msf_settings['url'], 'workspaces', session.msf_workspace_num, 'tasks/new_module_run')
+                                    msf_uri = os.path.join(msf_settings['url'], 'workspaces', session.msf_workspace_num, 'modules', expl_data.f_title)
                                 else:
-                                    msf_uri = 'http://www.metasploit.com/modules/'
-                                exp_link = A(IMG(_align="absmiddle", _width=16, _height=16, _src=URL('static','images/msf.gif')), ' metasploit - ' + expl_data.f_name,_href=os.path.join(msf_uri, expl_data.f_title), _target="msf_%s" % (expl_data.f_name))
+                                    msf_uri = URL('default', 'redirect', extension='html', vars={'url': 'http://www.rapid7.com/db/modules/%s' % expl_data.f_title})
+                                exp_link = A(IMG(_align="absmiddle", _width=16, _height=16, _src=URL('static','images/msf.gif')), ' metasploit - ' + expl_data.f_name, _href=msf_uri, _target="msf_%s" % (expl_data.f_name))
                             elif expl_data.f_source == 'canvas':
                                 exp_link = SPAN(IMG(_align="absmiddle", _width=16, _height=16, _src=URL('static','images/canvas.png')), ' canvas - ' + expl_data.f_name)
 
@@ -705,15 +705,15 @@ def aa_by_host():
                             if db.t_exploitdb[expl_data.f_title]:
                                 exploitdb_href = URL('exploitdb', 'detail.html', args=expl_data.f_title)
                             else:
-                                exploitdb_href = "http://www.exploit-db.com/exploits/%s" % expl_data.f_title
+                                exploitdb_href = URL('default', 'redirect', extension='html', vars={'url': 'http://www.exploit-db.com/exploits/%s' % expl_data.f_title})
                             exp_link = A(IMG(_align="absmiddle", _width=16, _height=16, _src=URL('static','images/exploitdb.ico')), ' exploitdb - ' + expl_data.f_name,_href=exploitdb_href, _target="exploitdb_%s" % (expl_data.f_name))
                         elif expl_data.f_source == 'metasploit':
                             metasploit += 1
                             if session.msf_workspace:
-                                msf_uri = msf_settings['url'] + "/" + session.msf_workspace + "/modules/"
+                                msf_uri = os.path.join(msf_settings['url'], session.msf_workspace, 'modules', expl_data.f_title)
                             else:
-                                msf_uri = 'http://www.metasploit.com/modules/'
-                            exp_link = A(IMG(_align="absmiddle", _width=16, _height=16, _src=URL('static','images/msf.gif')), ' metasploit - ' + expl_data.f_name,_href=os.path.join(msf_uri, expl_data.f_title), _target="msf_%s" % (expl_data.f_name))
+                                msf_uri = URL('default', 'redirect', extension='html', vars={'url': 'http://www.rapid7.com/db/modules/%s' % expl_data.f_title})
+                            exp_link = A(IMG(_align="absmiddle", _width=16, _height=16, _src=URL('static','images/msf.gif')), ' metasploit - ' + expl_data.f_name, _href=msf_uri, _target="msf_%s" % (expl_data.f_name))
                         elif expl_data.f_source == 'canvas':
                             canvas += 1
                             exp_link = SPAN(IMG(_align="absmiddle", _width=16, _height=16, _src=URL('static','images/canvas.png')), ' canvas - ' + expl_data.f_name)
