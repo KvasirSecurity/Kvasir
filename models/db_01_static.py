@@ -7,7 +7,7 @@
 # Row entries are generally static in these tables,
 # filled from master database and/or XML import scripts
 #
-# (c) 2010-2013 Cisco Systems, Inc.
+# (c) 2010-2014 Cisco Systems, Inc.
 #
 # Author: Kurt Grutzmacher <kgrutzma@cisco.com>
 #--------------------------------------#
@@ -170,7 +170,8 @@ db.define_table('t_exploits',
     Field('f_vulnid', type='list:string', label=T('Vulnerability List')),
     Field('f_cve', type='list:string', label=T('CVE List')),
     auth.signature,
-    format='%(f_source)s :: %(f_name)s :: %(f_title)s :: %(f_rank)s',
+    format=lambda r: XML(A(" :: ".join([r.f_source, r.f_name, r.f_title, r.f_rank]),
+                           _href=URL('exploits', 'edit', extension='html', args=r.id), _target='blank')),
     fake_migrate=settings.fake_migrate, migrate=settings.migrate)
 
 ########################################

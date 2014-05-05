@@ -341,6 +341,7 @@ def vulncircles_data():
         vulncount = db(db.t_service_vulns.f_vulndata_id == row.id).count()
 
         exploits = db(db.t_exploit_references.f_vulndata_id == row.id).select()
+        exploit_modifier = 1
         for expl in exploits:
             rank = db.t_exploits[expl.f_exploit_id].f_rank
             if rank in ['Novice', 'Intermediate']:
