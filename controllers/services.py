@@ -299,7 +299,8 @@ def list():
                 if len(exploits) > 0:
                     for expinfo in exploits:
                         exp = db.t_exploits[expinfo.f_exploit_id]
-                        explist.append(TR(TD(exp.f_name),
+                        exp_link = A(exp.f_name, _href=URL('exploits', 'edit', extension='html', args=exp.id), _target='blank')
+                        explist.append(TR(TD(exp_link),
                                           TD(exp.f_title),
                                           TD(exp.f_source),
                                           TD(exp.f_rank)
