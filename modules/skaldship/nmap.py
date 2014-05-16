@@ -180,7 +180,8 @@ def process_xml(
             host_id = None
             f_title = os['name'] #title
             for k in os['osclasses']:
-                f_cpename= k['cpe'].lstrip('cpe:/o:')
+                if k.get('cpe') != None:
+                    f_cpename= k['cpe'].lstrip('cpe:/o:')
                 f_vendor = k['vendor']
                 f_product = k['osfamily']
                 f_version = k['osgen']
