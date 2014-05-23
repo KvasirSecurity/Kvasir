@@ -610,7 +610,7 @@ def process_scanfile(
                         gid = '0'
 
                     # Windows users, local groups, and global groups
-                    d['f_username'] = user
+                    d['f_username'] = username
                     d['f_gid'] = gid
                     d['f_services_id'] = svc_id
                     d['f_source'] = '10860'
