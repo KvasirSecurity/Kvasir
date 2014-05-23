@@ -30,16 +30,18 @@ import logging
 logger = logging.getLogger("web2py.app.kvasir")
 
 try:
-    from xml.etree import cElementTree as etree
+    from lxml import etree
 except ImportError:
+    import sys
+    if not sys.hexversion >= 0x02070000:
+        raise Exception('python-lxml or Python 2.7 or higher required for Nessus parsing')
     try:
-        from xml.etree import ElementTree as etree
+        from xml.etree import cElementTree as etree
     except ImportError:
         try:
-            from lxml import etree
+            from xml.etree import ElementTree as etree
         except:
             raise Exception('No valid ElementTree parser found')
-
 
 ##-------------------------------------------------------------------------
 
