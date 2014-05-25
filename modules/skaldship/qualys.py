@@ -233,7 +233,7 @@ def process_xml(
 
             # Process <cpe> service entries
             for port_cpe in port.findall('service/cpe'):
-                cpe_id = port_cpe.text.lstrip('cpe:/')
+                cpe_id = port_cpe.text.replace('cpe:/', '')
 
                 if cpe_id[0] == "a":
                     # process CPE Applications

@@ -669,8 +669,8 @@ def process_scanfile(
             ### Operating Systems and CPE
             if pluginID == '45590':
                 # Common Platform Enumeration (CPE)
-                for cpe_os in re.findall('(cpe:/o:.*)', plugin_output):
-                    os_id = lookup_cpe(cpe_os.lstrip('cpe:/o:'))
+                for cpe_os in re.findall('(cpe:/o:.*? )', plugin_output):
+                    os_id = lookup_cpe(cpe_os.replace('cpe:/o:', '').rstrip(' '))
                     if os_id:
                         db.t_host_os_refs.update_or_insert(
                             f_certainty='0.90',     # just a stab

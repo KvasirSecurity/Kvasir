@@ -87,6 +87,21 @@ def list():
 
         return dict(add=add)
 
+@auth.requires_signature()
+@auth.requires_login()
+def delete():
+    count = 0
+    for r in request.vars.ids.split('|'):
+        if r is not None:
+            db(db.t_os.id == r).delete()
+            count += 1
+    db.commit()
+    response.flash = "%s OS record(s) deleted" % (count)
+    response.headers['web2py-component-command'] = "ostable.fnReloadAjax(); jQuery('.datatable tr.DTTT_selected').removeClass('DTTT_selected');"
+    #response.js = "hosttable.fnReloadAjax(); jQuery('.datatable tr.DTTT_selected').removeClass('DTTT_selected');"
+
+    return dict()
+
 ##-------------------------------------------------------------------------
 ## references
 ##-------------------------------------------------------------------------
@@ -297,7 +312,7 @@ def mass_assign():
                 os_id = None
                 if cpe:
                     # we have a cpe entry from xml! hooray!
-                    cpe_name = cpe.lstrip('cpe:/o:')
+                    cpe_name = cpe.replace('cpe:/o:', '')
                     os_id = lookup_cpe(cpe_name)
                 #else:
                     # no cpe attribute in xml, go through our messsy lookup

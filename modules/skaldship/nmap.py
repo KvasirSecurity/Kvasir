@@ -181,7 +181,7 @@ def process_xml(
             f_title = os['name'] #title
             for k in os['osclasses']:
                 if k.get('cpe') != None:
-                    f_cpename= k['cpe'].lstrip('cpe:/o:')
+                    f_cpename= k['cpe'].replace('cpe:/o:', '')
                 f_vendor = k['vendor']
                 f_product = k['osfamily']
                 f_version = k['osgen']
@@ -300,7 +300,7 @@ def process_xml(
             # Process <cpe> service entries
             port_cpe = port.get('service_cpe')
             if port_cpe:
-                cpe_id = port_cpe.lstrip('cpe:/')
+                cpe_id = port_cpe.replace('cpe:/', '')
 
                 if cpe_id.startswith('a'):
                     # process CPE Applications

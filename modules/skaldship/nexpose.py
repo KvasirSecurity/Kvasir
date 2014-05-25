@@ -966,7 +966,7 @@ def process_xml(
 
             if os_rec.attrib.has_key('cpe'):
                 # we have a cpe entry from xml! hooray!
-                cpe_name = os_rec.attrib['cpe'].lstrip('cpe:/o:')
+                cpe_name = os_rec.attrib['cpe'].replace('cpe:/o:', '')
                 os_id = lookup_cpe(cpe_name)
             else:
                 # no cpe attribute in xml, go through our messy lookup

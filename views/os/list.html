@@ -56,13 +56,13 @@ jQuery(document).ready(function() {
         },
     } );
 
-    $("#del_os").click(function(e) {
+    $("#delete_os").click(function(e) {
         e.preventDefault();
 
         //bootbox.options.onEscape =
         bootbox.confirm('These items will be permanently deleted and cannot be recovered. Are you sure?', "Cancel", "Delete", function(confirmed) {
             if(confirmed) {
-                var checks = dt_checkboxer_select_DT_RowIds(hosttable);
+                var checks = dt_checkboxer_select_DT_RowIds(ostable);
                 if (checks == '') { alert('Nothing selected'); return false; }
                 var data = "ids=" + checks;
                 url = "{{=URL('os', 'delete.json', user_signature=True)}}";

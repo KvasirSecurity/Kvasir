@@ -27,6 +27,11 @@ def split_cpe(cpe=None):
     """
     Splits a CPE record entry into a dictionary using an ugly try/except
     block.
+
+    >>> split_cpe('cpe:/o:freebsd:freebsd:5.2')
+    {'product': 'freebsd', 'vendor': 'freebsd', 'version': '5.2', 'language': None, 'update': None, 'edition': None, 'part': 'o'}
+    >>> split_cpe('cpe:/a:openbsd:openssh:3.6')
+    {'product': 'openssh', 'vendor': 'openbsd', 'version': '3.6', 'language': None, 'update': None, 'edition': None, 'part': 'a'}
     """
     # title, part, vendor,     product,             version, update, edition,    language
     # cpe:/  o:    microsoft:  windows_server_2008: -:       gold:   datacenter: english
@@ -74,6 +79,48 @@ def split_cpe(cpe=None):
 
 ##------------------------------------------------------------------------
 
+def normalize_cpe(cpe_string):
+    """
+    Normalize CPE data given known formats or capitalize.
+
+    >>> normalize_cpe('freebsd freebsd 5.2')
+    'FreeBSD FreeBSD 5.2'
+    >>> normalize_cpe('Microsoft Windows xp')
+    'Microsoft Windows XP'
+    >>> normalize_cpe('microsoft windows 2008 datacenter')
+    'Microsoft Windows 2008 Datacenter'
+    >>> normalize_cpe('apple iphone')
+    'Apple iPhone'
+    """
+
+    exchange_table = {
+        'hp': 'HP',
+        'freebsd': 'FreeBSD',
+        'openbsd': 'OpenBSD',
+        'netbsd': 'NetBSD',
+        'openssh': 'OpenSSH',
+        'hpux': 'HP/UX',
+        'cisco ios': 'Cisco IOS',
+        'apple ios': 'Apple iOS',
+        'ios': 'IOS',
+        'iphone': 'iPhone',
+        'windows_xp': 'Windows XP',
+        'windows_nt': 'Windows NT',
+        'windows_2000_server': 'Windows 2000 Server',
+        'windows_2003_server': 'Windows 2003 Server',
+        'windows_2008_server': 'Windows 2008 Server',
+        'xp': 'XP',
+        'nt': 'NT',
+    }
+
+    new_cpe = []
+    for cpe in cpe_string.split(' '):
+        new_cpe.append(exchange_table.get(cpe, cpe.title()))
+
+    return " ".join(new_cpe)
+
+##------------------------------------------------------------------------
+
 def make_cpe_title(cpe=None):
     """
     Create a CPE title based on cpe string value using string.capwords()
@@ -81,6 +128,13 @@ def make_cpe_title(cpe=None):
     Ex: cpe:/o:microsoft:windows:xp == Microsoft Windows Xp
 
     Only care about vendor, product and version
+
+    >>> make_cpe_title('cpe:/o:microsoft:windows:xp')
+    'Microsoft Windows XP'
+    >>> make_cpe_title('cpe:/o:freebsd:freebsd:5.2')
+    'FreeBSD FreeBSD 5.2'
+    >>> make_cpe_title('cpe:/o:cisco:ios:12.4')
+    'Cisco IOS 12.4'
     """
     if cpe is None:
         return ""
@@ -90,7 +144,7 @@ def make_cpe_title(cpe=None):
 
     parts = ['vendor', 'product', 'version']
 
-    return string.capwords(" ".join([cpe_dict[part] for part in parts]))
+    return normalize_cpe(" ".join([cpe_dict[part] for part in parts]))
 
 ##------------------------------------------------------------------------
 
@@ -105,9 +159,8 @@ def lookup_cpe(cpe_name=None):
     if not cpe_name:
         return None
 
-    if cpe_name.startswith('cpe:/o:'):
-        # cpe:/o: is stripped in the database
-        cpe_name = cpe_name.lstrip('cpe:/o:')
+    # cpe:/o: is stripped in the database
+    cpe_name = cpe_name.replace('cpe:/o:', '')
 
     db = current.globalenv['db']
     cache = current.globalenv['cache']
@@ -324,3 +377,12 @@ def process_xml(filename=None, download=False, wipe=False):
     msg = 'CPE items added/updated (%d/O, %d/A, %d/H)' % (os_added, apps_added, hardware_added)
     logger.info(msg)
     return msg
+
+##------------------------------------------------------------------------
+
+def _doctest():
+    import doctest
+    doctest.testmod()
+
+if __name__ == "__main__":
+    _doctest()
