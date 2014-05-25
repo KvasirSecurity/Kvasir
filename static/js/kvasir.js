@@ -78,7 +78,8 @@ $(function() {
               el.removeClass('withajaxpopover');
               el.popover({trigger: 'hover',
                           title: d.title,
-                          content: d.content}).popover('show');
+                          content: d.content});
+              el.popover('show');
           });
       }  else {
           $(this).popover('hide');

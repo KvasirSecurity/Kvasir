@@ -129,7 +129,7 @@ select, input {
 /* bootstrap .bigModal variation */
 .bigModal {
     width: 70%;
-    margin-left:-30%;
+    margin-left: -35%;
 }
 
 /* DataTable bootstrap pagination override */
@@ -332,4 +332,8 @@ div.controls .error_wrapper{
 div#exploitdb_exploit {
   background-color: #0f192a !important;
   padding: 4px;
+}
+
+#popoverwrap .popover {
+    width: auto;
 }

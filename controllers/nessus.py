@@ -66,7 +66,7 @@ def import_scan():
                 ts = time.ctime(float(report.timestamp))
                 nessusreports.append(["%s:%s" % (k, report.name), "%s: %s - %s (%s)" % (k, report.readablename, ts, report.status)])
         except Exception, e:
-            logger.error("Error communicating with %s (u:%s/p:%s): %s" % (k, v.get('user'), v.get('password'), str(e)))
+            logger.error("Error communicating with %s: %s" % (k, str(e)))
 
     if len(nessusreports) > 1:
         fields.append(Field('f_nessus_report', type='integer', label=T('Nessus Report'), requires=IS_IN_SET(nessusreports, zero=None)))

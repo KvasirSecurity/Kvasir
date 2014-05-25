@@ -209,7 +209,7 @@ class AddModal(object):
                         DIV(content_modal, _class="modal-body", _id="host-modal"),
                         SCRIPT("$('#%s').on('show', function () { $(this).find('.modal-body').css({'overflow-y':'scroll', 'width':'auto', 'height':'auto'});});" % self.modal_id),
                         **{"_id": "%s" % self.modal_id,
-                           "_class": "modal hide face",
+                           "_class": "modal bigModal hide face",
                            "_tabindex": "-1",
                            "_role": "dialog",
                            "_data-keyboard": "false",

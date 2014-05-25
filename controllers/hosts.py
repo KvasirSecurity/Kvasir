@@ -329,9 +329,9 @@ def popover():
             TR(TD(T('Asset Group')), TD(host_rec.f_asset_group)),
             TR(TD(T('Engineer')), TD(db.auth_user[host_rec.f_engineer].username)),
             TR(TD(T('OS')), TD("%s (%s)" % (host_os[1], host_os[0]))),
-            TR(TD(T('Services')), TD(svc_cnt)),
-            TR(TD(T('Vulnerabilities')), TD(vuln_cnt)),
-            TR(TD(T('Accounts')), TD(acct_cnt)),
+            TR(TD(T('Services')), TD(svc_cnt), _class="success"),
+            TR(TD(T('Vulnerabilities')), TD(vuln_cnt), _class="error"),
+            TR(TD(T('Accounts')), TD(acct_cnt), _class="warning"),
             _class="table table-condensed",
         ))
 
