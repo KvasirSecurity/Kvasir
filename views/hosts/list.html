@@ -247,7 +247,7 @@ jQuery(document).ready(function() {
                 url = "{{=URL('hosts', 'mass_os_refs.json', user_signature=True)}}";
                 $.web2py.ajax_page( 'POST', url, data, 'undefined' );
             }
-        });
+        }).addClass('bigModal');
     });
 
     var dialog_mass_asset = jQuery('<div></div>').appendTo('body');

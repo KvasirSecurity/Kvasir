@@ -217,11 +217,11 @@ def host_a_maker(record=None):
     host_a = A(host_title_maker(record), _target="host_detail_%s" % (record.id),
                _href=URL('hosts', 'detail', extension='html', args=record.id))
 
-    info_a = A(I(_class='icon-info-sign'), _href='#', _class='withajaxpopover',
+    info_a = SPAN(A(I(_class='icon-info-sign'), _href='#', _class='withajaxpopover',
                **{'_data-load':URL('hosts', 'popover.json', args=record.id),
                   '_data-trigger':'hover', '_data-delay':"{show: 500, hide: 100}",
-                  '_data-placement':'right', '_data-html':'true'}
-              )
+                  '_data-placement':'right', '_data-html':'true', '_data-container':'#popoverwrap'}
+              ), _id="popoverwrap")
 
     return SPAN(host_a, info_a)
 

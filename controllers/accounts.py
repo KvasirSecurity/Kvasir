@@ -321,7 +321,7 @@ def list():
             atxt['2'] = "%s/%s" % (r.t_services.f_proto, r.t_services.f_number)
             atxt['3'] = DIV(A(I(_class="icon-pencil", _style="display: inline-block;"),
                                _target="accounts_update_%s" % (r.t_accounts.id), \
-                               _href="edit.html/%s" % (r.t_accounts.id) \
+                               _href=URL('edit.html', args=r.t_accounts.id), \
                                ),
                              A("%s" % (r.t_accounts.f_username), \
                                _target="_blank", _id="username", \

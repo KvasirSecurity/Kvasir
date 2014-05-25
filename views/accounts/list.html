@@ -51,7 +51,7 @@ jQuery(document).ready(function() {
     jQuery("#import_account").click(function(e) {
         e.preventDefault();
 
-        dialog_import_account.load("{{=URL('accounts', 'import_file.load')}}")
+        dialog_import_account.load("{{=URL('accounts', 'import_file.load')}}");
         jQuery('#t_accounts_f_services_id').select2();
 
         bootbox.confirm(dialog_import_account, "Cancel", "Submit", function(confirmed) {
@@ -61,26 +61,15 @@ jQuery(document).ready(function() {
                 import_obj.get(0).setAttribute('action', import_action);
                 ajax_form_submit(import_obj);
             }
-        });
+        }).addClass('bigModal');
     });
 
     var dialog_paste_account = jQuery('<div></div>').appendTo('body');
 
     jQuery("#paste_account").click(function(e) {
+        e.preventDefault();
 
-    /*
-        $('body').modalmanager('loading');
-
-        setTimeout(function(){
-            $modal.load("{{=URL('accounts', 'paste.load')}}", '', function() {
-                $modal.modal();
-            });
-        }, 1000);
-    });
-    */
-      e.preventDefault();
-
-        dialog_paste_account.load("{{=URL('accounts', 'paste.load')}}")
+        dialog_paste_account.load("{{=URL('accounts', 'paste.load')}}");
         jQuery('#t_accounts_f_services_id').select2();
 
         bootbox.confirm(dialog_paste_account, "Cancel", "Submit", function(confirmed) {
@@ -89,7 +78,7 @@ jQuery(document).ready(function() {
                 var url = "{{=URL('accounts', 'paste.json')}}";
                 $.web2py.ajax_page( 'POST', url, data, 'undefined' );
             }
-        });
+        }).addClass('bigModal');
     });
 
     jQuery('#show_pwdump').click( function() {
@@ -104,7 +93,8 @@ jQuery(document).ready(function() {
                              node.cells[10].innerText + ':::\n';
             }
         } );
-        bootbox.alert('<pre>'+pwdumptext+'</pre>').addClass('bigModal');
+        
+        bootbox.alert('<button id="btnpwdump" class="btn btn-small" title="Copy" data-clipboard-target="pwdump_text" data-clipboard-text="">Copy</button></br><pre id="pwdump_text">'+pwdumptext+'</pre>').addClass('bigModal');
     } );
 
     accounttable = $('#accounttable').dataTable( {
@@ -175,7 +165,7 @@ jQuery(document).ready(function() {
 
     accounttable.fnSetFilteringDelay(520);
 
-    $('.modal').on('show', function () {
+    $('.bootbox').on('show', function () {
         $(this).find('.modal-body').css({
             'overflow-y':'scroll', 'width':'auto', 'height':'auto'
         });
