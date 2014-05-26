@@ -4,10 +4,16 @@
     <h3>Please wait...</h3>
   </div>
   <div class="modal-body">
+    {{if settings.loading_video:}}
     <video id="loadingvid" controls="controls" loop="loop" style="max-width:inherit;">
-        <source src="{{=URL('static', 'videos/loading.m4v')}}" type="video/mp4"/>
+        <source src="{{=URL('static', settings.loading_video)}}" type="video/mp4"/>
         Your browser does not support the video tag.
     </video>
+    {{else:}}
+    <div class="progress progress-striped active">
+        <div class="bar" style="width: 100%;"></div>
+    </div>
+    {{pass}}
   </div>
 </div>
 
@@ -19,6 +25,7 @@ $(document).ready(function() {
 
     //document.getElementById('loadingvid').pause();
 
+    {{if settings.loading_video:}}
     jQuery('#loading_modal').on('show', function() {
         document.getElementById('loadingvid').play();
     });
@@ -26,6 +33,7 @@ $(document).ready(function() {
     jQuery('#loading_modal').on('hide', function() {
         document.getElementById('loadingvid').pause();
     });
+    {{pass}}
 
     jQuery('input[type="submit"]').click( function() {
       jQuery('form').submit();

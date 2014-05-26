@@ -3,7 +3,7 @@
 {{if request.args(0)=='login':}}
     <div class="span4">
         <div id="signin-logo">
-            <img src="{{=URL('static', '/images/Kvasir_portrait.png')}}">
+            <img src="{{=URL('static', settings.login_image)}}">
         </div>
     </div>
 {{pass}}
