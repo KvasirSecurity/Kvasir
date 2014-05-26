@@ -106,3 +106,9 @@ settings.exploitdb_path = settings.kvasir_config.get('exploitdb_path', None)
 
 # redirect_timer
 settings.redirect_timer = settings.kvasir_config.get('redirect_timer', 10)
+
+# Login image. File must be under static/ subdirectory
+settings.login_image = settings.kvasir_config.get('login_image', 'images/Kvasir_portrait.png')
+
+# Loading video - can be a movie file (mp4/m4v) or None
+settings.loading_video = settings.kvasir_config.get('loading_video', None)

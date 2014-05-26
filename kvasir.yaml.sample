@@ -78,6 +78,18 @@ security_key: "sha512:36518081-c858-47ad-8832-a28d842f3052"
 
 ##########################################################################################################
 #
+# Customization
+#
+##########################################################################################################
+
+# Login page image. File must be under static/ subdirectory.
+login_image: images/Kvasir_portrait.png
+
+# Loading video - can be a movie file (mp4/m4v) or comment it out for a progress bar.
+loading_video: videos/loading.m4v
+
+##########################################################################################################
+#
 # Web2py scheduler settings
 #
 # scheduler_group_name:
