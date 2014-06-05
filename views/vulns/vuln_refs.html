@@ -1,0 +1,23 @@
+{{extend 'layout.html'}}
+
+{{=rows}}
+
+<div class="table">
+{{#if rows:}}
+    {{#headers=dict((str(k),k.label) for k in db.t_vuln_references)}}
+    {{#=SQLTABLE(rows,headers=headers,_class="datatable",_width="100%")}}
+{{#else:}}
+    {{#=TAG.blockquote(T('No Data'))}}
+{{#pass}}
+</div>
+
+<script>
+jQuery(document).ready(function() {
+    $('.datatable').dataTable( {
+        "sDom": 'T<"clear">lfrtip',
+        "oTableTools": {
+            "sSwfPath": "{{=URL('static','TableTools/swf/copy_csv_xls.swf')}}"
+        },
+    } );
+} );
+</script>

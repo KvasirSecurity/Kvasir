@@ -591,6 +591,34 @@ def service_vuln_exploited():
     return
 
 ##-------------------------------------------------------------------------
+## vuln_ref
+##-------------------------------------------------------------------------
+
+@auth.requires_login()
+def vuln_refs_add():
+    form=crud.create(db.t_vuln_refs,next='vuln_ref_edit/[id]',message='Reference added')
+    response.title = "%s :: Add Reference" % (settings.title)
+    return dict(form=form)
+
+@auth.requires_login()
+def vuln_refs_edit():
+    record = db.t_vuln_refs(request.args(0)) or redirect(URL('default', 'error', vars={'msg': T('Record not found')}))
+    form=crud.update(db.t_vuln_refs,record,next='vuln_refs_edit/[id]',
+                     ondelete=lambda form: redirect(URL('vuln_refs_list')))
+    response.title = "%s :: Edit Reference" % (settings.title)
+    return dict(form=form)
+
+@auth.requires_login()
+def vuln_refs():
+    #f,v=request.args(0),request.args(1)
+    #query=f and db.t_vuln_references[f]==v or db.t_vuln_references
+    #rows=db(query).select()
+    #return dict(rows=rows)
+    rows = SQLFORM.smartgrid(db.t_vuln_refs)
+    response.title = "%s :: References" % (settings.title)
+    return dict(rows=rows)
+
+##-------------------------------------------------------------------------
 ## vuln_references
 ##-------------------------------------------------------------------------
 
@@ -603,23 +631,23 @@ def vuln_references_add():
             form.vars.f_vulndata_id = record.id
 
         if form.accepts(request.vars, session):
-            response.flash = "Vulnerability Reference Added"
+            response.flash = "Vulnerability->Reference Added"
             #response.headers['web2py-component-command'] = 'hosttable.fnReloadAjax();'
             return
         elif form.errors:
             response.flash = "Error in form submission"
             return TABLE(*[TR(k, v) for k, v in form.errors.items()])
     else:
-        form=crud.create(db.t_vuln_references,next='vuln_references_edit/[id]',message='Vulnerability added')
-        response.title = "%s :: Add Vulnerability Reference" % (settings.title)
+        form=crud.create(db.t_vuln_references,next='vuln_references_edit/[id]',message='Vulnerability reference added')
+        response.title = "%s :: Add Vulnerability->Reference" % (settings.title)
     return dict(form=form)
 
 @auth.requires_login()
 def vuln_references_edit():
-    record = db.t_vuln_references(request.args(0)) or redirect(URL('default', 'error', vars={'msg': T('Host record not found')}))
+    record = db.t_vuln_references(request.args(0)) or redirect(URL('default', 'error', vars={'msg': T('Record not found')}))
     form=crud.update(db.t_vuln_references,record,next='vuln_references_edit/[id]',
                      ondelete=lambda form: redirect(URL('vuln_references_list')))
-    response.title = "%s :: Edit Vulnerability Reference" % (settings.title)
+    response.title = "%s :: Edit Vulnerability->Reference" % (settings.title)
     return dict(form=form)
 
 @auth.requires_login()
