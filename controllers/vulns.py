@@ -25,7 +25,7 @@ def index():
 ##-------------------------------------------------------------------------
 
 @auth.requires_login()
-def vuln_refs():
+def vuln_refs_by_vulnid():
     """
     Returns Vulnerability References in a grid based on f_vulndata_id
     """
@@ -50,7 +50,7 @@ def vuln_refs():
     return refs
 
 @auth.requires_login()
-def vuln_exploits():
+def vuln_exploits_by_vulnid():
     """
     Returns vulnerability exploits in a grid based on f_vulndata_id
     """
@@ -74,7 +74,7 @@ def vuln_exploits():
     return exploits
 
 @auth.requires_login()
-def vuln_hosts():
+def vuln_hosts_by_vulnid():
     """
     Returns a grid of hosts based on f_vulndata_id
     """
@@ -135,8 +135,8 @@ def vulninfo_by_vulnid():
         vulninfo = record
         cvssmetrics = cvss_metrics(record)
 
-        refs = LOAD(request.controller, 'vuln_refs', args=[record.id], ajax=True)
-        exploits = LOAD(request.controller, 'vuln_exploits', args=[record.id], ajax=True)
+        refs = LOAD(request.controller, 'vuln_refs_by_vulnid', args=[record.id], ajax=True)
+        exploits = LOAD(request.controller, 'vuln_exploits_by_vulnid', args=[record.id], ajax=True)
 
         # TODO: Add hosts with vulnerability -- include service info (proto/port) and
         # ability to delete vuln from service
@@ -233,9 +233,9 @@ def vulndata_edit():
         showid=False,
     )
 
-    hosts = LOAD(request.controller , 'vuln_hosts', args=[record.id], ajax=True, target='vuln_hosts_grid')
-    refs = LOAD(request.controller, 'vuln_refs', args=[record.id], ajax=True, target='vuln_refs_grid')
-    exploits = LOAD(request.controller, 'vuln_exploits', args=[record.id], ajax=True, target='vuln_exploits_grid')
+    hosts = LOAD(request.controller , 'vuln_hosts_by_vulnid', args=[record.id], ajax=True, target='vuln_hosts_grid')
+    refs = LOAD(request.controller, 'vuln_refs_by_vulnid', args=[record.id], ajax=True, target='vuln_refs_grid')
+    exploits = LOAD(request.controller, 'vuln_exploits_by_vulnid', args=[record.id], ajax=True, target='vuln_exploits_grid')
 
     if form.process().accepted:
        response.flash = 'Record updated'
