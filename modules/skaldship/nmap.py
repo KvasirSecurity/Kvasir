@@ -335,9 +335,9 @@ def process_xml(
 
         # Adding uptime. Needed to add a table "f_uptime" in t_hosts db!
         if node.uptime['lastboot']:
-            db.t_hosts.update_or_insert((db.t_hosts.f_ipv4 == ipaddr), f_uptime=node.uptime['lastboot'])
+            db.t_hosts.update_or_insert((db.t_hosts.f_ipaddr == ipaddr), f_uptime=node.uptime['lastboot'])
         if not node.uptime['lastboot']:
-            db.t_hosts.update_or_insert((db.t_hosts.f_ipv4 == ipaddr), f_uptime=T("no entry found"))
+            db.t_hosts.update_or_insert((db.t_hosts.f_ipaddr == ipaddr), f_uptime=T("no entry found"))
 
     if msf_settings.get('workspace'):
         try:

@@ -322,19 +322,11 @@ def list():
             # Append A tags around services with HTTP Ports
             if r.t_services.f_number in HTTP_PORTS and r.t_services.f_proto == "tcp" or r.t_services.f_name == "HTTP":
                 atxt['5'] = A(r.t_services.f_number,
-<<<<<<< HEAD
                               _href=URL('default', 'redirect', extension='html', vars={'url': "http://%s:%s/" % (host_rec.f_ipaddr, r.t_services.f_number)}),
                               _target="%s-tcp-%s" % (host_rec.f_ipaddr, r.t_services.f_number)).xml()
             elif r.t_services.f_number in HTTPS_PORTS and r.t_services.f_proto == "tcp" or r.t_services.f_name == "HTTPS":
                 atxt['5'] = A(r.t_services.f_number,
                               _href=URL('default', 'redirect', extension='html', vars={'url': "https://%s:%s/" % (host_rec.f_ipaddr, r.t_services.f_number)}),
-=======
-                              _href=URL('default', 'redirect', extension='html', vars={'url': "http://%s:%s/" % (host_rec.f_ipv4, r.t_services.f_number)}),
-                              _target="%s-tcp-%s" % (host_rec.f_ipaddr, r.t_services.f_number)).xml()
-            elif r.t_services.f_number in HTTPS_PORTS and r.t_services.f_proto == "tcp" or r.t_services.f_name == "HTTPS":
-                atxt['5'] = A(r.t_services.f_number,
-                              _href=URL('default', 'redirect', extension='html', vars={'url': "https://%s:%s/" % (host_rec.f_ipv4, r.t_services.f_number)}),
->>>>>>> cd0e9b3... Adds redirect page w/delay, pwnwiki link and fixes
                               _target="%s-tcp-%s" % (host_rec.f_ipaddr, r.t_services.f_number)).xml()
             else:
                 atxt['5'] = r.t_services.f_number
@@ -508,7 +500,7 @@ def hosts_with_port():
         Field('f_name', type='string', label=T('Name (exact)')),
         Field('f_banner', type='string', label=T('Banner (contains)')),
         Field('ignore_filter', type='boolean', default=False, label=T('Ignore Hostfilter')),
-        #Field('f_ipaddr', type='boolean', default=True, label=T('Show IPv4')),
+        #Field('f_ipaddr', type='boolean', default=True, label=T('Show IP Address')),
         #Field('f_hostname', type='boolean', default=False, label=T('Show Hostname')),
         #Field('f_engineer', type='integer', label=T('Engineer'), default=auth.user.id, requires=IS_IN_SET(userlist)),
         #Field('f_asset_group', type='string', label=T('Asset Group'), requires=IS_NOT_EMPTY()),

@@ -18,52 +18,34 @@ cache = current.globalenv['cache']
 settings = current.globalenv['settings']
 session = current.globalenv['session']
 
-def process_file(
-    filename=None,
-    asset_group=None,
-    engineer=None,
-    ):
+
+##-------------------------------------------------------------------------
+def process_file(filename=None, asset_group=None, engineer=None):
+
     # Upload and process hping Scan file
-    import re
-    import os
-    from skaldship.hosts import get_host_record, do_host_status
+    from skaldship.hosts import get_host_record, do_host_status, add_or_update
 
-    log(" [*] Processing hping scan file %s" % (filename))
+    log(" [*] Processing hping scan file %s" % filename)
 
-    # parse the hosts, where all the goodies are
-    #log(" [-] Parsing %d hosts" % (len(nmap_parsed.hosts)))
-    hoststats = {}
-    hoststats['added'] = 0
-    hoststats['updated'] = 0
-    hosts = []   # array of host_id fields
-
-    nodefields = {}
-    nodefields['f_engineer'] = engineer
-    nodefields['f_asset_group'] = asset_group
-    nodefields['f_confirmed'] = False
+    hoststats = 0
+    nodefields = {'f_engineer': engineer, 'f_asset_group': asset_group, 'f_confirmed': False}
 
     svc_db = db.t_services
-    query = db(db.t_hosts).select(db.t_hosts.f_ipv4, db.t_hosts.id)
-    
-    host_ip = ''
+
+    host_ip = None
     ICMP_type = ''
-    response = ''
     answer_ip = ''
-    comment = ''
 
     with open(filename) as f:
         for line in f:
             if "IP: " in line:
                 host_ip = line.split()[1]
-                get_id = db(db.t_hosts.f_ipv4==host_ip).select(db.t_hosts.id).first()
-                if get_id:
-                    log(" [-] Updating Host %s" %(host_ip))
-                    hoststats['updated'] += 1
+                if IS_IPADDRESS()(host_ip)[1] == None:
+                    nodefields['f_ipaddr'] = host_ip
+                    host_rec = add_or_update(nodefields, update=True)
+                    hoststats += 1
                 else:
-                    log(" [-] Adding Host %s" %(host_ip))
-                    db.t_hosts.insert(f_ipv4=host_ip, **nodefields)
-                    db.commit()
-                    hoststats['added'] += 1
+                    log(" [!] ERROR: Not a valid IP Address (%s)" % host_ip, logging.ERROR)
             if "[*] " in line:
                 ICMP_type = line.split()[1]
             if "ip=" in line:
@@ -78,10 +60,12 @@ def process_file(
                         response = T("Yes")
                 else:
                     response = T("No")
-                get_id = db(db.t_hosts.f_ipv4==host_ip).select(db.t_hosts.id).first()
-                svc_db.update_or_insert(f_hosts_id=get_id.id, f_proto='ICMP', f_number='0', f_status=response, f_name=ICMP_type)
+                get_id = get_host_record(host_ip)
+                svc_db.update_or_insert(
+                    f_hosts_id=get_id.id, f_proto='ICMP', f_number='0', f_status=response, f_name=ICMP_type
+                )
                 db.commit()
     f.close()
-    log(" [*] Import complete: hosts: %s added, %s updated" % (hoststats['added'], hoststats['updated']))
+    do_host_status(asset_group=asset_group)
+    log(" [*] Import complete, %s hosts added/updated" % hoststats)
 
-##-------------------------------------------------------------------------

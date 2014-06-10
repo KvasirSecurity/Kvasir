@@ -3,7 +3,7 @@
 ##--------------------------------------#
 ## Kvasir
 ##
-## (c) 2010-2013 Cisco Systems, Inc.
+## (c) 2010-2014 Cisco Systems, Inc.
 ##
 ## API Library
 ##
@@ -15,7 +15,7 @@
 ## Author: Kurt Grutzmacher <kgrutzma@cisco.com>
 ##--------------------------------------#
 
-__version__ = "1.0"
+__version__ = "1.1.0"
 from skaldship.hosts import get_host_record, create_hostfilter_query
 from skaldship.general import cvss_metrics, vuln_data
 
@@ -37,19 +37,48 @@ def version():
     """Returns the API version number"""
     return __version__
 
+
+##-------------------------------------------------------------------------
+## RESTful service
+## http://web2py.com/books/default/chapter/29/10/services#parse_as_rest--experimental-
+##-------------------------------------------------------------------------
+
+@auth.requires_login()
+@request.restful()
+def rest():
+    response.view = 'generic.'+request.extension
+
+    def GET(*args, **fields):
+        patterns = 'auto'
+        parser = db.parse_as_rest(patterns, args, fields)
+        if parser.status == 200:
+            return dict(content=parser.response)
+        else:
+            raise HTTP(parser.status, parser.error)
+
+    def POST(table_name, **fields):
+        return db[table_name].validate_and_insert(**fields)
+
+    return locals()
+
+
 ##-------------------------------------------------------------------------
 ## evidence
 ##-------------------------------------------------------------------------
 
 @service.jsonrpc
-def evidence_list(recid=None):
+def evidence_list(query=None):
     """List evidence on a host
 
-Accepts: Record ID, ipv4, ipv6 or hostname or None for all records
-
-Returns: List of evidence records
+    :param query: A record id, ipv4, ipv6, hostname or None for all records
+    :returns t_evidence.id:
+    :returns t_evidence.f_type:
+    :returns t_evidence.f_other_type:
+    :returns t_evidence.f_text:
+    :returns t_evidence.f_evidence:
+    :returns t_evidence.f_filename:
 """
-    record = get_host_record(recid)
+    record = get_host_record(query)
     if not record:
         query = db.t_evidence.id > 0
     else:
@@ -65,9 +94,8 @@ Returns: List of evidence records
 def evidence_download(filename):
     """Download an evidence file
 
-Accepts: filename to download
-
-Returns: f_data blob (base64 decoded, of course)
+    :param filename: Filename to download
+    :returns t_evidence.f_data: Base64 of file contents
 """
     row=db(db.t_evidence.f_evidence==filename).select(db.t_evidence.f_data).first()
     if row is None:
@@ -81,9 +109,9 @@ Returns: f_data blob (base64 decoded, of course)
 def evidence_del(records=[]):
     """Delete an evidence record id
 
-Accepts: List of record IDs to delete
-
-Returns: [(True/False, message)]
+    :param records: List of record IDs to delete
+    :returns boolean: Record deletion status
+    :return string: Status message
 """
     if not records: return (False, 'No records sent')
     msg = []
@@ -102,9 +130,14 @@ Returns: [(True/False, message)]
 def evidence_add(recid, filename, f_data, f_type, f_other_type=None, f_text=''):
     """Receive evidence file and store in t_evidence.
 
-Accepts: Host ID/IPv4/IPv6/Hostname, filename, data, type, other_type, text
-
-Returns: True/False, Record ID/Message
+    :param recid: Record ID
+    :param filename: Filename
+    :param f_data: Data field content
+    :param f_type: Evidence type
+    :param f_other_type: Other type if Evidence Type == Other
+    :param f_text: Text information about the evidence
+    :return boolean: Success/failure
+    :return string: Status message
 """
 
     if not recid: return (False, 'No record id or IP address')
@@ -134,7 +167,7 @@ Returns: True/False, Record ID/Message
 ##-------------------------------------------------------------------------
 
 @service.jsonrpc
-def host_list(hostfilter=(None, None)):
+def host_list(hostfilter=None):
     """Returns a long list of hosts
 
 Accepts: hostfilter=(type, value)"""
@@ -149,76 +182,75 @@ Accepts: hostfilter=(type, value)"""
 ##-------------------------------------------------------------------------
 
 @service.jsonrpc
-def host_add(f_ipaddr, f_macaddr, f_hostname, f_netbios_name, f_engineer, f_asset_group, f_confirmed=False):
-    """Adding a host
+def host_add(**fields):
+    """Adds a host record
 
-Accepts: ipv4, ipv6, macaddr, hostname, netbios name, engineer name (must exist), asset group, confirmed
-
-Returns: (True/False, Record id or error message)
+    :param fields: A dictionary of db.t_hosts fields
+    :returns status: True/False
+    :returns t_hosts.id: Record id
 """
 
-    if f_ipaddr is None:
-        return (False, "No IPv4 or IPv6 address provided.")
+    if not fields.get('f_ipaddr'):
+        return False, "No IP Address provided."
 
-    if  db(db.auth_user.username == f_engineer).count() == 0:
-        return (False, "Engineer not found in user database")
+    if db(db.auth_user.username == fields['f_engineer']).count() == 0:
+        return False, "Engineer not found in user database"
 
     try:
-        record_id = db.insert(f_ipaddr = f_ipaddr,
-                              f_macaddr = f_macaddr,
-                              f_hostname = f_hostname,
-                              f_netbios_name = f_netbios_name,
-                              f_confirmed = f_confirmed,
-                              f_engineer = f_engineer,
-                              f_asset_group = f_asset_group)
+        record_id = db.t_hosts.validate_and_insert(**fields)
         db.commit()
     except Exception, e:
         db.commit()
-        return (False, e)
-    return (True, record_id)
+        return False, e
+    return True, record_id
 
 ##-------------------------------------------------------------------------
 
 @service.jsonrpc
-def host_del(hostrec = [], ipaddresses = []):
+def host_del(hostrecs=[], iprecs=[]):
     """Delete a host or group of hosts.
 
-Accepts: dictionary of host record IDs, IPv4 or IPv6 addresses
-
-Returns: (hostrecs deleted, ip addresses deleted)
+    :param hostrecs: List of t_host.id numbers
+    :param iprecs: List of IPv4 or IPv6 addresses
+    :returns hostrec_deleted: List of deleted records
+    :returns iprecs_delete: List of IPv6/IPv6 addresses deleted
+    :returns errors: List of error messages ([id|ip, message])
 """
 
     errors = []
-    hostrec_deleted = []
+    hostrecs_deleted = []
     for host in hostrecs:
         try:
             del db.t_hosts[host]
-            hostrec_deleted.append(host)
+            hostrecs_deleted.append(host)
         except Exception, e:
-            errors.append(e)
+            errors.append([host, e])
         db.commit()
 
-    ipaddr_deleted = []
-    for ip in ipaddresses:
-        host_id = db(db.t_hosts.f_ipaddr == ip).select(cache=(cache.ram,120)).first()
-        if host_id is not None:
-            del db.t_hosts[host_id]
-            ipaddr_deleted.append(ip)
-            db.commit()
+    iprecs_deleted = []
+    for ipaddr in iprecs:
+        retval = db(db.t_hosts.f_ipaddr == ipaddr).delete()
+        if retval == 1:
+            iprecs_deleted.append(host)
+        else:
+            errors.append([ipaddr, "IP not found"])
+        db.commit()
 
-    return (hostrec_deleted, ipaddr_deleted, errors)
+    return hostrecs_deleted, iprecs_deleted, errors
 
 ##-------------------------------------------------------------------------
 
 @service.jsonrpc
-def host_info(hostrec):
+def host_info(record_data):
     """Returns the detail of a host record
 
-Accepts: Host ID/IPv4/IPv6/Hostname
-
+    :param record_data: t_hosts.id, IPv4 or IPv6 Address
+    :returns Boolean: True if record exists, false if not
+    :returns record.id: t_hosts.id
+    :returns record.
 Returns: Host record information
 """
-    record = get_host_record(hostrec)
+    record = get_host_record(record_data)
 
     if record is None:
         return (False, "Host record not found")
@@ -393,12 +425,12 @@ def host_details(hostrec):
 ##-------------------------------------------------------------------------
 
 @service.jsonrpc
-def service_list(svc_rec=None, host_rec=None, hostfilter=(None, None)):
+def service_list(svc_rec=None, host_rec=None, hostfilter=None):
     """Returns a specific service or all services
 
 Accepts: Service id, host record (ipv4, ipv6 or id) or hostfilter
 
-Returns: [ service_id, host_id, ipaddr, hostname, proto, number, status, name, banner, [ vuln list ...] ]
+Returns: [ service_id, host_id, ipv4, ipv6, hostname, proto, number, status, name, banner, [ vuln list ...] ]
 """
     if svc_rec is not None:
         if type(svc_rec) is type(int):
@@ -425,12 +457,12 @@ Returns: [ service_id, host_id, ipaddr, hostname, proto, number, status, name, b
 #--------------------------------------------------------------------------
 
 @service.jsonrpc
-def service_list_only(host_rec=None, hostfilter=(None, None)):
+def service_list_only(host_rec=None, hostfilter=None):
     """Returns a list of ports
 
 Accepts: Service id, host record (ipv4, ipv6 or id) or hostfilter
 
-Returns: [ service_id, host_id, ipaddr, hostname, proto, number, status, name, banner, [ vuln list ...] ]
+Returns: [ service_id, host_id, ipv4, ipv6, hostname, proto, number, status, name, banner, [ vuln list ...] ]
 """
     if host_rec is not None:
         host_rec = get_host_record(host_rec)
@@ -453,7 +485,7 @@ def service_info(svc_rec=None, ipaddr=None, proto=None, port=None):
     """Returns the information about a service from either a svc_record id or
 ip address/port combo. If a port doesn't exist it will add it if insert=True
 
-Returns: [ service_id, host_id, ipaddr, hostname, proto, number, status, name, banner ]
+Returns: [ service_id, host_id, ipv4, ipv6, hostname, proto, number, status, name, banner ]
 """
     if svc_rec:
         rows = db(db.t_services.id == svc_rec).select()
@@ -540,7 +572,7 @@ def service_del(svc_rec=None, ipaddr=None, proto=None, port=None):
 #--------------------------------------------------------------------------
 
 @service.jsonrpc
-def service_rpt_index_stats(hostfilter=(None, None)):
+def service_rpt_index_stats(hostfilter=None):
     """Returns the services index statistics:
 
 Port, Service Name, Number of Hosts, Unique Vulns, Vuln count
@@ -590,7 +622,7 @@ Port, Service Name, Number of Hosts, Unique Vulns, Vuln count
 #--------------------------------------------------------------------------
 
 @service.jsonrpc
-def service_report_list(service_id=None, service_port=None, hostfilter=(None, None)):
+def service_report_list(service_id=None, service_port=None, hostfilter=None):
     """Returns a list of ports with IPs and banners and vulns
 
     XXX: THIS IS REALLY REALLY REALLY REALLY SLOW!
@@ -631,7 +663,7 @@ def service_report_list(service_id=None, service_port=None, hostfilter=(None, No
 #--------------------------------------------------------------------------
 
 @service.jsonrpc
-def service_vulns_list(service_rec=None, service_port=None, hostfilter=(None, None)):
+def service_vulns_list(service_rec=None, service_port=None, hostfilter=None):
     """Returns a list of vulnerablities for a service
 
 Accepts: Service Record ID
@@ -667,11 +699,11 @@ Returns: (True/False, Service info ...)
 #--------------------------------------------------------------------------
 
 @service.jsonrpc
-def service_vuln_iptable(hostfilter=(None, None)):
+def service_vuln_iptable(hostfilter=None):
     """Returns a dict of services. Contains a list of IPs with (vuln, sev)
 
-    '0/info': { 'host_id1': [ (ipaddr, hostname), ( (vuln1, 5), (vuln2, 10) ... ) ] },
-              { 'host_id2': [ (ipaddr, hostname), ( (vuln1, 5) ) ] }
+    '0/info': { 'host_id1': [ (ipv4, ipv6, hostname), ( (vuln1, 5), (vuln2, 10) ... ) ] },
+              { 'host_id2': [ (ipv4, ipv6, hostname), ( (vuln1, 5) ) ] }
 
 """
 
@@ -708,12 +740,12 @@ def service_vuln_iptable(hostfilter=(None, None)):
 ##-------------------------------------------------------------------------
 
 @service.jsonrpc
-def accounts_list(svc_rec=None, hostfilter=(None, None), compromised=False):
+def accounts_list(svc_rec=None, hostfilter=None, compromised=False):
     """Returns a list of accounts for a service or host
 
 Accepts: Service id, hostfilter, compromised
 
-Returns: [ service_id, ipaddr, hostname, account info... ]
+Returns: [ service_id, ipv4, ipv6, hostname, account info... ]
 """
 
     query = (db.t_accounts.f_services_id==db.t_services.id)
@@ -958,7 +990,7 @@ def list_pw_types():
 ##-------------------------------------------------------------------------
 
 @service.jsonrpc
-def accounts_index_data(hostfilter=(None, None)):
+def accounts_index_data(hostfilter=None):
     """Returns a list of IP address and account statistics.
 A compromised account is when the Password is not None"""
     query = (db.t_accounts.f_services_id==db.t_services.id)
@@ -994,12 +1026,12 @@ Returns: [ string, string, string ...]
 ##-------------------------------------------------------------------------
 
 @service.jsonrpc
-def snmp_list(snmpstring=None, hostfilter=(None, None)):
+def snmp_list(snmpstring=None, hostfilter=None):
     """Returns a list of SNMP information for a host
 
 Accepts: Record id, IPv4, IPv6 or Hostname - if not found return nothing
 
-Returns: [ [ record_id, ipaddr, hostname, community, access, version ] ... ]
+Returns: [ [ record_id, ipv4, ipv6, hostname, community, access, version ] ... ]
 """
     query = (db.t_snmp.id > 0)
     query = create_hostfilter_query(hostfilter, query, 't_snmp')
@@ -1017,7 +1049,7 @@ Returns: [ [ record_id, ipaddr, hostname, community, access, version ] ... ]
 ##-------------------------------------------------------------------------
 
 @service.jsonrpc
-def snmp_rpt_table(hostfilter=(None, None)):
+def snmp_rpt_table(hostfilter=None):
     """Returns an array of tuples containing (communitystring, count_of_ips_with_string, perm)"""
 
     query = (db.t_snmp.id > 0)
@@ -1101,7 +1133,7 @@ Returns: ( True/False, message )
 ##-------------------------------------------------------------------------
 
 @service.jsonrpc
-def vuln_list(host_rec = None, svc_rec = None, hostfilter=(None, None)):
+def vuln_list(host_rec=None, svc_rec=None, hostfilter=None):
     """Returns a list of Vulnerabilities known to a host, a service or
 all known Vulnerabilities
 
@@ -1175,7 +1207,7 @@ def vuln_info(vuln_name = None, vuln_id = None):
 ##-------------------------------------------------------------------------
 
 @service.jsonrpc
-def vuln_ip_info(vuln_name = None, vuln_id = None, ip_list_only=True, hostfilter=(None, None)):
+def vuln_ip_info(vuln_name = None, vuln_id = None, ip_list_only=True, hostfilter=None):
     """Returns a list of all IP addresses with a vulnerability and their proof/status
 
 If ip_list_only is false then adds proof and status
@@ -1207,12 +1239,12 @@ If ip_list_only is false then adds proof and status
 ##-------------------------------------------------------------------------
 
 @service.jsonrpc
-def vuln_service_list(vuln_name = None, vuln_id = None, hostfilter=(None, None)):
+def vuln_service_list(vuln_name = None, vuln_id = None, hostfilter=None):
     """Returns a list of services and IPs vulnerability has been found on:
 
-'vuln-id': {'port1': [ (ipaddr, hostname ),
-                       (ipaddr, hostname ) ]},
-           {'port2': [ (ipaddr, hostname ) ]}
+'vuln-id': {'port1': [ (ipv4, ipv6, hostname ),
+                       (ipv4, ipv6, hostname ) ]},
+           {'port2': [ (ipv4, ipv6, hostname ) ]}
 
 """
 
@@ -1283,12 +1315,12 @@ XXX: This isn't complete
 ##-------------------------------------------------------------------------
 
 @service.jsonrpc
-def os_list(hostfilter=(None, None)):
+def os_list(hostfilter=None):
     """Returns the Operating Systems for a host or all OS records and hosts
 
 Accepts: hostfilter
 
-Returns: [ ( ipaddr, hostname, os records... ) ... ]
+Returns: [ ( ipv4, ipv6, hostname, os records... ) ... ]
 """
     data = []
     query = (db.t_host_os_refs.f_hosts_id == db.t_hosts.id)
@@ -1316,7 +1348,7 @@ Returns: [ ( ipaddr, hostname, os records... ) ... ]
 ##-------------------------------------------------------------------------
 
 @service.jsonrpc
-def os_report_list(hostfilter=(None, None)):
+def os_report_list(hostfilter=None):
     """Returns a list of hosts and their top operating systems"""
 
     os_q = (db.t_host_os_refs.f_hosts_id == db.t_hosts.id)
@@ -1354,7 +1386,7 @@ def os_report_list(hostfilter=(None, None)):
 ##-------------------------------------------------------------------------
 
 @service.jsonrpc
-def netbios_list(hostfilter=(None, None)):
+def netbios_list(hostfilter=None):
     """Returns a list of NetBIOS workgroups/domains for an IP (or all IPs)"""
     data = []
     query = (db.t_netbios.id > 0)
@@ -1370,7 +1402,7 @@ def netbios_list(hostfilter=(None, None)):
 ##-------------------------------------------------------------------------
 
 @service.jsonrpc
-def netbios_rpt_table(hostfilter=(None, None)):
+def netbios_rpt_table(hostfilter=None):
     """Returns a list of domains and host count"""
     data = []
     query = (db.t_netbios.id > 0)
@@ -1384,7 +1416,7 @@ def netbios_rpt_table(hostfilter=(None, None)):
 ##-------------------------------------------------------------------------
 
 @service.jsonrpc
-def netbios_domain_members(domain=None, hostfilter=(None, None)):
+def netbios_domain_members(domain=None, hostfilter=None):
     """Returns a list of domain member IP addresses"""
     data = []
     q = (db.t_netbios.f_domain == domain) & (db.t_netbios.f_hosts_id == db.t_hosts.id)
@@ -1396,7 +1428,7 @@ def netbios_domain_members(domain=None, hostfilter=(None, None)):
 ##-------------------------------------------------------------------------
 
 @service.jsonrpc
-def netbios_domain_controllers(domain=None, hostfilter=(None, None)):
+def netbios_domain_controllers(domain=None, hostfilter=None):
     """Returns a list of domain controller IPs"""
     data = []
     q = (db.t_netbios.f_domain == domain) & (db.t_netbios.f_hosts_id == db.t_hosts.id)
@@ -1411,7 +1443,7 @@ def netbios_domain_controllers(domain=None, hostfilter=(None, None)):
 ##-------------------------------------------------------------------------
 
 @service.jsonrpc
-def tbl_count(tables = [], hostfilter=(None, None)):
+def tbl_count(tables = [], hostfilter=None):
     """Returns the record count of a database or list of dbs"""
 
     if type(tables) == type(list()):

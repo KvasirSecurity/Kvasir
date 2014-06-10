@@ -86,7 +86,6 @@ def import_xml_scan():
         response.flash = 'Error in form'
     elif form.accepts(request.vars, session):
         # process a nmap file
-        filename = form.vars.f_filename
         filename = os.path.join(filedir, form.vars.f_filename)
 
         # build the hosts only/exclude list

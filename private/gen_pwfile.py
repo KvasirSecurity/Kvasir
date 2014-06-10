@@ -150,7 +150,7 @@ query &= (db.t_services.f_hosts_id == db.t_hosts.id)
 
 if output_type == "csv":
     output = csv.writer(sys.stdout, quoting=csv.QUOTE_MINIMAL)
-    output.writerow(["IPv4", "IPv6", "Hostname", "Account", "Full Name", "Password", "Hash 1 type", "Hash 1", "Hash Type", "Hash 2"])
+    output.writerow(["IP Address", "Hostname", "Account", "Full Name", "Password", "Hash 1 type", "Hash 1", "Hash Type", "Hash 2"])
 else:
     output = ""
 
