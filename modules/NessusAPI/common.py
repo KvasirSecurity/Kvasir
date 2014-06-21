@@ -29,7 +29,10 @@ class NessusConnection(object):
         f = urlopen(url, urlencode(params))
         dom = parse_xml(f)
         reply = dom.getElementsByTagName('reply')[0]
-        status = get_text_by_tag(reply, 'status')
+        status = None
+        for node in reply.childNodes:
+            if node.nodeName == 'status':
+                status = node.firstChild.nodeValue
         if status != 'OK':
             raise Exception("Authentication failure")
 
