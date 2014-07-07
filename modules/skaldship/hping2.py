@@ -73,7 +73,7 @@ def process_file(
                 packets = line.split()
                 if packets[0] == packets[3]:
                     if answer_ip != host_ip:
-                        response = "Ja, von: %s" %(answer_ip)
+                        response = "Nein"
                     else:
                         response = "Ja"
                 else:
