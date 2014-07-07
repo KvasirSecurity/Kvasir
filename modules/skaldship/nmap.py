@@ -264,7 +264,6 @@ def process_xml(
             f_name = port.get('service_name')
             f_product = port.get('service_product')
 
-            ## edit begins ##
             query = (svc_db.f_proto==f_proto) & (svc_db.f_number==f_number) & (svc_db.f_hosts_id == host_id)
             svc = db(query).select().first()
             
@@ -279,7 +278,6 @@ def process_xml(
                     svc_id = db.t_services.validate_and_update(_key=svc.id, f_name=(f_name + ' | ' + svc.f_name))
                 else:
                     svc_id = db.t_services.validate_and_update(_key=svc.id, f_name=(svc.f_name))   
-                ## edit ends ##
                 svc_id = svc_id.id
 
             if f_product:
@@ -292,13 +290,11 @@ def process_xml(
             # Process <script> service entries
             for script in port.get('scripts'):
                 try:
-                    ## edit begins ##
                     if script.get('id') == 'ssl-cert':
                         text=script.get('output')
                         sslcert = text.replace("/", "\n")
                         db.t_service_info.update_or_insert(f_services_id=svc_id, f_name=script.get('id'), f_text=sslcert)
                     else:
-                    ## edit ends ##
                         db.t_service_info.update_or_insert(f_services_id=svc_id, f_name=script.get('id'), f_text=script.get('output'))
                 except Exception, e:
                     logger.error("Error inserting Script: %s" % (e))
@@ -338,13 +334,11 @@ def process_xml(
                         # So no CPE or existing OS data, lets split up the CPE data and make our own
                         log(" [!] No os_id found, this is odd !!!")
 
-        ## edit begins ##
         # Adding uptime. Needed to add a table "f_uptime" in t_hosts db!
         if node.uptime['lastboot']:
             db.t_hosts.update_or_insert((db.t_hosts.f_ipv4 == ipaddr), f_uptime=node.uptime['lastboot'])
         if not node.uptime['lastboot']:
             db.t_hosts.update_or_insert((db.t_hosts.f_ipv4 == ipaddr), f_uptime='Konnte nicht ermittelt werden')
-        ## edit begins ##
 
     if msf_settings.get('workspace'):
         try:

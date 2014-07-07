@@ -283,11 +283,8 @@ class NessusVulns:
             is_xml = True
             extradata['proto'] = rpt_item.get('protocol', 'info')
             extradata['port'] = rpt_item.get('port', 0)
-            ## edit begin ##
-            #extradata['svcname'] = rpt_item.findtext('svc_name', '')
             extradata['status'] = rpt_item.get('port', 'open')
             extradata['svcname'] = rpt_item.get('svc_name', 0)
-            ## edit end ##
             extradata['plugin_output'] = rpt_item.findtext('plugin_output', '') 
             extradata['exploit_available'] = rpt_item.findtext('exploit_available', 'false')
             fname = rpt_item.findtext('fname', '')
