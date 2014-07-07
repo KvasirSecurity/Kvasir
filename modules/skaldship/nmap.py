@@ -139,7 +139,7 @@ def process_xml(
             hoststats['skipped'] += 1
             continue
 
-        # we'lll just take the last hostname in the names list since it'll usually be the full dns name
+        # we'll just take the last hostname in the names list since it'll usually be the full dns name
         for name in node.hostnames:
             nodefields['f_hostname'] = name['hostname']
 
@@ -180,33 +180,33 @@ def process_xml(
             host_id = None
             f_title = os['name'] #title
             for k in os['osclasses']:
-                if k.get('cpe') != None:
-                    f_cpename= k['cpe'].replace('cpe:/o:', '')
-                f_vendor = k['vendor']
-                f_product = k['osfamily']
-                f_version = k['osgen']
-                f_class = k['type']
-                f_family = k['osfamily']
-                f_certainty= k['accuracy']
+                if k.get('cpe') != None: #fixes error on loading cpe:/os
+                    f_cpename = k['cpe'].replace('cpe:/o:', '')
+                    f_vendor = k['vendor']
+                    f_product = k['osfamily']
+                    f_version = k['osgen']
+                    f_class = k['type']
+                    f_family = k['osfamily']
+                    f_certainty= k['accuracy']
 
-                cpe_res = db((db.t_os.f_cpename == f_cpename)&(db.t_os.f_title == f_title)).select().first()
+                    cpe_res = db((db.t_os.f_cpename == f_cpename)&(db.t_os.f_title == f_title)).select().first()
 
-                if cpe_res is not None:
-                    os_id = cpe_res.id
+                    if cpe_res is not None:
+                        os_id = cpe_res.id
 
-                else:
-                    try:
-                        os_id = db.t_os.insert(
-                        f_cpename = f_cpename,
-                        f_title = f_title,
-                        f_vendor = f_vendor,
-                        f_product = f_product,
-                        f_version = f_version,
-                        )
-                    except Exception, e:
-                        logger.error("Error inserting OS: %s" % (e))
+                    else:
+                        try:
+                            os_id = db.t_os.insert(
+                            f_cpename = f_cpename,
+                            f_title = f_title,
+                            f_vendor = f_vendor,
+                            f_product = f_product,
+                            f_version = f_version,
+                            )
+                        except Exception, e:
+                            logger.error("Error inserting OS: %s" % (e))
 
-                    db.commit()
+                        db.commit()
 
                 if os_id and (f_class or f_family or f_certainty):
                     ipaddr = node.ip.get('addr')
@@ -264,14 +264,22 @@ def process_xml(
             f_name = port.get('service_name')
             f_product = port.get('service_product')
 
-            log(" [-] Adding port: %s/%s (%s)" % (f_proto, f_number, f_name))
-            svc_id = db.t_services.update_or_insert(f_proto=f_proto, f_number=f_number, f_status=f_status, f_hosts_id=host_id, f_name=f_name)
-
-            # if record exists, update returns None so look up the record:
-            if svc_id is None:
-                svc_id = db((db.t_services.f_hosts_id == host_id) &
-                           (db.t_services.f_proto == f_proto) &
-                           (db.t_services.f_number == f_number)).select('id').first()
+            ## edit begins ##
+            query = (svc_db.f_proto==f_proto) & (svc_db.f_number==f_number) & (svc_db.f_hosts_id == host_id)
+            svc = db(query).select().first()
+            
+            # if record does not exist, query returns None so add the record:
+            if svc is None:
+                log(" [-] Adding port: %s/%s (%s)" % (f_proto, f_number, f_name))
+                svc_id = db.t_services.update_or_insert(f_proto=f_proto, f_number=f_number, f_status=f_status, f_name=f_name,f_hosts_id=host_id)
+            
+            if not (svc is None):
+                log(" [-] Updating port: %s/%s (%s)" % (f_proto, f_number, f_name))
+                if svc.f_name != f_name and f_name not in svc.f_name:
+                    svc_id = db.t_services.validate_and_update(_key=svc.id, f_name=(f_name + ' | ' + svc.f_name))
+                else:
+                    svc_id = db.t_services.validate_and_update(_key=svc.id, f_name=(svc.f_name))   
+                ## edit ends ##
                 svc_id = svc_id.id
 
             if f_product:
@@ -284,7 +292,14 @@ def process_xml(
             # Process <script> service entries
             for script in port.get('scripts'):
                 try:
-                    db.t_service_info.update_or_insert(f_services_id=svc_id, f_name=script.get('id'), f_text=script.get('output'))
+                    ## edit begins ##
+                    if script.get('id') == 'ssl-cert':
+                        text=script.get('output')
+                        sslcert = text.replace("/", "\n")
+                        db.t_service_info.update_or_insert(f_services_id=svc_id, f_name=script.get('id'), f_text=sslcert)
+                    else:
+                    ## edit ends ##
+                        db.t_service_info.update_or_insert(f_services_id=svc_id, f_name=script.get('id'), f_text=script.get('output'))
                 except Exception, e:
                     logger.error("Error inserting Script: %s" % (e))
                 db.commit()
@@ -295,7 +310,6 @@ def process_xml(
                     except Exception, e:
                         logger.error("Error inserting Banner: %s" % (e))
                     db.commit()
-
 
             # Process <cpe> service entries
             port_cpe = port.get('service_cpe')
@@ -323,6 +337,14 @@ def process_xml(
                     else:
                         # So no CPE or existing OS data, lets split up the CPE data and make our own
                         log(" [!] No os_id found, this is odd !!!")
+
+        ## edit begins ##
+        # Adding uptime. Needed to add a table "f_uptime" in t_hosts db!
+        if node.uptime['lastboot']:
+            db.t_hosts.update_or_insert((db.t_hosts.f_ipv4 == ipaddr), f_uptime=node.uptime['lastboot'])
+        if not node.uptime['lastboot']:
+            db.t_hosts.update_or_insert((db.t_hosts.f_ipv4 == ipaddr), f_uptime='Konnte nicht ermittelt werden')
+        ## edit begins ##
 
     if msf_settings.get('workspace'):
         try:
@@ -358,9 +380,7 @@ def process_xml(
     log(" [*] Connecting exploits to vulns and performing do_host_status")
     do_host_status(asset_group=asset_group)
 
-    log(" [*] Import complete: hosts: %s added, %s skipped" % (hoststats['added'],
-                                                               hoststats['skipped'],
-                                                              ))
+    log(" [*] Import complete: hosts: %s added, %s updated, %s skipped" % (hoststats['added'], hoststats['updated'], hoststats['skipped'],))
 
 ##-------------------------------------------------------------------------
 

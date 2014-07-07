@@ -54,10 +54,19 @@ class Services:
         """
         Our own update_or_insert routine
         """
-        if not fields['f_proto'] or not fields['f_number'] or not fields['f_hosts_id']:
-            return None
+        record = self._get_record(**fields)
 
-        svc_id = self.svc_db.update_or_insert(**fields)
+        splited = fields['f_svcname'].split("?")
+        if record is not None:
+            if splited[0] != record.f_name and record.f_name not in splited[0]:
+                fields['f_name'] = "%s | %s" % (record.f_name, splited[0])
+                svc_id = self.svc_db.update_or_insert(_key=record.id, **fields)
+            else:
+                svc_id = self.svc_db.update_or_insert(**fields)
+        else:
+            fields['f_name'] = splited[0]
+            svc_id = self.svc_db.update_or_insert(**fields)
+
         self.db.commit()
         if not svc_id:
             record = self._get_record(**fields)
