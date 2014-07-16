@@ -99,7 +99,7 @@ response.menu = [
          (T('Nmap XML'), False, URL(_a,'nmap','import_xml_scan'), []),
          (T('Nmap Scan and Import'), False, URL(_a,'nmap','nmap_scan'), []),
          (T('Nessus Scanfile'), False, URL(_a,'nessus','import_scan'), []),
-         (T('hping2 File'), False, URL(_a,'hping2','import_scan'), []),
+         (T('hping File'), False, URL(_a,'hping','import_scan'), []),
          (T('Metasploit XML'), False, URL(_a, 'metasploit', 'import_report_xml'), []),
          (T('ShodanHQ'), False, URL(_a, 'shodanhq', 'import_report'), []),
      ]),
