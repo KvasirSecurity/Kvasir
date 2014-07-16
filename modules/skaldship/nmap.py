@@ -338,7 +338,7 @@ def process_xml(
         if node.uptime['lastboot']:
             db.t_hosts.update_or_insert((db.t_hosts.f_ipv4 == ipaddr), f_uptime=node.uptime['lastboot'])
         if not node.uptime['lastboot']:
-            db.t_hosts.update_or_insert((db.t_hosts.f_ipv4 == ipaddr), f_uptime='Konnte nicht ermittelt werden')
+            db.t_hosts.update_or_insert((db.t_hosts.f_ipv4 == ipaddr), f_uptime=T("no entry found"))
 
     if msf_settings.get('workspace'):
         try:
