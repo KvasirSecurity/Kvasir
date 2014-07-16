@@ -4,9 +4,9 @@
 ##--------------------------------------#
 ## Kvasir
 ##
-## Hping2 Utilities for Kvasir
+## Hping Utilities for Kvasir
 ##
-## Author: Jan RUde
+## Author: Jan Rude
 ##--------------------------------------#
 """
 from gluon import current
@@ -28,7 +28,7 @@ def process_file(
     import os
     from skaldship.hosts import get_host_record, do_host_status
 
-    log(" [*] Processing hping2 scan file %s" % (filename))
+    log(" [*] Processing hping scan file %s" % (filename))
 
     # parse the hosts, where all the goodies are
     #log(" [-] Parsing %d hosts" % (len(nmap_parsed.hosts)))
@@ -73,11 +73,11 @@ def process_file(
                 packets = line.split()
                 if packets[0] == packets[3]:
                     if answer_ip != host_ip:
-                        response = "Nein"
+                        response = T("No")
                     else:
-                        response = "Ja"
+                        response = T("Yes")
                 else:
-                    response = "Nein"
+                    response = T("No")
                 get_id = db(db.t_hosts.f_ipv4==host_ip).select(db.t_hosts.id).first()
                 svc_db.update_or_insert(f_hosts_id=get_id.id, f_proto='ICMP', f_number='0', f_status=response, f_name=ICMP_type)
                 db.commit()
