@@ -250,7 +250,7 @@ def scanner_import(
             engineer=engineer,
             ip_ignore_list=ip_ignore_list,
             ip_include_list=ip_include_list,
-            update_hosts=update_hosts,
+            #update_hosts=update_hosts,
         )
     return True
 
