@@ -6,7 +6,7 @@ __version__ = "1.0"
 ##--------------------------------------#
 ## Kvasir
 ##
-## (c) 2010-2013 Cisco Systems, Inc.
+## (c) 2010-2014 Cisco Systems, Inc.
 ##
 ## Abstraction layer for Hosts and DB functions
 ##
@@ -85,6 +85,69 @@ def get_host_record(argument):
                 record = None
         else:
             record = None
+
+    return record
+
+
+##-------------------------------------------------------------------------
+
+def get_or_create_record(argument, **defaults):
+    """
+    Returns a t_host record based on the argument. If argument is an ipv4/ipv6 address it looks it up. If it's an
+    integer it returns it. If none exist and argument is an ipv4/ipv6 address it creates a new record using the
+    defaults provided.
+
+    :param argument: ip address or db.t_hosts.id
+    :param defaults: dictionary of db.t_hosts fields, validated before inserting
+    :returns: Row with id
+
+    >>> get_or_create_record('2.2.2.2')
+    <Row {'f_confirmed': False, 'f_followup': None, 'f_macaddr': None, 'f_longitude': None, 'f_vuln_count': 0L, 'f_asset_group': 'undefined', 'f_accessed': False, 'id': 1L, 'f_vuln_graph': '0,0,0,0,0,0,0,0,0,0', 'f_engineer': 1L, 'f_exploit_count': 0L, 'f_hostname': None, 'f_ipv6': None, 'f_ipv4': '2.2.2.2', 'f_city': None, 'f_country': None, 'f_latitude': None, 'f_netbios_name': None, 'f_service_count': 0L}>
+
+    >>> get_or_create_record('9.9.9.9', f_engineer=9999)
+    None
+
+    >>> get_or_create_record(1)
+    <Row {'f_confirmed': False, 'f_followup': None, 'f_macaddr': None, 'f_longitude': None, 'f_vuln_count': 0L, 'f_asset_group': 'undefined', 'f_accessed': False, 'id': 1L, 'f_vuln_graph': '0,0,0,0,0,0,0,0,0,0', 'f_engineer': 1L, 'f_exploit_count': 0L, 'f_hostname': None, 'f_ipv6': None, 'f_ipv4': '2.2.2.2', 'f_city': None, 'f_country': None, 'f_latitude': None, 'f_netbios_name': None, 'f_service_count': 0L}>
+
+    >>> get_or_create_record(9999)
+    None
+    """
+    if argument is None:
+        return None
+
+    from gluon.validators import IS_IPADDRESS
+    db = current.globalenv['db']
+    auth = current.globalenv['auth']
+
+    record = get_host_record(argument)
+    if not record:
+        fields = {}
+        for k in defaults.keys():
+            if k in db.t_hosts.fields:
+                fields[k] = defaults[k]
+
+        # set defaults for assetgroup/engineer if not set
+        if 'f_asset_group' not in fields:
+            fields['f_asset_group'] = 'undefined'
+        if 'f_engineer' not in fields:
+            fields['f_engineer'] = auth.user_id or 1
+
+        if IS_IPADDRESS(is_ipv4=True)(argument)[1] == None:
+            fields['f_ipv4'] = argument
+        elif IS_IPADDRESS(is_ipv6=True)(argument)[1] == None:
+            fields['f_ipv6'] = argument
+        else:
+            # invalid ip address, clear the fields
+            fields = None
+
+        if fields:
+            host_rec = db.t_hosts.validate_and_insert(**fields)
+            if host_rec.error:
+                log("Error creating host record: %s" % host_rec.error, logging.ERROR)
+            else:
+                db.commit()
+                record = db.t_hosts(host_rec.get('id'))
 
     return record
 
@@ -399,3 +462,8 @@ def pagination(request, curr_host):
     pagination['host_number'] = "( %d/%d )" % (hostselected, len(hostlist))
 
     return pagination
+
+
+if __name__ == '__main__':
+    import doctest
+    doctest.testmod()
