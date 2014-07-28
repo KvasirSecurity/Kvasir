@@ -154,7 +154,7 @@ def get_or_create_record(argument, **defaults):
 
 ##-------------------------------------------------------------------------
 
-def create_hostfilter_query(fdata=[(None, None), False], q=None, dbname=None):
+def create_hostfilter_query(fdata, q=None, dbname=None):
     """
     Creates or appends a hostfilter to a query variable
 
@@ -163,31 +163,39 @@ def create_hostfilter_query(fdata=[(None, None), False], q=None, dbname=None):
     q is the base query we're appending to
     dbname is used to ensure the first query adds the dbname.f_hosts_id fields
     """
-    from gluon.dal import Query
-
     db = current.globalenv['db']
     cache = current.globalenv['cache']
+    session = current.globalenv['session']
 
-    if isinstance(fdata, list):
-        hostfilter = fdata[0] or (None, None)
-        unconfirmed = fdata[1] or False
-    else:
-        hostfilter = fdata
-        unconfirmed = False
+    if not isinstance(fdata, dict):
+        session.hostfilter = {
+            'filtertype': None,
+            'content': None,
+            'unconfirmed': False,
+            'accessed': False,
+            'followup': False,
+        }
 
-    if isinstance(hostfilter, (list,tuple)):
-        f_type, f_value = hostfilter
-    else:
-        f_type, f_value = (None, None)
+    f_type = fdata.get('filtertype', '')
+    if isinstance(f_type, type(None)):
+        f_type = ''
+    f_value = fdata.get('content')
+    unconfirmed = fdata.get('unconfirmed', False)
+    accessed = fdata.get('accessed', False)
+    followup = fdata.get('followup', False)
 
     if db is None or cache is None:
         return None
 
     if q is None:
-        q = (db.t_hosts.id > 0)
+        q = db.t_hosts.id > 0
 
     if unconfirmed:
-        q &= (db.t_hosts.f_confirmed==False)
+        q &= db.t_hosts.f_confirmed != unconfirmed
+    if accessed:
+        q &= db.t_hosts.f_accessed == accessed
+    if followup:
+        q &= db.t_hosts.f_followup == followup
 
     if dbname is not None:
         # dbname specified, must add this to the first query
@@ -200,42 +208,26 @@ def create_hostfilter_query(fdata=[(None, None), False], q=None, dbname=None):
             't_accounts': 't_services',
             }
         if dbname in db_parent_map.keys():
-            q & (db.t_hosts.id == db[db_parent_map[dbname]].f_hosts_id)
+            q &= db.t_hosts.id == db[db_parent_map[dbname]].f_hosts_id
         else:
-            q &= (db.t_hosts.id == db[dbname].f_hosts_id)
+            q &= db.t_hosts.id == db[dbname].f_hosts_id
 
     # go through the f_types and if matched add to the query
-    if f_type == "userid":
+    if f_type.lower() == "userid":
         if f_value is not None:
             try:
                 f_value = int(f_value)
-                user_id = db(db.auth_user.id == f_value).select(cache=(cache.ram,120)).first()
-            except:
+                user_id = db(db.auth_user.id == f_value).select(cache=(cache.ram, 120)).first()
+            except ValueError:
                 f_value = f_value.lower()
-                user_id = db(db.auth_user.username.lower() == f_value).select(cache=(cache.ram,120)).first()
-            q = q & (db.t_hosts.f_engineer == user_id)
-    elif f_type == "assetgroup":
-        #logger.debug("assetgroup filter: %s" % (f_value))
+                user_id = db(db.auth_user.username.lower() == f_value).select(cache=(cache.ram, 120)).first()
+            q &= db.t_hosts.f_engineer == user_id
+    elif f_type.lower() == "assetgroup":
         if "%" in f_value:
-            q &= (db.t_hosts.f_asset_group.contains(f_value))
+            q &= db.t_hosts.f_asset_group.contains(f_value)
         else:
-            q &= (db.t_hosts.f_asset_group == f_value)
-    elif f_type == "range":
-        q = q & (db.t_hosts.f_ipv4.contains(f_value))
-    elif f_type == "ipv4_list":
-        if len(f_value) > 0:
-            ip_q = (db.t_hosts.f_ipv4 == f_value[0])
-        for host in f_value[1:]:
-            ip_q |= (db.t_hosts.f_ipv4 == host)
-        q = q &  ip_q
-    elif f_type == "ipv6_list":
-        if len(f_value) > 0:
-            ip_q = (db.t_hosts.f_ipv6 == f_value[0])
-        for host in f_value[1:]:
-            ip_q |= (db.t_hosts.f_ipv6 == host)
-        q = q & ip_q
+            q &= db.t_hosts.f_asset_group == f_value
 
-    #logger.debug("hostfilter query = %s" % (str(q)))
     return q
 
 
@@ -425,11 +417,12 @@ def pagination(request, curr_host):
         hostfilter = session.hostfilter[0]
         if hostfilter is not None:
             if hostfilter[0] == "userid":
-                query &= (db.t_hosts.f_engineer == hostfilter[1])
+                userid = db(db.auth_user.username == hostfilter[1]).select().first().get('id')
+                query &= (db.t_hosts.f_engineer == userid)
             elif hostfilter[0] == "assetgroup":
                 query &= (db.t_hosts.f_asset_group.contains(hostfilter[1]))
-            elif hostfilter[0] == "range":
-                query &= (db.t_hosts.f_ipv4.contains(hostfilter[1]))
+            #elif hostfilter[0] == "range":
+            #    query &= (db.t_hosts.f_ipv4.contains(hostfilter[1]))
 
     for h_rec in db(query).select():
         hostlist.append(OPTION(host_title_maker(h_rec), _value=h_rec.id))

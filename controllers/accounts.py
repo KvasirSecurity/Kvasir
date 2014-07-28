@@ -112,10 +112,8 @@ def edit():
 @auth.requires_login()
 def accounts_grid():
     response.title = "%s :: Accounts" % (settings.title)
-    if session.hostfilter is None:
-        session.hostfilter = [(None, None), False]
 
-    query = (db.t_accounts.id > 0)  & (db.t_accounts.f_services_id== db.t_services.id)
+    query = (db.t_accounts.id > 0) & (db.t_accounts.f_services_id== db.t_services.id)
     query = create_hostfilter_query(session.hostfilter, query, 't_services')
     columns = [
         db.t_hosts.f_ipv4, db.t_hosts.f_hostname, db.t_services.f_proto, db.t_services.f_number,
@@ -158,9 +156,6 @@ def csv():
 @auth.requires_login()
 def list():
     response.title = "%s :: Accounts" % (settings.title)
-    # if no filter is set then we blank it out
-    if session.hostfilter is None:
-        session.hostfilter = [(None, None), False]
 
     if request.extension == 'json':
         query = (db.t_accounts.id > 0) & (db.t_accounts.f_services_id== db.t_services.id)
