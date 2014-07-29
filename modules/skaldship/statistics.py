@@ -42,11 +42,6 @@ def vulnlist(query="%", hostfilter=None):
 
     hostfilter = hostfilter or session.hostfilter
 
-    if hostfilter is None:
-        # if no filter is set then we blank it out
-        if session.hostfilter is None:
-            session.hostfilter = [(None, None), False]
-
     query = (db.t_vulndata.f_vulnid.contains(query))
     query &= (db.t_service_vulns.f_services_id == db.t_services.id) & (db.t_service_vulns.f_vulndata_id == db.t_vulndata.id)
     query = create_hostfilter_query(hostfilter, query, 't_services')

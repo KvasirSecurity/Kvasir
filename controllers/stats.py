@@ -133,12 +133,6 @@ def os():
     Operating system statistics
     """
 
-    hostfilter = session.hostfilter
-    if hostfilter is None:
-        # if no filter is set then we blank it out
-        if session.hostfilter is None:
-            session.hostfilter = [(None, None), False]
-
     q = create_hostfilter_query(session.hostfilter)
 
     rows = db(q).select(db.t_hosts.id, db.t_host_os_refs.f_certainty, db.t_os.f_title, db.t_os.f_vendor,
@@ -199,13 +193,7 @@ def services():
     t_hosts = db.t_hosts
     t_svcs = db.t_services
 
-    hostfilter = session.hostfilter
-    if hostfilter is None:
-        # if no filter is set then we blank it out
-        if session.hostfilter is None:
-            session.hostfilter = [(None, None), False]
-
-    q = (t_hosts.id>0)
+    q = (t_hosts.id > 0)
     q = create_hostfilter_query(session.hostfilter, q, t_svcs)
 
     rows = db(q).select(t_svcs.f_proto, t_svcs.f_number, t_svcs.f_name, cache=(cache.ram, 60))

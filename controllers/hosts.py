@@ -387,16 +387,6 @@ def edit():
 @auth.requires_login()
 def list():
     response.title = "%s :: Host Listing" % (settings.title)
-    # hostfilter is a session variable that can be
-    # None -- no host filtering
-    # (userid, <x>) - limit on user id
-    # (assetgroup, <x>) - limit on asset group
-    # (range, <x>) - limit on subnet (eg: 192.168)
-    hostfilter = session.hostfilter
-    if hostfilter is None:
-        # if no filter is set then we blank it out
-        if session.hostfilter is None:
-            session.hostfilter = [(None, None), False]
 
     if request.extension == 'json':
         # from datetime import datetime, timedelta
@@ -438,14 +428,14 @@ def list():
                 spanflags = []
                 if r.t_hosts.f_confirmed:
                     confirmed = 'hosts_select_confirmed'
-                    spanflags.append('<span class="badge"><i class="icon-check"></i></span>')
+                    spanflags.append('<span title="Confirmed" class="badge"><i class="icon-check"></i></span>')
                 else:
                     confirmed = 'hosts_select_unconfirmed'
 
                 if r.t_hosts.f_accessed:
-                    spanflags.append('<span class="badge badge-success"><i class="icon-heart"></i></span>')
+                    spanflags.append('<span title="Accessed" class="badge badge-success"><i class="icon-heart"></i></span>')
                 if r.t_hosts.f_followup:
-                    spanflags.append('<span class="badge badge-important"><i class="icon-flag"></i></span>')
+                    spanflags.append('<span title="Followup" class="badge badge-important"><i class="icon-flag"></i></span>')
 
                 confirmed = '<div class="%s">%s</div>' % (confirmed, " ".join(spanflags))
 
@@ -528,39 +518,63 @@ def delete():
 @auth.requires_login()
 def filter():
     """
-    hostfilter is a session variable that can be
+    hostfilter is a session variable that can be:
+
       None -- no host filtering
       (userid, <x>) - limit on user id
       (group, <x>) - limit on asset group
-      (range, <x>) - limit on subnet (eg: 192.168)
-    """
-    if type(session.hostfilter) is type(None):
-        session.hostfilter = [(None, None), False]
+      and 3 booleans for confirmed, accessed and followup
 
-    hostfilter = session.hostfilter[0]
-    unconfirmed = session.hostfilter[1]
+    structured into a JSON string to the html, stored as a dict in session.
+    """
+    from gluon.contrib.simplejson import loads, dumps
+
+    if not session.hostfilter:
+        session.hostfilter = {
+            'filtertype': None,
+            'content': None,
+            'unconfirmed': False,
+            'accessed': False,
+            'followup': False,
+        }
+
     response.title = "%s :: Host Filter" % (settings.title)
 
     if request.extension == 'json':
         # process filter function requests
-        function = request.vars.get('function', '')
+        function = request.vars.get('function')
+        filtertype = request.vars.get('filtertype', '')
 
-        if function.lower() in ['assetgroup', 'range']:
-            hostfilter = (function.lower(), request.vars.get('filter', ''))
-        elif function.lower() == 'userid':
-            userid = request.vars.get('userid', '')
-            username = db.auth_user[userid].username or ''
-            hostfilter = (function.lower(), username)
-        elif function.lower() == 'clear':
-            hostfilter = (None, None)
+        if function == 'set':
+            if filtertype.lower() in ['assetgroup']:  #, 'range']:
+                session.hostfilter['content'] = request.vars.get('filter', '')
+            elif filtertype.lower() == 'userid':
+                session.hostfilter['content'] = db.auth_user[request.vars.get('userid', '')].username or ''
+            session.hostfilter['filtertype'] = filtertype
 
-        if request.vars.has_key('_formname'):
-            if request.vars.get('unconfirmed'):
-                unconfirmed = True
-            else:
-                unconfirmed = False
+            # this block is a little weird to make True booleans
+            if request.vars.has_key('_formname'):
+                if request.vars.get('unconfirmed'):
+                    session.hostfilter['unconfirmed'] = True
+                else:
+                    session.hostfilter['unconfirmed'] = False
+                if request.vars.get('accessed'):
+                    session.hostfilter['accessed'] = True
+                else:
+                    session.hostfilter['accessed'] = False
+                if request.vars.get('followup'):
+                    session.hostfilter['followup'] = True
+                else:
+                    session.hostfilter['followup'] = False
+        elif function == 'clear':
+            session.hostfilter = {
+                'filtertype': None,
+                'content': None,
+                'unconfirmed': False,
+                'accessed': False,
+                'followup': False,
+            }
 
-        session.hostfilter = [hostfilter, unconfirmed]
         referrer = request.env.http_referer or ''
         if function:
             if "hosts/list" in referrer:
@@ -572,7 +586,7 @@ def filter():
             elif "stats/vulnlist" in referrer:
                 response.headers['web2py-component-command'] = 'vulntable.fnReloadAjax();'
 
-        return dict(hostfilter=session.hostfilter)
+        return dict(hostfilter=dumps(session.hostfilter))
 
     elif request.extension in ['load', 'html']:
         # send filter form
@@ -581,31 +595,42 @@ def filter():
         else:
             buttons = ['submit']
         form = SQLFORM.factory(
-            Field('function', 'list', label=T('Filter by'), requires=IS_IN_SET(['UserID', 'AssetGroup', 'Range'], multiple=False)),
-            Field('filter', 'string', label=T('Filter text')),
-            Field('userid', db.auth_user, label=T('User'), requires=IS_EMPTY_OR(IS_IN_DB(db, db.auth_user.id, '%(username)s'))),
-            Field('unconfirmed', 'boolean', default=False, label=T('Unconfirmed Only')),
+            # removing IP Range, will add it back when it's implemented:  , 'Range'
+            Field('filtertype', 'list', label=T('Filter by'), default=session.hostfilter['filtertype'],
+                  requires=IS_IN_SET(['UserID', 'AssetGroup'], multiple=False)),
+            Field('filter', 'string', label=T('Filter text'), default=session.hostfilter['content']),
+            Field('userid', db.auth_user, label=T('User'),
+                  requires=IS_EMPTY_OR(IS_IN_DB(db, db.auth_user.id, '%(username)s'))),
+            Field('unconfirmed', 'boolean', default=session.hostfilter['unconfirmed'], label=T('Unconfirmed')),
+            Field('accessed', 'boolean', default=session.hostfilter['accessed'], label=T('Accessed')),
+            Field('followup', 'boolean', default=session.hostfilter['followup'], label=T('Follow-up')),
             _id="host_filter_form",
             buttons=buttons,
         )
+
         if form.accepts(request.vars, session):
             function = request.vars.get('function', '')
+            filtertype = request.vars.get('filtertype')
 
-            if function.lower() == 'userid':
-                userid = request.vars.get('userid', '')
-                username = db.auth_user[userid].username or ''
-                hostfilter = (function.lower(), username)
-            elif function.lower() in ['assetgroup', 'range']:
-                hostfilter = (function.lower(), request.vars.get('filter', ''))
-            elif function.lower() == 'clear':
-                hostfilter = [(None, None), False]
+            if function is not 'clear':
+                if filtertype in ['assetgroup']:  #, 'range']:
+                    session.hostfilter['content'] = request.vars.get('filter', '')
+                elif filtertype == 'userid':
+                    session.hostfilter['content'] = db.auth_user[request.vars.get('userid', '')].username or ''
+                session.hostfilter['filtertype'] = filtertype
 
-            unconfirmed = form.vars.get('unconfirmed', False)
-            if unconfirmed == 'on':
-                unconfirmed = True
+                session.hostfilter['unconfirmed'] = request.vars.get('unconfirmed')
+                session.hostfilter['accessed'] = request.vars.get('accessed')
+                session.hostfilter['followup'] = request.vars.get('followup')
             else:
-                unconfirmed = False
-            session.hostfilter = [hostfilter, form.vars.unconfirmed]
+                session.hostfilter = {
+                    'filtertype': None,
+                    'content': None,
+                    'unconfirmed': False,
+                    'accessed': False,
+                    'followup': False,
+                }
+
         elif form.errors:
             pass
         return dict(form=form)

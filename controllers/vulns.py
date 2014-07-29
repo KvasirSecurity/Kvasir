@@ -148,10 +148,6 @@ def vulninfo_by_vulnid():
                                      db.t_service_vulns.id,
                                      distinct=True)
 
-        # if no filter is set then we blank it out
-        if session.hostfilter is None:
-            session.hostfilter = [(None, None), False]
-
         hosts_tr = []
         query = (db.t_hosts.id > 0)
         query = create_hostfilter_query(session.hostfilter, query, 't_services')
@@ -500,8 +496,6 @@ def service_vulns_edit():
 @auth.requires_login()
 def service_vulns_list():
     # XXX: this doesn't work yet. . .
-    if session.hostfilter is None:
-        session.hostfilter = [(None, None), False]
 
     query = (db.t_service_vulns.id > 0) & (db.t_service_vulns.f_services_id == db.t_services.id) & (db.t_service_vulns.f_vulndata_id == db.t_vulndata.id)
     query = create_hostfilter_query(session.hostfilter, query, 't_services')
@@ -521,8 +515,6 @@ def new_service_vulns():
     # TODO: This...?
     response.title = "%s :: Services and Vulnerabilities" % (settings.title)
     if request.extension == 'json':
-        if session.hostfilter is None:
-            session.hostfilter = [(None, None), False]
 
         query = (db.t_service_vulns.id > 0) & (db.t_service_vulns.f_services_id == db.t_services.id) & (db.t_service_vulns.f_vulndata_id == db.t_vulndata.id)
         query = create_hostfilter_query(session.hostfilter, query, 't_services')

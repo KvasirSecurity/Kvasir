@@ -3,8 +3,8 @@
 <script>
     jQuery(document).ready(function() {
         jQuery('#no_table_userid__row').hide();
-        jQuery('#no_table_function').change(function() {
-            if(jQuery('#no_table_function option:selected').val() == "UserID") {
+        jQuery('#no_table_filtertype').change(function() {
+            if(jQuery('#no_table_filtertype option:selected').val() == "UserID") {
                 jQuery('#no_table_filter__row').hide();
                 jQuery('#no_table_userid__row').show();
             } else {

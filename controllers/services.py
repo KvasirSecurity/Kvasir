@@ -181,10 +181,6 @@ def list():
     from skaldship.general import severity_mapping
     response.title = "%s :: Services" % (settings.title)
 
-    # if no filter is set then we blank it out
-    if session.hostfilter is None:
-        session.hostfilter = [(None, None), False]
-
     if request.extension == 'json':
 
         q = (db.t_services.id > 0)

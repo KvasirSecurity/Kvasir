@@ -27,21 +27,37 @@ function do_hostfilter(wait) {
         datatype: 'json',
         async: wait,
         success: function(data) {
-            hostfilter = data['hostfilter'][0];
-            var replacetext;
-            if (hostfilter[0])
-                replacetext = hostfilter[0] + '/' + hostfilter[1];
-            else
-                replacetext = "OFF";
+            var hostfilter = JSON.parse(data['hostfilter']);
+            var replacetext = "OFF";
 
-            if (data['hostfilter'][1]) {
-                replacetext = "ON";
-                showall = "Unconfirmed";
-            } else
-                showall = "All";
+            if (hostfilter['filtertype'])
+                replacetext = hostfilter['filtertype'] + '/' + hostfilter['content'];
 
-            replacetext = replacetext + "/["+showall+"]";
-            jQuery('#filter_hosts').text(' Filter: ' + replacetext);
+            var showall = new Array();
+            var showtext;
+            if (hostfilter['unconfirmed']) {
+                //showall.push('<i class="icon-check"></i>');
+                showall.push('U');
+            }
+            if (hostfilter['accessed']) {
+                showall.push('<i class="icon-heart"></i>');
+                //showall.push('A');
+            }
+            if (hostfilter['followup']) {
+                showall.push('<i class="icon-flag"></i>');
+                //showall.push('F');
+            }
+            if (showall.length == 0) {
+                showtext = "All";
+                if (replacetext.length == 0)
+                    replacetext = "OFF";
+            } else {
+                showtext = showall.join("+");
+            }
+
+            replacetext = replacetext + "/["+showtext+"]";
+            jQuery('#filter_hosts').html('<i class="icon-filter"></i> Filter: ' + replacetext).css('color', 'red');
+
             return true;
         },
         error: function(data) {
@@ -56,20 +72,21 @@ jQuery(document).ready(function() {
     do_hostfilter(false);
     jQuery("#btnFilterClear").on("click", function() {
         var url = '{{=URL("hosts", "filter.json", vars = {"function": "clear"})}}'
-        $.web2py.ajax_page( 'POST', url, data, 'undefined' );
-        do_hostfilter(true);
+        $.web2py.ajax_page( 'GET', url, '', 'undefined' );
+        jQuery('#filter_hosts').text(' Filter: OFF/[All]').css('color', 'black');
         jQuery("#filterModal").modal('hide');
     });
 
     jQuery("#btnFilterSubmit").on("click", function() {
         var data = jQuery('#host_filter_form').serialize();
-        var url = '{{=URL("hosts", "filter.json")}}';
+        var url = '{{=URL("hosts", "filter.json", vars = {"function": "set"})}}';
         $.web2py.ajax_page( 'POST', url, data, 'undefined' );
         do_hostfilter(true);
         jQuery("#filterModal").modal('hide');
+        /* XXX: This is never defined/used.
         if ($refreshpage) {
             location.reload();
-        }
+        }*/
     });
 
 } );
