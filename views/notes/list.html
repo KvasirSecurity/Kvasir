@@ -36,7 +36,14 @@ jQuery(document).ready(function() {
         "oTableTools": {
             "sRowSelect": "multi",
             "sSelectedClass": "row_selected",
-            "sSwfPath": "{{=URL('static', 'TableTools/swf/copy_csv_xls.swf')}}"
+            "sSwfPath": "{{=URL('static', 'TableTools/swf/copy_csv_xls.swf')}}",
+            "aButtons": [
+                "select_all",
+                "select_none",
+                "copy",
+                "csv",
+                "print"
+            ]
         },
         {{if request.args(0):}}
         "sAjaxSource": "{{=URL('list.json', args=request.args(0))}}",
