@@ -15,10 +15,10 @@ __version__ = "1.0"
 """
 
 from gluon import current
+from skaldship.log import log
 import logging
 from skaldship.hosts import get_host_record, do_host_status
 
-logger = logging.getLogger("web2py.app.kvasir")
 
 
 ##-------------------------------------------------------------------------
@@ -193,8 +193,13 @@ def process_report_xml(
 
     Generate the XML report by using db_export -t xml filename.xml or through WebUI
 
-    TODO: Auto-exploits successful exploit attemps if matching CVE/VulnDB entry found
+    TODO: Auto-exploits successful exploit attempts if matching CVE/VulnDB entry found
     """
+    from gluon.validators import IS_IPADDRESS
+    from skaldship.passwords import lookup_hash
+    from skaldship.hosts import get_host_record, get_or_create_record
+    from skaldship.services import Services
+    services = Services()
 
     db = current.globalenv['db']
     cache = current.globalenv['cache']
@@ -220,19 +225,18 @@ def process_report_xml(
         ip_only = ip_include_list.split('\r\n')
         # TODO: check for ip subnet/range and break it out to individuals
 
-    print(" [*] Processing Metasploit Pro report file: %s" % (filename))
+    log(" [*] Processing Metasploit Pro report file: %s" % (filename))
 
     try:
         xml = etree.parse(filename)
     except etree.ParseError, e:
         raise Exception(" [!] Invalid XML file (%s): %s " % (filename, e))
-        return
 
     root = xml.getroot()
 
     # parse the hosts now
     hosts = root.findall("hosts/host")
-    print(" [-] Parsing %d hosts" % (len(hosts)))
+    log(" [-] Parsing %d hosts" % (len(hosts)))
     stats = {}
     stats['hosts_added'] = 0
     stats['hosts_skipped'] = 0
@@ -241,9 +245,6 @@ def process_report_xml(
     stats['services_updated'] = 0
     stats['accounts_added'] = 0
     stats['accounts_updated'] = 0
-
-    from gluon.validators import IS_IPADDRESS
-    from skaldship.passwords import lookup_hash
 
     for host in hosts:
         didwhat = "Unknown"
@@ -255,19 +256,13 @@ def process_report_xml(
         ipaddr = host.findtext('address')
 
         if len(ip_only) > 0 and ipaddr not in ip_only:
-            print(" [-] Node is not in the only list... skipping")
-            #sys.stderr.write(msg)
+            log(" [-] Node is not in the only list... skipping")
             stats['hosts_skipped'] += 1
             continue
 
-        if IS_IPADDRESS(is_ipv4=True)(ipaddr)[1] == None:
-            # address is IPv4:
-            hostfields['f_ipv4'] = ipaddr
-        elif IS_IPADDRESS(is_ipv6=True)(ipaddr)[1] == None:
-            hostfields['f_ipv6'] = ipaddr
-        else:
-            logger.error("Invalid IP Address in report: %s" % (ipaddr))
-            print(" [!] Invalid IP Address in report: %s" % (ipaddr))
+        if IS_IPADDRESS()(ipaddr)[1] is not None:
+            logger.error("Invalid IP Address in report: %s" % ipaddr)
+            log(" [!] Invalid IP Address in report: %s" % ipaddr)
             continue
 
         macaddr = host.findtext('mac')
@@ -279,106 +274,60 @@ def process_report_xml(
             hostfields['f_hostname'] = hostname
 
         # check to see if IP exists in DB already
-        if hostfields.has_key('f_ipv4'):
-            host_rec = db(db.t_hosts.f_ipv4 == hostfields['f_ipv4']).select().first()
-        else:
-            host_rec = db(db.t_hosts.f_ipv6 == hostfields['f_ipv6']).select().first()
-        if host_rec is None:
-            hostfields['f_asset_group'] = asset_group
-            hostfields['f_engineer'] = engineer
-            host_id = db.t_hosts.insert(**hostfields)
-            db.commit()
+        hostfields['f_asset_group'] = asset_group
+        hostfields['f_engineer'] = engineer
+
+        if update_hosts:
+            # update or add, doesn't matter which
+            host_rec = get_or_create_record(ipaddr, **hostfields)
             stats['hosts_added'] += 1
-            print(" [-] Adding IP: %s" % (ipaddr))
-            #sys.stderr.write(msg)
-        elif host_rec is not None and update_hosts:
-            db.commit()
-            if hostfields.has_key('f_ipv4'):
-                host_id = db(db.t_hosts.f_ipv4 == hostfields['f_ipv4']).update(**hostfields)
-                db.commit()
-                host_id = get_host_record(hostfields['f_ipv4'])
-                host_id = host_id.id
-                stats['hosts_updated'] += 1
-                print(" [-] Updating IP: %s" % (hostfields['f_ipv4']))
-            else:
-                host_id = db(db.t_hosts.f_ipv6 == hostfields['f_ipv6']).update(**hostfields)
-                db.commit()
-                host_id = get_host_record(hostfields['f_ipv6'])
-                host_id = host_id.id
-                stats['hosts_updated'] += 1
-                print(" [-] Updating IP: %s" % (hostfields['f_ipv6']))
         else:
-            stats['hosts_skipped'] += 1
-            db.commit()
-            print(" [-] Skipped IP: %s" % (ipaddr))
-            continue
+            # weird logic.. get a host record, if it doesn't exist create it otherwise skip because update_hosts=False
+            host_rec = get_host_record(ipaddr)
+            if not host_rec:
+                host_rec = get_or_create_record(ipaddr, **hostfields)
+                stats['hosts_added'] += 1
+                log(" [-] Adding IP: %s" % (ipaddr))
+            else:
+                stats['hosts_skipped'] += 1
+                log(" [-] Skipped IP: %s" % (ipaddr))
+                continue
 
         # add the <info> and <comments> as a note to the host
         info_note = host.findtext('info') or ''
         if info_note.startswith('Domain controller for '):
             db.t_netbios.update_or_insert(
-                f_hosts_id=host_id,
+                f_hosts_id=host_rec.id,
                 f_type="PDC",
                 f_domain=info_note[22:].upper()
             )
         else:
             db.t_host_notes.update_or_insert(
-                f_hosts_id=host_id,
+                f_hosts_id=host_rec.id,
                 f_note=info_note,
             )
         db.commit()
         for comment in host.findall('comments/comment'):
             db.t_host_notes.update_or_insert(
-                f_hosts_id=host_id,
+                f_hosts_id=host_rec.id,
                 f_note=comment.text,
             )
 
         # process the services, adding any new
         for svc in host.findall('services/service'):
-            f_number = svc.findtext('port')
-            f_proto = svc.findtext('proto')
-            f_status = svc.findtext('state')
-            f_name = svc.findtext('name') or ''
-            f_banner = svc.findtext('info') or ''
+            svc_fields = {
+                'f_number': svc.findtext('port'),
+                'f_proto': svc.findtext('proto'),
+                'f_status': svc.findtext('state'),
+                'f_name': svc.findtext('name') or '',
+                'f_banner': svc.findtext('info') or '',
+                'f_hosts_id': host_rec.id,
+            }
 
-            if f_name in ['http', 'https']:
-                f_name = f_name.upper()
+            if svc_fields['f_name'] in ['http', 'https']:
+                svc_fields['f_name'] = svc_fields['f_name'].upper()
 
-            query = (db.t_services.f_proto==f_proto) & (db.t_services.f_number==f_number) & (db.t_services.f_hosts_id==host_id)
-            svc_row = db(query).select().first()
-            if svc_row:
-                # we found a service record! Check for similar status, names and banners
-                do_update = False
-                if svc_row.f_status != f_status:
-                    svc_row.f_status=f_status
-                    do_update = True
-                if svc_row.f_name != f_name:
-                    svc_row.f_name=f_name
-                    do_update = True
-                if svc_row.f_banner != f_banner:
-                    svc_row.f_banner=f_banner
-                    do_update = True
-
-                if do_update:
-                    svc_row.update_record()
-                    db.commit()
-                    didwhat = "Updated"
-                    stats['services_updated'] += 1
-            else:
-                # we have a new service!
-                svc_id = db.t_services.insert(
-                    f_proto=f_proto,
-                    f_number=f_number,
-                    f_status=f_status,
-                    f_name=f_name,
-                    f_banner=f_banner,
-                    f_hosts_id=host_id
-                )
-                db.commit()
-                didwhat = "Added"
-                stats['services_added'] += 1
-
-            print(" [-] %s service: (%s) %s/%s" % (didwhat, ipaddr, f_proto, f_number))
+            svc_rec = services.get_record(create_or_update=True, **svc_fields)
 
         for cred in host.findall('creds/cred'):
             # handle credential data
@@ -388,18 +337,18 @@ def process_report_xml(
             cred_type = cred.findtext('ptype')
             if cred_type == "smb_hash":
                 # add smb hashes to info/0 service
-                query = (db.t_services.f_proto=='info') & (db.t_services.f_number=='0') & (db.t_services.f_hosts_id==host_id)
-                svc_row = db(query).select().first()
-                if not svc_row:
-                    svc_id = db.t_services.insert(f_proto='info', f_number='0', f_hosts_id=host_id)
-                else:
-                    svc_id = svc_row.id
+                svc_fields = {
+                    'f_number': '0',
+                    'f_proto': 'info',
+                    'f_hosts_id': host_rec.id,
+                }
+                svc_rec = services.get_record(create_or_update=True, **svc_fields)
 
                 pwhash = cred.findtext('pass')
                 f_password = lookup_hash(pwhash)
                 (lm, nt) = pwhash.split(':')
                 user = cred.findtext('user')
-                query = (db.t_accounts.f_services_id==svc_id) & (db.t_accounts.f_username.upper()==user.upper())
+                query = (db.t_accounts.f_services_id == svc_rec.id) & (db.t_accounts.f_username.upper() == user.upper())
                 acct_row = db(query).select().first()
                 if acct_row:
                     # we have an account already, lets see if the hashes are in there
@@ -426,7 +375,7 @@ def process_report_xml(
                     else:
                         f_compromised = False
                     acct_data = dict(
-                        f_services_id=svc_id,
+                        f_services_id=svc_rec.id,
                         f_username=user,
                         f_password=f_password,
                         f_compromised=f_compromised,
@@ -443,15 +392,15 @@ def process_report_xml(
 
             elif cred_type == 'smb_challenge':
                 # add smb challenge hashes to info/0 service
-                query = (db.t_services.f_proto=='info') & (db.t_services.f_number=='0') & (db.t_services.f_hosts_id==host_id)
-                svc_row = db(query).select().first()
-                if not svc_row:
-                    svc_id = db.t_services.insert(f_proto='info', f_number='0', f_hosts_id=host_id)
-                else:
-                    svc_id = svc_row.id
+                svc_fields = {
+                    'f_number': '0',
+                    'f_proto': 'info',
+                    'f_hosts_id': host_rec.id,
+                }
+                svc_rec = services.get_record(create_or_update=True, **svc_fields)
 
                 user = cred.findtext('user')
-                query = (db.t_accounts.f_services_id==svc_id) & (db.t_accounts.f_username.upper()==user.upper())
+                query = (db.t_accounts.f_services_id == svc_rec.id) & (db.t_accounts.f_username.upper() == user.upper())
                 acct_row = db(query).select().first()
                 if acct_row:
                     # we have an account already, lets see if the hashes are in there
@@ -476,7 +425,7 @@ def process_report_xml(
                     else:
                         f_compromised = False
                     acct_data = dict(
-                        f_services_id=svc_id,
+                        f_services_id=svc_rec.id,
                         f_username=user,
                         f_password=f_password,
                         f_compromised=f_compromised,
@@ -489,21 +438,51 @@ def process_report_xml(
                     stats['accounts_added'] += 1
                     didwhat = "Added"
 
+            elif cred_type == 'rakp_hmac_sha1_hash':
+                # IPMI 2.0 RAKP Remote SHA1 Hashes
+
+                f_hash1 = cred.findtext('pass')
+                f_hash1_type = cred.findtext('ptype')
+                user = cred.findtext('user')
+                svcname = cred.findtext('sname')
+
+                query = (db.t_accounts.f_services_id == svc_rec.id) & (db.t_accounts.f_username.upper() == user.upper())
+                acct_row = db(query).select().first()
+                f_source = "Metasploit Import"
+                if acct_row:
+                    # we have an account already, lets see if the hashes are in there
+                    if acct_row.f_hash1 != f_hash1:
+                        acct_row.f_hash1 = f_hash1
+                        acct_row.f_hash1_type = f_hash1_type
+                        if not acct_row.f_source:
+                            acct_row.f_source = f_source
+                        acct_row.update_record()
+                        db.commit()
+                        stats['accounts_updated'] += 1
+                        didwhat = "Updated"
+                else:
+                    # new account record
+                    acct_data = dict(
+                        f_services_id=svc_rec.id,
+                        f_username=user,
+                        f_hash1=f_hash1,
+                        f_hash1_type=f_hash1_type,
+                        f_source=f_source,
+                        f_compromised=True
+                    )
+                    acct_id = db.t_accounts.insert(**acct_data)
+                    db.commit()
+                    stats['accounts_added'] += 1
+                    didwhat = "Added"
+
             else:
                 # for cred_type == 'password' or 'exploit':
                 # add regular password
-                f_proto = 'tcp'
-                f_number = cred.findtext('port')
-                if f_number == '445':
-                    f_proto='info'
-                    f_number='0'
+                if svc_fields['f_number'] == '445':
+                    svc_fields['f_proto'] = 'info'
+                    svc_fields['f_number'] = '0'
 
-                query = (db.t_services.f_proto==f_proto) & (db.t_services.f_number==f_number) & (db.t_services.f_hosts_id==host_id)
-                svc_row = db(query).select().first()
-                if not svc_row:
-                    svc_id = db.t_services.insert(f_proto=f_proto, f_number=f_number, f_hosts_id=host_id)
-                else:
-                    svc_id = svc_row.id
+                svc_rec = services.get_record(create_or_update=True, **svc_fields)
 
                 f_password = cred.findtext('pass')
                 if f_password == "*BLANK PASSWORD*":
@@ -516,7 +495,7 @@ def process_report_xml(
                 if svcname == "vnc":
                     user = "vnc"
 
-                query = (db.t_accounts.f_services_id==svc_id) & (db.t_accounts.f_username.upper()==user.upper())
+                query = (db.t_accounts.f_services_id == svc_rec.id) & (db.t_accounts.f_username.upper() == user.upper())
                 acct_row = db(query).select().first()
                 f_source = cred.findtext('type')
                 if f_source == 'captured':
@@ -537,7 +516,7 @@ def process_report_xml(
                 else:
                     # new account record
                     acct_data = dict(
-                        f_services_id=svc_id,
+                        f_services_id=svc_rec.id,
                         f_username=user,
                         f_password=f_password,
                         f_source=f_source,
@@ -548,7 +527,7 @@ def process_report_xml(
                     stats['accounts_added'] += 1
                     didwhat = "Added"
 
-            print(" [-] Account %s: (%s) %s" % (didwhat, ipaddr, user))
+            log(" [-] Account %s: (%s) %s" % (didwhat, ipaddr, user))
 
     do_host_status()
 
@@ -563,5 +542,5 @@ def process_report_xml(
             stats['accounts_updated']
         )
 
-    print(msg)
+    log(msg)
     return msg
