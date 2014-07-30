@@ -60,7 +60,7 @@ jQuery(document).ready(function() {
         "aoColumnDefs": [
             { "bSortable": false, "aTargets": [ 0 ] }
         ],
-        "aaSorting": [[ 3, "asc" ]],
+        "aaSorting": [[ 3, "desc" ]],
         "sAjaxSource": "{{=URL('refs_by_host.json', args=request.args(0))}}",
     } );
 } );
