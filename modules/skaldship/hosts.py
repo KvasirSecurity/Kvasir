@@ -143,8 +143,8 @@ def get_or_create_record(argument, **defaults):
 
         if fields:
             host_rec = db.t_hosts.validate_and_insert(**fields)
-            if host_rec.error:
-                log("Error creating host record: %s" % host_rec.error, logging.ERROR)
+            if host_rec.errors:
+                log("Error creating host record: %s" % host_rec.errors, logging.ERROR)
             else:
                 db.commit()
                 record = db.t_hosts(host_rec.get('id'))
@@ -409,21 +409,11 @@ def pagination(request, curr_host):
         session.hostfilterconfirmed=request.vars.filterconfirmed
 
     if session.hostfilterconfirmed == 'Unconfirmed [H]osts':
-        query = (db.t_hosts)
+        query = (db.t_hosts.id > 0)
     else:
         query = (db.t_hosts.f_confirmed==False)
 
-    if session.hostfilter:
-        hostfilter = session.hostfilter[0]
-        if hostfilter is not None:
-            if hostfilter[0] == "userid":
-                userid = db(db.auth_user.username == hostfilter[1]).select().first().get('id')
-                query &= (db.t_hosts.f_engineer == userid)
-            elif hostfilter[0] == "assetgroup":
-                query &= (db.t_hosts.f_asset_group.contains(hostfilter[1]))
-            #elif hostfilter[0] == "range":
-            #    query &= (db.t_hosts.f_ipv4.contains(hostfilter[1]))
-
+    query = create_hostfilter_query(session.hostfilter, query)
     for h_rec in db(query).select():
         hostlist.append(OPTION(host_title_maker(h_rec), _value=h_rec.id))
         if hostselected != 0 and hostnext == "#":
