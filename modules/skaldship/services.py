@@ -31,15 +31,18 @@ class Services:
 
 
     ##---------------------------------------------------------------------
-    def _get_record(self, proto, port, svcname, host_id):
+    def _get_record(self, **fields):
         """
         Returns a unique single record based on specific data
         """
-        if not proto or not port or not host_id:
+        if not fields['f_proto'] or not fields['f_number'] or not fields['f_hosts_id']:
             return None
 
-        query = (self.svc_db.f_proto==proto) & (self.svc_db.f_number==port) & (self.svc_db.f_hosts_id == host_id)
+        query = (self.svc_db.f_proto == fields['f_proto']) &\
+                (self.svc_db.f_number == fields['f_number']) &\
+                (self.svc_db.f_hosts_id == fields['f_hosts_id'])
         record = self.db(query).select().first()
+
         if record.id not in self.services:
             self.services[record.id] = record
 
@@ -47,19 +50,17 @@ class Services:
 
 
     ##---------------------------------------------------------------------
-    def _update_or_insert(self, proto, port, svcname, host_id):
+    def _update_or_insert(self, **fields):
         """
         Our own update_or_insert routine
         """
-        if not proto or not port or not host_id:
+        if not fields['f_proto'] or not fields['f_number'] or not fields['f_hosts_id']:
             return None
 
-        svc_id = self.svc_db.update_or_insert(
-            f_proto=proto, f_number=port, f_status=svcname, f_hosts_id=host_id
-        )
+        svc_id = self.svc_db.update_or_insert(**fields)
         self.db.commit()
         if not svc_id:
-            record = self._get_record(proto, port, svcname, host_id)
+            record = self._get_record(**fields)
             if record:
                 return record.id
             else:
@@ -69,17 +70,35 @@ class Services:
 
 
     ##---------------------------------------------------------------------
-    def get_id(self, proto, port, svcname, host_id, create_or_update=False):
+    def get_or_create_id(self, create_or_update=False, **fields):
         """
         Returns the record identifier of a service based upon strict criteria.
         """
 
         if create_or_update:
-            return self._update_or_insert(proto, port, svcname, host_id)
+            return self._update_or_insert(**fields)
 
-        record = self._get_record(proto, port, svcname, host_id)
+        record = self._get_record(**fields)
         if record:
             return record.id
+
+        return None
+
+
+    ##---------------------------------------------------------------------
+    def get_record(self, create_or_update=False, **fields):
+        """
+        Returns the record identifier of a service based upon strict criteria.
+        """
+
+        if create_or_update:
+            svc_id = self._update_or_insert(**fields)
+            record = self.db.t_services[svc_id]
+        else:
+            record = self._get_record(**fields)
+
+        if record:
+            return record
 
         return None
 

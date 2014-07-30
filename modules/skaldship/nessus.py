@@ -27,7 +27,6 @@ from skaldship.services import Services
 from gluon.validators import IS_SLUG
 from skaldship.log import log
 import logging
-logger = logging.getLogger("web2py.app.kvasir")
 
 try:
     from lxml import etree
@@ -289,7 +288,7 @@ class NessusVulns:
             extradata['exploit_available'] = rpt_item.findtext('exploit_available', 'false')
             fname = rpt_item.findtext('fname', '')
             pluginID = rpt_item.get('pluginID')
-            f_title = rpt_item.findtext('plugin_name', '')
+            f_title = rpt_item.get('pluginName')
             f_riskscore = rpt_item.get('risk_factor', '')
             f_cvss_score = float(rpt_item.findtext('cvss_base_score', 0.0))
             f_cvss_i_score = float(rpt_item.findtext('cvss_temporal_score', 0.0))
@@ -546,14 +545,14 @@ def process_scanfile(
             plugin_output = extradata['plugin_output']
             pluginID = extradata['pluginID']
 
-            svc_id = services.get_id(
-                proto=proto, port=port, svcname=svcname, host_id=host_id,
-                create_or_update=True
+            svc_rec = services.get_record(
+                create_or_update=True,
+                **{'f_proto': proto, 'f_number': port, 'f_name': svcname, 'f_hosts_id': host_id}
             )
 
             # create t_service_vulns entry for this pluginID
             svc_vuln = {}
-            svc_vuln['f_services_id'] = svc_id
+            svc_vuln['f_services_id'] = svc_rec.id
             svc_vuln['f_vulndata_id'] = vuln_id
             svc_vuln['f_proof'] = plugin_output
 
@@ -612,7 +611,7 @@ def process_scanfile(
                     # Windows users, local groups, and global groups
                     d['f_username'] = username
                     d['f_gid'] = gid
-                    d['f_services_id'] = svc_id
+                    d['f_services_id'] = svc_rec.id
                     d['f_source'] = '10860'
                     db.t_accounts.update_or_insert(**d)
                     db.commit()
@@ -652,7 +651,7 @@ def process_scanfile(
                 RE_10092 = re.compile('The remote FTP banner is :\n\n(.*)', re.DOTALL)
                 try:
                     d['f_banner'] = RE_10092.findall(plugin_output)[0]
-                    svcs[svc_id].update(**d)
+                    svc_rec.update(**d)
                     db.commit()
                 except Exception, e:
                     log("Error parsing FTP banner: %s" % str(e), logging.ERROR)
