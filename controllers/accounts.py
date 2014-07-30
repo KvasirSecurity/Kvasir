@@ -839,24 +839,18 @@ def update_hashes_by_file():
         buttons=buttons, _action=URL('accounts', 'update_hashes_by_file'), _id='accounts_update_hashes_by_file',
     )
 
-    resp_text = ""
-    accounts_added = []
-    accounts_updated = []
-    if request.vars.f_filename is not None:
-        orig_filename = request.vars.f_filename.filename
     if form.errors:
         response.flash = 'Error in form'
         return TABLE(*[TR(k, v) for k, v in form.errors.items()])
     elif form.accepts(request.vars, session):
         filename = os.path.join(request.folder, settings.password_upload_dir, form.vars.f_filename)
         logger.info("Processing password file: %s" % (filename))
-        resp_text = process_cracked_file(pw_file=filename, file_type=request.vars.f_type, message=request.vars.f_message)
+        response.flash = process_cracked_file(
+            pw_file=filename, file_type=request.vars.f_type, message=request.vars.f_message
+        )
 
     response.title = "%s :: Update Password Hashes by File" % (settings.title)
-    if request.extension == "json":
-        return dict()
-    else:
-        return dict(form=form, resp_text=resp_text)
+    return dict(form=form)
 
 @auth.requires_login()
 def import_mass_password():
