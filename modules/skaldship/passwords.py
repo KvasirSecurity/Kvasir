@@ -18,7 +18,7 @@ from collections import defaultdict
 import re, string
 from gluon import current
 import logging
-logger = logging.getLogger("web2py.app.kvasir")
+from skaldship.log import log
 
 # Module definitions
 lowercase = set(string.lowercase)
@@ -153,7 +153,7 @@ def process_medusa(line):
     try:
         data = line.split()
     except Exception, e:
-        logger.error("Error processing medusa line: %s -- %s" % (e, line))
+        log("Error processing medusa line: %s -- %s" % (e, line), logging.ERROR)
         return retval
 
     if " ".join(data[:2]) == "ACCOUNT FOUND:":
@@ -212,7 +212,7 @@ def process_hydra(line):
     try:
         data = line.split()
     except Exception, e:
-        logger.error("Error processing hydra line: %s -- %s" % (e, line))
+        log("Error processing hydra line: %s -- %s" % (e, line), logging.ERROR)
         return retval
 
     if data[1] == "host:":
@@ -370,13 +370,13 @@ def insert_or_update_acct(svc_id=None, accounts={}):
                         db.t_accounts[rec.id] = acct_values
                         accounts_updated.append(username)
                     else:
-                        logger.error("%s has a different hash1 value. Nothing done. (orig: %s) (pwfile: %s)" % (username, rec.f_hash1, acct_values['f_hash1']))
+                        log("%s has a different hash1 value. Nothing done. (orig: %s) (pwfile: %s)" % (username, rec.f_hash1, acct_values['f_hash1']), logging.ERROR)
                 db.commit()
             resp_text = "Accounts added: %s\nAccounts Updated: %s\n" % (" ".join(accounts_added), " ".join(accounts_updated))
     else:
         resp_text = 'Invalid Service ID sent'
 
-    logging.debug(resp_text)
+    log(resp_text, logging.DEBUG)
     return resp_text
 
 ##-------------------------------------------------------------------------
@@ -395,12 +395,12 @@ def process_cracked_file(pw_file=None, file_type=None, message=""):
         try:
             fIN = fileinput.input(files=pw_file)
         except IOError, e:
-            logger.error("Error opening %s: %s" % (pw_file, e))
+            log("Error opening %s: %s" % (pw_file, e), logging.ERROR)
             return "Error opening %s: %s" % (pw_file, e)
 
     accounts = {}
     if file_type == "JTR PWDUMP":
-        logger.info("Processing JTR PWDUMP Result file...")
+        log("Processing JTR PWDUMP Result file...")
         for line in fIN:
             if line == "\n": continue
             if line.count(":") != 6: continue
@@ -408,7 +408,7 @@ def process_cracked_file(pw_file=None, file_type=None, message=""):
                 (username, password, lm, nt) = line.split(':')[0:4]
                 accounts[nt] = password
             except Exception, e:
-                logger.error("Error with line (%s): %s" % (line, e))
+                log("Error with line (%s): %s" % (line, e), logging.ERROR)
 
     elif file_type == "JTR Shadow":
         pass
@@ -416,32 +416,36 @@ def process_cracked_file(pw_file=None, file_type=None, message=""):
     elif file_type == "Hash:Password":
         for line in fIN:
             if line == "\n": continue
-            if line.count(":") != 1: continue
+            if line.count(":") <= 0: continue
             try:
-                (enchash, cleartext) = line.split(':')[0:1]
-                accounts[enchash] = password
+                line = line.strip('\n')
+                (enchash, cleartext) = line.split(':', 1)
+                accounts[enchash] = cleartext
             except Exception, e:
-                logger.error("Error with line (%s): %s" % (line, e))
+                log("Error with line (%s): %s" % (line, e), logging.ERROR)
 
     elif file_type == "Password:Hash":
         for line in fIN:
             if line == "\n": continue
-            if line.count(":") != 1: continue
+            if line.count(":") <= 0: continue
             try:
-                (cleartext, enchash) = line.split(':')[0:1]
-                accounts[enchash] = password
+                line = line.strip('\n')
+                (cleartext, enchash) = line.split(':', 1)
+                accounts[enchash] = cleartext
             except Exception, e:
-                logger.error("Error with line (%s): %s" % (line, e))
+                log("Error with line (%s): %s" % (line, e), logging.ERROR)
 
     else:
         return "Unknown file type sent"
 
+    updated = 0
     for k,v in accounts.iteritems():
         query = (db.t_accounts.f_hash1 == k)|(db.t_accounts.f_hash2 == k)
         for row in db(query).select():
             row.update_record(f_password=v, f_compromised=True, f_message=message)
+            updated += 1
             db.commit()
-    return "Password hash/cleartext updated"
+    return "%s accounts updated with passwords" % updated
 
 ##-------------------------------------------------------------------------
 
@@ -462,11 +466,11 @@ def process_password_file(pw_file=None, pw_data=None, file_type=None, source=Non
             for line in fileinput.input(files=pw_file):
                 pw_data.append(line)
         except IOError, e:
-            logger.error("Error opening %s: %s" % (pw_file, e))
+            log("Error opening %s: %s" % (pw_file, e), logging.ERROR)
             return accounts
 
     if file_type == 'PWDUMP':
-        logger.debug("Processing PWDUMP file")
+        log("Processing PWDUMP file")
         if source is None:
             source = "PWDUMP"
         for line in pw_data:
@@ -481,10 +485,10 @@ def process_password_file(pw_file=None, pw_data=None, file_type=None, source=Non
                                        'f_hash1': lm.strip, 'f_hash1_type': 'LM',
                                        'f_hash2': nt.strip, 'f_hash2_type': 'NTLM' }
             except Exception, e:
-                logger.error("Error with line (%s): %s" % (line, e))
+                log("Error with line (%s): %s" % (line, e), logging.ERROR)
 
     elif file_type == "MSCa$h Dump":
-        logger.debug("Processing MSCa$h file")
+        log("Processing MSCa$h file")
         if source is None:
             source = "MSCASH"
         for line in pw_data:
@@ -494,10 +498,10 @@ def process_password_file(pw_file=None, pw_data=None, file_type=None, source=Non
                 (username, pwhash, domain) = line.split(':')
                 accounts[username] = { 'f_hash1': pwhash, 'f_hash1_type': 'MSCASH', 'f_domain': domain, 'f_source': source}
             except Exception, e:
-                logger.error("Error with line (%s): %s" % (line, e))
+                log("Error with line (%s): %s" % (line, e), logging.ERROR)
 
     elif file_type == "UNIX Passwd":
-        logger.debug("Processing UNIX Passwd file")
+        log("Processing UNIX Passwd file")
         if source is None:
             source == "UNIX Passwd"
         for line in pw_data:
@@ -517,12 +521,12 @@ def process_password_file(pw_file=None, pw_data=None, file_type=None, source=Non
                     accounts[username] = { 'f_uid': uid, 'f_gid': gid, 'f_level': level,
                                            'f_fullname': fullname, 'f_source': source }
 
-                logging.debug("Account -> %s" % (accounts[username]))
+                log("Account -> %s" % (accounts[username]), logging.DEBUG)
             except Exception, e:
-                logger.error("Error with line (%s): %s" % (line, e))
+                log("Error with line (%s): %s" % (line, e), logging.ERROR)
 
     elif file_type == "UNIX Shadow":
-        logger.debug("Processing UNIX Shadow file")
+        log("Processing UNIX Shadow file")
         if source is None:
             source = "UNIX Shadow"
         for line in pw_data:
@@ -538,10 +542,10 @@ def process_password_file(pw_file=None, pw_data=None, file_type=None, source=Non
                     accounts[username] = { 'f_source': source }
 
             except Exception, e:
-                logger.error("Error with line (%s): %s" % (line, e))
+                log("Error with line (%s): %s" % (line, e), logging.ERROR)
 
     elif file_type == "Username:Password":
-        logger.debug("Processing Username:Password file")
+        log("Processing Username:Password file")
         for line in pw_data:
             if line == "\n": continue
             line = line.replace('\n', '')   # remove any and all carriage returns!
@@ -551,17 +555,17 @@ def process_password_file(pw_file=None, pw_data=None, file_type=None, source=Non
                     source = "Username:Password"
                 accounts[username] = { 'f_password': password.strip("\n"), 'f_source': source, 'f_compromised': True  }
             except Exception, e:
-                logger.error("Error with line (%s): %s" % (line, e))
+                log("Error with line (%s): %s" % (line, e), logging.ERROR)
 
     elif file_type == "Usernames":
-        logger.debug("Processing Usernames only file")
+        log("Processing Usernames only file")
         for line in pw_data:
             if line == "\n": continue
             line = line.replace('\n', '')   # remove any and all carriage returns!
             accounts[line.strip("\n")] = { 'f_compromised': False }
 
     elif file_type == "Medusa":
-        logger.debug("Processing Medusa output file")
+        log("Processing Medusa output file")
         if source is None:
             source = "Medusa"
         for line in pw_data:
@@ -580,10 +584,10 @@ def process_password_file(pw_file=None, pw_data=None, file_type=None, source=Non
                     accounts[pw_data['user']] = { 'f_password': pw_data['pass'],
                                                    'f_message': pw_data['msg'], 'f_source': source, 'f_compromised': True }
             except Exception, e:
-                logger.error("Error with line (%s): %s" % (line, e))
+                log("Error with line (%s): %s" % (line, e), logging.ERROR)
 
     elif file_type == "Hydra":
-        logger.debug("Processing Hydra output file")
+        log("Processing Hydra output file")
         if source is None:
             source = "Hydra"
         for line in pw_data:
@@ -601,10 +605,10 @@ def process_password_file(pw_file=None, pw_data=None, file_type=None, source=Non
                     accounts[pw_data['user']] = { 'f_password': pw_data['pass'],
                                                    'f_message': pw_data['msg'], 'f_source': source, 'f_compromised': True }
             except Exception, e:
-                logger.error("Error with line (%s): %s" % (line, e))
+                log("Error with line (%s): %s" % (line, e), logging.ERROR)
 
     elif file_type == "Metasploit Creds CSV":
-        logger.debug("Processing Metasploit Creds CSV output file")
+        log("Processing Metasploit Creds CSV output file")
         if source is None:
             source = "Metasploit"
         for line in pw_data:
@@ -629,10 +633,10 @@ def process_password_file(pw_file=None, pw_data=None, file_type=None, source=Non
                         'f_message': pw_data['msg'], 'f_source': source, 'f_compromised': compromised,
                     }
             except Exception, e:
-                logger.error("Error with line (%s): %s" % (line, e))
+                log("Error with line (%s): %s" % (line, e), logging.ERROR)
 
     elif file_type == "Username Only":
-        logger.debug("Processing Username only output file")
+        log("Processing Username only output file")
         if source is None:
             source = "Username list"
         for line in pw_data:
@@ -646,7 +650,7 @@ def process_password_file(pw_file=None, pw_data=None, file_type=None, source=Non
                 continue
 
     elif file_type == "AccountDB":
-        logger.debug("Processing AccountDB output file")
+        log("Processing AccountDB output file")
         if source is None:
             source = "AccountDB"
         from StringIO import StringIO
@@ -656,7 +660,7 @@ def process_password_file(pw_file=None, pw_data=None, file_type=None, source=Non
             if len(line) == 10:
                 IP, Port, User, Password, uid, gid, level, status, fullname, Comment = line
             else:
-                logger.error("Line length != 10, skipping")
+                log("Line length != 10, skipping", logging.ERROR)
                 continue
             if status == "DISABLED":
                 status=False
@@ -678,9 +682,9 @@ def process_password_file(pw_file=None, pw_data=None, file_type=None, source=Non
             }
 
     else:
-        logger.error("Unknown file type provided")
+        log("Unknown file type provided: %s" % file_type, logging.ERROR)
 
-    logging.debug(accounts)
+    log(accounts, logging.DEBUG)
     return accounts
 
 ##-------------------------------------------------------------------------
@@ -702,7 +706,7 @@ def process_mass_password(pw_file=None, pw_type=None, message=None, proto=None, 
         try:
             fIN = fileinput.input(files=pw_file)
         except IOError, e:
-            logger.error("Error opening %s: %s" % (pw_file, e))
+            log("Error opening %s: %s" % (pw_file, e), logging.ERROR)
             return "Error opening %s: %s" % (pw_file, e)
     else:
         return "No filename provided.. that's odd"
@@ -726,7 +730,7 @@ def process_mass_password(pw_file=None, pw_type=None, message=None, proto=None, 
                 mass_pw_data = {}
                 mass_pw_data['error'] = 'Invalid password file type provided'
         except Exception, e:
-            logger.error("Error with line (%s): %s" % (line, e))
+            log("Error with line (%s): %s" % (line, e), logging.ERROR)
             continue
 
         if not mass_pw_data.get('error'):
@@ -794,11 +798,11 @@ def process_mass_password(pw_file=None, pw_type=None, message=None, proto=None, 
                     }
                     host_rec = db.t_hosts.insert(**fields)
                     db.commit()
-                    logger.info("Added new host from Medusa output: %s" % (k))
+                    log("Added new host from Medusa output: %s" % k)
                     new_hosts += 1
                 elif host_rec is None:
                     # no host and not asking to add hosts so print message and continue
-                    logger.error("Unable to find host_rec for %s" % (k))
+                    log("Unable to find host_rec for %s" % k, logging.ERROR)
                     continue
 
                 # add the new service to the host_rec
@@ -809,7 +813,7 @@ def process_mass_password(pw_file=None, pw_type=None, message=None, proto=None, 
                 }
                 svc_id = db.t_services.insert(**fields)
                 db.commit()
-                logger.info("Added new service (%s/%s) to host %s" % (ip_acct['f_proto'], ip_acct['f_number'], k))
+                log("Added new service (%s/%s) to host %s" % (ip_acct['f_proto'], ip_acct['f_number'], k))
             else:
                 svc_id = svc.id
 
