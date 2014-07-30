@@ -771,7 +771,7 @@ def import_file():
                 ),
                 group_name=settings.scheduler_group_name,
                 sync_output=5,
-                timeout=300    # 5 minutes
+                timeout=settings.scheduler_timeout
             )
             if task.id:
                 resp_text = "Submitted file for processing: %s" % (A("task " + str(task.id), _href=URL(c='tasks', f='status', args=task.id)).xml())
