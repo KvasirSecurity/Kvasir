@@ -482,8 +482,8 @@ def process_password_file(pw_file=None, pw_data=None, file_type=None, source=Non
                 else: level = "USER"
 
                 accounts[username] = { 'f_uid': uid, 'f_level': level, 'f_source': source,
-                                       'f_hash1': lm.strip, 'f_hash1_type': 'LM',
-                                       'f_hash2': nt.strip, 'f_hash2_type': 'NTLM' }
+                                       'f_hash1': lm, 'f_hash1_type': 'LM',
+                                       'f_hash2': nt, 'f_hash2_type': 'NTLM' }
             except Exception, e:
                 log("Error with line (%s): %s" % (line, e), logging.ERROR)
 
