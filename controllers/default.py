@@ -162,7 +162,7 @@ def update_dynamic_fields():
                     pvars=dict(asset_group=form.vars.f_asset_group),
                     group_name=settings.scheduler_group_name,
                     sync_output=5,
-                    timeout=scheduler_timeout,
+                    timeout=settings.scheduler_timeout,
                 )
                 if task.id:
                     redirect(URL('tasks', 'status', args=task.id))

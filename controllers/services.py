@@ -686,7 +686,7 @@ def valkyries_ajax():
                     ),
                     group_name=settings.scheduler_group_name,
                     sync_output=5,
-                    timeout=scheduler_timeout,
+                    timeout=settings.scheduler_timeout,
                 )
                 if task.id:
                     task_ids.append(task.id)
