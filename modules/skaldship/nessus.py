@@ -42,11 +42,12 @@ except ImportError:
         except:
             raise Exception('No valid ElementTree parser found')
 
+
 ##-------------------------------------------------------------------------
 
-def nessus_get_config(session={}):
+def nessus_get_config():
     """
-    Returns a dict of Nessus configuration settings based on yaml or session
+    Returns a dict of Nessus configuration settings based on yaml
     """
 
     nessus_config = current.globalenv['settings']['kvasir_config'].get('nessus') or {}
@@ -62,21 +63,6 @@ def nessus_get_config(session={}):
             }
 
     return config
-
-
-##-------------------------------------------------------------------------
-
-def vuln_time_convert(vtime=''):
-    """
-    Convert Nessus date (YYYY/MM/DD) into python datetime
-    """
-    if not vtime:
-        tval = datetime(1970, 1, 1)
-    else:
-        if isinstance(vtime, str):
-            (year, mon, day) = vtime.split('/')
-            tval = time.strptime(vtime, "%Y/%m/%d")
-    return datetime.fromtimestamp(time.mktime(tval))
 
 
 ##-------------------------------------------------------------------------
@@ -102,11 +88,8 @@ class NessusHosts:
         t_hosts or other areas. These are processed and returned as dictionary
         entries in 'hostdata'
 
-        Args:
-            host_properties: A <HostProperties> section from .nessus or a CSV line
-
-        Returns:
-            t_hosts.id, { hostdata }
+        :param host_properties: A <HostProperties> section from .nessus or a CSV line
+        :returns t_hosts.id, { hostdata }:
         """
         from gluon.validators import IS_IPADDRESS
         hostdata = {}
@@ -209,13 +192,10 @@ class NessusVulns:
         """
         Add or update vulnerability references such as CPE, MSF Bulletins, OSVDB, Bugtraq, etc.
 
-        Args:
-            vuln_id: The db.t_vulndata reference id
-            vulndadta: A dictionary of vulnerability data from t_vulndata
-            extradata: A dictionary of extra vulndata
-
-        Returns:
-            None
+        :param vuln_id: The db.t_vulndata reference id
+        :param vulndadta: A dictionary of vulnerability data from t_vulndata
+        :param extradata: A dictionary of extra vulndata
+        :returns None: Nothing.
         """
         if not vulndata:
             log(" [!] No vulndata sent!", logging.ERROR)
@@ -261,13 +241,10 @@ class NessusVulns:
         performed with both the pluginID and fname. If none found the record is
         entered into the database and populates the local dict
 
-        Args:
-            rpt_item: A ReportItem field (etree._Element or CSV line)
-
-        Returns:
-            t_vulndata.id: integer field of db.t_vulndata[id]
-            vulndata: A dictionary of fields for t_vulndata
-            extradata: A dictionary of extra data fields such as references
+        :param rpt_item: A ReportItem field (etree._Element or CSV line)
+        :returns t_vulndata.id: integer field of db.t_vulndata[id]
+        :returns vulndata: A dictionary of fields for t_vulndata
+        :returns extradata: A dictionary of extra data fields such as references
         """
         # TODO: Check validity of XML or CSV
         # if not etree.iselement(rpt_item):
@@ -430,6 +407,7 @@ class NessusVulns:
             vulndata['f_cvss_i'] = ''
             vulndata['f_cvss_a'] = ''
         vuln_id = self.db.t_vulndata.update_or_insert(**vulndata)
+        self.db.commit()
         if not vuln_id:
             vuln_id = self.db(self.db.t_vulndata.f_vulnid == f_vulnid).select(cache=(self.cache.ram, 180)).first().id
 
@@ -462,17 +440,14 @@ def process_scanfile(
     centralized manager. I forget what it's called but it packs more data. If you have a
     standalone scanner, always export/save as .nessus.
 
-    Args:
-        filename: A local filename to process
-        asset_group: Asset group to assign hosts to
-        engineer: Engineer record number to assign hosts to
-        msf_workspace: If set a Metasploit workspace to send the scanfile to via the API
-        ip_ignore_list: List of IP addresses to ignore
-        ip_include_list: List of IP addresses to ONLY import (skip all others)
-        update_hosts: Boolean to update/append to hosts, otherwise hosts are skipped
-
-    Returns:
-        msg: A string status message
+    :param filename: A local filename to process
+    :param asset_group: Asset group to assign hosts to
+    :param engineer: Engineer record number to assign hosts to
+    :param msf_workspace: If set a Metasploit workspace to send the scanfile to via the API
+    :param ip_ignore_list: List of IP addresses to ignore
+    :param ip_include_list: List of IP addresses to ONLY import (skip all others)
+    :param update_hosts: Boolean to update/append to hosts, otherwise hosts are skipped
+    :returns msg: A string status message
     """
     from skaldship.cpe import lookup_cpe
     nessus_config = nessus_get_config()
@@ -545,16 +520,34 @@ def process_scanfile(
             plugin_output = extradata['plugin_output']
             pluginID = extradata['pluginID']
 
+            svc_fields = {
+                'f_proto': proto,
+                'f_number': port,
+                'f_name': svcname,
+                'f_hosts_id': host_id
+            }
+            svc_rec = services.get_record(**svc_fields)
+
+            # Nessus only guesses the services (and appends a ? at the end)
+            splited = svc_fields['f_name'].split("?")
+            if svc_rec is not None:
+                if splited[0] != svc_rec.f_name and svc_rec.f_name not in splited[0]:
+                    svc_fields['f_name'] = "%s | %s" % (svc_rec.f_name, splited[0])
+                svc_id = svcs.update_or_insert(_key=svc_rec.id, **svc_fields)
+            else:
+                svc_fields['f_name'] = splited[0]
+
             svc_rec = services.get_record(
                 create_or_update=True,
-                **{'f_proto': proto, 'f_number': port, 'f_name': svcname, 'f_hosts_id': host_id}
+                **svc_fields
             )
 
             # create t_service_vulns entry for this pluginID
-            svc_vuln = {}
-            svc_vuln['f_services_id'] = svc_rec.id
-            svc_vuln['f_vulndata_id'] = vuln_id
-            svc_vuln['f_proof'] = plugin_output
+            svc_vuln = {
+                'f_services_id': svc_rec.id,
+                'f_vulndata_id': vuln_id,
+                'f_proof': plugin_output
+            }
 
             # you may be a vulnerability if...
             if extradata['exploit_available'] == 'true':
@@ -681,8 +674,6 @@ def process_scanfile(
                         db.commit()
 
         if not nessus_csv_type:
-            rpt_items = []
-
             # Parse the XML <ReportItem> sections where plugins, ports and output are all in
             for rpt_item in host.iterfind('ReportItem'):
                 (vuln_id, vulndata, extradata) = nessus_vulns.parse(rpt_item)

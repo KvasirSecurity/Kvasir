@@ -676,6 +676,7 @@ def import_report_xml():
                 update_hosts=form.vars.f_update_hosts,
             )
             response.flash = result
+            redirect(URL('default', 'index'))
 
     return dict(form=form, alert=alert, error=error)
 

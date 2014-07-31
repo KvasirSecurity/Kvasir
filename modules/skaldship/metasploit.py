@@ -294,14 +294,14 @@ def process_report_xml(
                 continue
 
         # add the <info> and <comments> as a note to the host
-        info_note = host.findtext('info') or ''
-        if info_note.startswith('Domain controller for '):
+        info_note = host.findtext('info') or None
+        if info_note and info_note.startswith('Domain controller for '):
             db.t_netbios.update_or_insert(
                 f_hosts_id=host_rec.id,
                 f_type="PDC",
                 f_domain=info_note[22:].upper()
             )
-        else:
+        elif info_note:
             db.t_host_notes.update_or_insert(
                 f_hosts_id=host_rec.id,
                 f_note=info_note,
