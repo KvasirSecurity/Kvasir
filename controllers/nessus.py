@@ -48,7 +48,7 @@ def import_scan():
     for user in users:
         userlist.append([user.id, user.username])
 
-    nessus_config = nessus_get_config(session)
+    nessus_config = nessus_get_config()
     # {'ignored_vulnids': [19506, 11219, 34277],
     #  'servers': {'server_1': {'password': 'password',
     #                           'url': 'https://localhost:8834/',

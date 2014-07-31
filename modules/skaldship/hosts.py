@@ -175,6 +175,7 @@ def create_hostfilter_query(fdata, q=None, dbname=None):
             'accessed': False,
             'followup': False,
         }
+        fdata = session.hostfilter
 
     f_type = fdata.get('filtertype', '')
     if isinstance(f_type, type(None)):

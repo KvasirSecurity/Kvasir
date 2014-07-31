@@ -66,6 +66,8 @@ def process_xml(
     from skaldship.hosts import get_host_record, do_host_status
     from skaldship.cpe import lookup_cpe
     from zenmapCore_Kvasir.NmapParser import NmapParser
+    from gluon import current
+    T = current.T
 
     # output regexes
     RE_NETBIOS_NAME = re.compile('NetBIOS computer name: (?P<d>.*),')
