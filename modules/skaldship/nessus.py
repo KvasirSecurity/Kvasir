@@ -167,7 +167,7 @@ class NessusHosts:
             host_id = result.id
             log(" [-] Adding host: %s" % ipaddr)
         elif self.update_hosts:
-            if hostfields['f_ipv4']:
+            if hostfields['f_ipv4']:             
                 host_id = self.db(self.db.t_hosts.f_ipv4 == hostfields['f_ipv4']).update(**hostfields)
                 self.db.commit()
                 host_id = get_host_record(hostfields['f_ipv4'])
@@ -283,8 +283,9 @@ class NessusVulns:
             is_xml = True
             extradata['proto'] = rpt_item.get('protocol', 'info')
             extradata['port'] = rpt_item.get('port', 0)
-            extradata['svcname'] = rpt_item.findtext('svc_name', '')
-            extradata['plugin_output'] = rpt_item.findtext('plugin_output', '')
+            extradata['status'] = rpt_item.get('port', 'open')
+            extradata['svcname'] = rpt_item.get('svc_name', 0)
+            extradata['plugin_output'] = rpt_item.findtext('plugin_output', '') 
             extradata['exploit_available'] = rpt_item.findtext('exploit_available', 'false')
             fname = rpt_item.findtext('fname', '')
             pluginID = rpt_item.get('pluginID')
@@ -428,7 +429,6 @@ class NessusVulns:
             vulndata['f_cvss_c'] = ''
             vulndata['f_cvss_i'] = ''
             vulndata['f_cvss_a'] = ''
-
         vuln_id = self.db.t_vulndata.update_or_insert(**vulndata)
         if not vuln_id:
             vuln_id = self.db(self.db.t_vulndata.f_vulnid == f_vulnid).select(cache=(self.cache.ram, 180)).first().id

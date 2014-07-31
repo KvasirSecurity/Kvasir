@@ -1,0 +1,64 @@
+{{extend 'layout.html'}}
+
+<div class="row-fluid">
+    <div class="span8">
+        <div class="widget-box">
+            <div class="widget-title">
+              <span class="icon">
+                <i class="icon-upload"></i>
+              </span>
+              <h5>{{=response.title or request.application}}</h5>
+            </div>
+            <div class="widget-content">
+                <div id="form">
+                    {{=form}}
+                </div>
+            </div>
+        </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="alert alert-info span8">
+        <p>The following script will generate a file to be imported</p>
+        <script type="syntaxhighlighter" class="brush: bash; toolbar: false;"><![CDATA[
+#!/bin/sh
+#check if the first argument is a file
+if [ -f $1 ]
+    then
+    # file found, execute the script once per line
+    xargs -a "$1" -n 1 "$0"
+    exit
+fi
+
+COUNT=4
+echo ""
+echo "-----------------------------------------------------------------------------"
+echo "IP: $1"
+
+echo "[*] Echo"
+hping3 -c $COUNT -1 $1
+echo ""
+
+echo "[*] Timestamp"
+hping3 -c $COUNT --icmp-ts $1
+echo ""
+
+echo "[*] Netmask"
+hping3 -c $COUNT --icmp-addr $1
+]]>
+        </script>
+    </div>
+
+<script type="text/javascript" src="{{=URL('static', 'syntaxhighlighter/scripts/shCore.js')}}"></script>
+<script type="text/javascript" src="{{=URL('static', 'syntaxhighlighter/scripts/shBrushBash.js')}}"></script>
+<link type="text/css" rel="stylesheet" href="{{=URL('static', 'syntaxhighlighter/styles/shCore.css')}}"/>
+<link type="text/css" rel="stylesheet" href="{{=URL('static', 'syntaxhighlighter/styles/shThemeMidnight.css')}}"/>
+
+<script type="text/javascript">
+    SyntaxHighlighter.all();
+</script>
+
+</div>
+
