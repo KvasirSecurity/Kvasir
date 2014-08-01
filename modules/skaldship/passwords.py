@@ -84,6 +84,7 @@ def password_class_stat(passwords):
     it belongs to
     """
     for pw_rec in passwords:
+        character_class = "Unknown"
         password = pw_rec.f_password
         if not password or password.lower() == "no password":
             pwlenstat = "blank"
