@@ -23,11 +23,13 @@ from skaldship.general import severity_mapping
 import logging
 logger = logging.getLogger("web2py.app.kvasir")
 
-def vulnlist(query="%", hostfilter=None):
+def vulnlist(qstr="%", hostfilter=None):
     """
     Returns a vulnerability dictionary with counts:
 
-    { 'vulnerability id': [ status, count, severity, cvss ] }
+    :param qstr: Vulnerability identity for .like()
+    :param hostfilter: A valid hostfilter or None
+    :returns dict: { 'vulnerability id': [ status, count, severity, cvss ] }
     """
 
     db = current.globalenv['db']
@@ -42,7 +44,7 @@ def vulnlist(query="%", hostfilter=None):
 
     hostfilter = hostfilter or session.hostfilter
 
-    query = (db.t_vulndata.f_vulnid.contains(query))
+    query = db.t_vulndata.f_vulnid.like(qstr)
     query &= (db.t_service_vulns.f_services_id == db.t_services.id) & (db.t_service_vulns.f_vulndata_id == db.t_vulndata.id)
     query = create_hostfilter_query(hostfilter, query, 't_services')
     #query = (db.t_service_vulns.f_vulndata_id == db.t_vulndata.id)

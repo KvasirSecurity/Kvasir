@@ -117,9 +117,12 @@ def spreadsheet():
         for ag in ags:
             if ag == "%":
                 ag = "Vulnlist"
-                hostfilter = [(None, None), False]
+                hostfilter = None
             else:
-                hostfilter = [('assetgroup', ag), False]
+                hostfilter = {
+                    'filtertype': 'assetgroup',
+                    'content': ag,
+                }
 
             vl_worksheet = workbook.add_worksheet(ag)
             vl_worksheet.write('A1', 'Vulnerability ID', bold)
@@ -131,7 +134,7 @@ def spreadsheet():
             vl_worksheet.write('E1', 'CVSS Score', bold)
 
             # { 'vulnerability id': [ status, count, severity, cvss ] }
-            vlist = vulnlist(hostfilter)
+            vlist = vulnlist(hostfilter=hostfilter)
             vuln_count = 1
             vl_stats = {}
             for k, v in vlist.iteritems():
@@ -219,14 +222,6 @@ def customer_xml():
 
     from lxml import etree
 
-    # grab the filter type and value if provided or from the session
-    if session.hostfilter is None:
-        f_type  = request.vars.f_type or None
-        f_value = request.vars.f_value or None
-    else:
-        f_type  = session.hostfilter[0]
-        f_value = session.hostfilter[1]
-
     location_attribute = '{%s}noNameSpaceSchemaLocation' % "http://www.w3.org/2001/XMLSchema-instance"
     kvasir_results_xml = etree.Element('KvasirResults', attrib={ location_attribute: 'kvasir.xsd', })
 
@@ -250,7 +245,7 @@ def customer_xml():
     unknown_cpeid_counter = 0
 
     # go through each host, adding the os, services and vulns accordingly
-    query = create_hostfilter_query([(f_type, f_value), False])
+    query = create_hostfilter_query(session.hostfilter)
     for host_rec in db(query).select():
         host_xml = etree.SubElement(hosts_xml, 'host')
         host_xml.set('ipaddr', host_rec.f_ipaddr)
