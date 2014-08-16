@@ -212,7 +212,7 @@ def detail():
     if record is None:
         redirect(URL('hosts', 'list'))
 
-    hostipv4=record.f_ipv4
+    hostipaddr=record.f_ipaddr
     engineername = db.auth_user[record.f_engineer].username
 
     # to allow updating of the host record from this page
@@ -297,7 +297,7 @@ def detail():
     return dict(host=host,
                 netbios=netbios,
                 host_points=host_points,
-                host_pagination=host_pagination, hostipv4=hostipv4, engineername=engineername)
+                host_pagination=host_pagination, hostipaddr=hostipaddr, engineername=engineername)
 
 @auth.requires_login()
 def popover():
@@ -343,8 +343,7 @@ def add():
     Add a host record to the database
     """
     fields = [
-        'f_ipv4',
-        'f_ipv6',
+        'f_ipaddr',
         'f_hostname',
         'f_netbios_name',
         'f_macaddr',
@@ -438,15 +437,7 @@ def list():
                     spanflags.append('<span title="Followup" class="badge badge-important"><i class="icon-flag"></i></span>')
 
                 confirmed = '<div class="%s">%s</div>' % (confirmed, " ".join(spanflags))
-
-                if r.t_hosts.f_ipv4:
-                    ipv4 = A(r.t_hosts.f_ipv4, _id='ipv4', _href=URL('detail', extension='html', args=[r.t_hosts.id]), _target="host_detail_%s" % (r.t_hosts.id)).xml()
-                else:
-                    ipv4 = ""
-                if r.t_hosts.f_ipv6:
-                    ipv6 = A(r.t_hosts.f_ipv6, _id='ipv6', _href=URL('detail', extension='html', args=[r.t_hosts.id]), _target="host_detail_%s" % (r.t_hosts.id)).xml()
-                else:
-                    ipv6 = ""
+                ipaddr = A(r.t_hosts.f_ipaddr, _id='ipaddr', _href=URL('detail', extension='html', args=[r.t_hosts.id]), _target="host_detail_%s" % (r.t_hosts.id)).xml()
 
                 if r.t_os.f_title is None:
                     os = "Unknown"
@@ -455,17 +446,16 @@ def list():
 
                 atxt = {
                      '0': confirmed,
-                     '1': ipv4,
-                     '2': ipv6,
-                     '3': r.t_hosts.f_service_count,
-                     '4': r.t_hosts.f_vuln_count,
-                     '5': "<span class=\"severity_sparkline\" values=\"%s\"></span>" % (r.t_hosts.f_vuln_graph),
-                     '6': r.t_hosts.f_exploit_count,
-                     '7': r.t_hosts.f_hostname,
-                     '8': r.t_hosts.f_netbios_name,
-                     '9': os,
-                     '10': r.auth_user.username,
-                     '11': r.t_hosts.f_asset_group,
+                     '1': ipaddr,
+                     '2': r.t_hosts.f_service_count,
+                     '3': r.t_hosts.f_vuln_count,
+                     '4': "<span class=\"severity_sparkline\" values=\"%s\"></span>" % (r.t_hosts.f_vuln_graph),
+                     '5': r.t_hosts.f_exploit_count,
+                     '6': r.t_hosts.f_hostname,
+                     '7': r.t_hosts.f_netbios_name,
+                     '8': os,
+                     '9': r.auth_user.username,
+                     '10': r.t_hosts.f_asset_group,
                      'DT_RowId': "%s" % (r.t_hosts.id),
                 }
 
@@ -486,8 +476,7 @@ def list():
         add_hosts = AddModal(
             db.t_hosts, 'Add Host', 'Add Host', 'Add Host',
             fields = [
-                'f_ipv4',
-                'f_ipv6',
+                'f_ipaddr',
                 'f_hostname',
                 'f_netbios_name',
                 'f_macaddr',
@@ -654,18 +643,16 @@ def csv_hostupdate():
         for row in csv_rdr:
             record = None
             if row[0] != '':
-                record=db(db.t_hosts.f_ipv4==row[0]).select().first()
-            elif row[1] != '':
-                record=db(db.t_hosts.f_ipv6==row[1]).select().first()
+                record=db(db.t_hosts.f_ipaddr==row[0]).select().first()
             if record is None:
                 logging.warning("Host record not found for %s" % row)
                 skipped += 1
                 continue
             if record.f_hostname is None or record.f_hostname == '':
-                record.update_record(f_hostname = row[2].strip('\n'))
+                record.update_record(f_hostname = row[1].strip('\n'))
                 updated += 1
             elif form.vars.overwrite:
-                record.update_record(f_hostname = row[2].strip('\n'))
+                record.update_record(f_hostname = row[1].strip('\n'))
                 updated += 1
             else:
                 skipped += 1

@@ -112,3 +112,4 @@ settings.login_image = settings.kvasir_config.get('login_image', 'images/Kvasir_
 
 # Loading video - can be a movie file (mp4/m4v) or None
 settings.loading_video = settings.kvasir_config.get('loading_video', None)
+

@@ -43,8 +43,7 @@
         <thead>
             <tr>
                 <th width="5%">C</th>
-                <th>IPv4</th>
-                <th>IPv6</th>
+                <th>IP</th>
                 <th width="5%">Services</th>
                 <th width="5%">Vulns</th>
                 <th width="8%">Vuln Graph</th>
@@ -126,15 +125,15 @@ jQuery(document).ready(function() {
             ]
         },
         "fnDrawCallback": function(nRow, aData, iDisplayIndex, iDisplayIndexFull) {
-            jQuery('#hosttable tbody tr td:nth-child(7)').css("color", "red").css("font-weight", "bold"); //Column 7 is exploits
+            jQuery('#hosttable tbody tr td:nth-child(6)').css("color", "red").css("font-weight", "bold"); //Column 6 is exploits
             doSpark();
         },
         "aoColumnDefs": [
             { "sType": "ip-address", "aTargets": [ 1 ] },
-            { "sSortDataType": "formatted-num", "aTargets": [ 6 ] },
-            { "sType": "numeric", "aTargets": [ 3, 4 ] },
-            { "sClass": "center", "aTargets": [ 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 ] },
-            { "bSortable": false, "aTargets": [ 0, 5 ] },
+            { "sSortDataType": "formatted-num", "aTargets": [ 5 ] },
+            { "sType": "numeric", "aTargets": [ 2, 3 ] },
+            { "sClass": "center", "aTargets": [ 1, 2, 3, 4, 5, 6, 7, 8, 9 ] },
+            { "bSortable": false, "aTargets": [ 0, 4 ] },
         ],
         "aaSorting": [[ 1, "asc" ]],
     } );

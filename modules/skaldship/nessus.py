@@ -123,10 +123,8 @@ class NessusHosts:
         hostfields['f_confirmed'] = False
 
         # check ipv4/ipv6 and set hostfields accordingly
-        if IS_IPADDRESS(is_ipv4=True)(ipaddr)[1] is None:
-            hostfields['f_ipv4'] = ipaddr
-        elif IS_IPADDRESS(is_ipv6=True)(ipaddr)[1] is None:
-            hostfields['f_ipv6'] = ipaddr
+        if IS_IPADDRESS()(ipaddr)[1] is None:
+            hostfields['f_ipaddr'] = ipaddr
         else:
             log("Invalid IP Address in HostProperties: %s" % ipaddr, logging.ERROR)
             return None, {}
@@ -150,20 +148,14 @@ class NessusHosts:
             host_id = result.id
             log(" [-] Adding host: %s" % ipaddr)
         elif self.update_hosts:
-            if hostfields['f_ipv4']:             
-                host_id = self.db(self.db.t_hosts.f_ipv4 == hostfields['f_ipv4']).update(**hostfields)
+            if hostfields['f_ipaddr']:
+                host_id = self.db(self.db.t_hosts.f_ipaddr == hostfields['f_ipaddr']).update(**hostfields)
                 self.db.commit()
-                host_id = get_host_record(hostfields['f_ipv4'])
+                host_id = get_host_record(hostfields['f_ipaddr'])
                 if host_id:
                     host_id = host_id.id
-                log(" [-] Updating IP: %s" % (hostfields['f_ipv4']))
-            else:
-                host_id = self.db(self.db.t_hosts.f_ipv6 == hostfields['f_ipv6']).update(**hostfields)
-                self.db.commit()
-                host_id = get_host_record(hostfields['f_ipv6'])
-                host_id = host_id.id
-                log(" [-] Updating IP: %s" % (hostfields['f_ipv6']))
-            self.stats['updated'] += 1
+                log(" [-] Updating IP: %s" % (hostfields['f_ipaddr']))
+                self.stats['updated'] += 1
 
         return host_id, hostfields
 

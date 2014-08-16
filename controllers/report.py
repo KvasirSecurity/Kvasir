@@ -253,10 +253,8 @@ def customer_xml():
     query = create_hostfilter_query([(f_type, f_value), False])
     for host_rec in db(query).select():
         host_xml = etree.SubElement(hosts_xml, 'host')
-        host_xml.set('ipv4', host_rec.f_ipv4)
+        host_xml.set('ipaddr', host_rec.f_ipaddr)
         host_xml.set('assetgroup', host_rec.f_asset_group)
-        if host_rec.f_ipv6:
-            host_xml.set('ipv6', host_rec.f_ipv6)
         if host_rec.f_macaddr:
             host_xml.set('macaddr', host_rec.f_macaddr)
         if host_rec.f_hostname:

@@ -56,11 +56,8 @@ class ShodanData():
         if ipaddr in self.ip_exclude:
             log(" [-] %s is in exclude list... skipping" % (ipaddr))
 
-        if IS_IPADDRESS(is_ipv4=True)(ipaddr)[1] is None:
-            # address is IPv4:
-            hostfields['f_ipv4'] = ipaddr
-        elif IS_IPADDRESS(is_ipv6=True)(ipaddr)[1] is None:
-            hostfields['f_ipv6'] = ipaddr
+        if IS_IPADDRESS()(ipaddr)[1] is None:
+            hostfields['f_ipaddr'] = ipaddr
         else:
             log(" [!] Invalid IP Address in report: %s" % (ipaddr))
             return
@@ -70,10 +67,7 @@ class ShodanData():
             hostfields['f_hostname'] = hostname
 
         # check to see if IP exists in DB already
-        if 'f_ipv4' in hostfields:
-            host_rec = db(db.t_hosts.f_ipv4 == hostfields['f_ipv4']).select().first()
-        else:
-            host_rec = db(db.t_hosts.f_ipv6 == hostfields['f_ipv6']).select().first()
+        host_rec = db(db.t_hosts.f_ipaddr == hostfields['f_ipaddr']).select().first()
 
         if host_rec is None:
             hostfields['f_asset_group'] = self.asset_group
@@ -85,20 +79,12 @@ class ShodanData():
 
         elif host_rec is not None:
             db.commit()
-            if 'f_ipv4' in hostfields:
-                host_id = db(db.t_hosts.f_ipv4 == hostfields['f_ipv4']).update(**hostfields)
-                db.commit()
-                host_id = get_host_record(hostfields['f_ipv4'])
-                host_id = host_id.id
-                self.stats['hosts_updated'] += 1
-                log(" [-] Updating IP: %s" % (hostfields['f_ipv4']))
-            else:
-                host_id = db(db.t_hosts.f_ipv6 == hostfields['f_ipv6']).update(**hostfields)
-                db.commit()
-                host_id = get_host_record(hostfields['f_ipv6'])
-                host_id = host_id.id
-                self.stats['hosts_updated'] += 1
-                log(" [-] Updating IP: %s" % (hostfields['f_ipv6']))
+            host_id = db(db.t_hosts.f_ipaddr == hostfields['f_ipaddr']).update(**hostfields)
+            db.commit()
+            host_id = get_host_record(hostfields['f_ipaddr'])
+            host_id = host_id.id
+            self.stats['hosts_updated'] += 1
+            log(" [-] Updating IP: %s" % (hostfields['f_ipaddr']))
 
         else:
             self.stats['hosts_skipped'] += 1

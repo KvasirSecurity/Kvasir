@@ -88,9 +88,9 @@ jQuery(document).ready(function() {
         rows.forEach( function(node) {
             if (node.cells[7].innerText == 'LM') {
                 pwdumptext += $(node).find('#username').text() + ':' +
-                             node.cells[4].innerText + ':' +
-                             node.cells[8].innerText + ':' +
-                             node.cells[10].innerText + ':::\n';
+                             node.cells[3].innerText + ':' +
+                             node.cells[7].innerText + ':' +
+                             node.cells[9].innerText + ':::\n';
             }
         } );
         

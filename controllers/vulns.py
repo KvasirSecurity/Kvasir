@@ -88,8 +88,7 @@ def vuln_hosts_by_vulnid():
         query,
         args=[vuln_id],
         fields = [
-            db.t_hosts.f_ipv4,
-            db.t_hosts.f_ipv6,
+            db.t_hosts.f_ipaddr,
             db.t_hosts.f_hostname,
             db.t_services.f_proto,
             db.t_services.f_number,
@@ -501,7 +500,7 @@ def service_vulns_list():
     query = create_hostfilter_query(session.hostfilter, query, 't_services')
 
     columns = [
-        db.t_hosts.f_ipv4, db.t_hosts.f_ipv6, db.t_hosts.f_hostname, db.t_services.f_proto, db.t_services.f_number,
+        db.t_hosts.f_ipaddr, db.t_hosts.f_hostname, db.t_services.f_proto, db.t_services.f_number,
         db.t_vulndata.f_vulnid, db.t_service_vulns.f_status, db.t_service_vulns.f_proof,
         #db.t_service_vulns.id
     ]

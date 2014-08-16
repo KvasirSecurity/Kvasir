@@ -29,10 +29,8 @@ def index():
 def add():
     if request.vars.has_key('id'):
         host_id = db.t_hosts[request.vars.id] or redirect(URL('default', 'error', vars={'msg': T('Host record not found')}))
-    elif request.vars.has_key('ipv4'):
-        host_id = db(db.t_hosts.f_ipv4 == request.vars.ipv4) or redirect(URL('default', 'error', vars={'msg': T('Host record not found')}))
-    elif request.vars.has_key('ipv6'):
-        host_id = db(db.t_hosts.f_ipv6 == request.vars.ipv6) or redirect(URL('default', 'error', vars={'msg': T('Host record not found')}))
+    elif request.vars.has_key('ipaddr'):
+        host_id = db(db.t_hosts.f_ipaddr == request.vars.ipaddr) or redirect(URL('default', 'error', vars={'msg': T('Host record not found')}))
     else:
         host_id = None
 
@@ -217,9 +215,7 @@ def list():
                 ["status", db.t_services.f_status],
                 ["name", db.t_services.f_name],
                 ["banner", db.t_services.f_banner],
-                ["ip", db.t_hosts.f_ipv4],
-                ["ipv4", db.t_hosts.f_ipv4],
-                ["ipv6", db.t_hosts.f_ipv6],
+                ["ip", db.t_hosts.f_ipaddr],
                 ["hostname", db.t_hosts.f_hostname],
             ]
 
@@ -326,12 +322,12 @@ def list():
             # Append A tags around services with HTTP Ports
             if r.t_services.f_number in HTTP_PORTS and r.t_services.f_proto == "tcp" or r.t_services.f_name == "HTTP":
                 atxt['5'] = A(r.t_services.f_number,
-                              _href=URL('default', 'redirect', extension='html', vars={'url': "http://%s:%s/" % (host_rec.f_ipv4, r.t_services.f_number)}),
-                              _target="%s-tcp-%s" % (host_rec.f_ipv4, r.t_services.f_number)).xml()
+                              _href=URL('default', 'redirect', extension='html', vars={'url': "http://%s:%s/" % (host_rec.f_ipaddr, r.t_services.f_number)}),
+                              _target="%s-tcp-%s" % (host_rec.f_ipaddr, r.t_services.f_number)).xml()
             elif r.t_services.f_number in HTTPS_PORTS and r.t_services.f_proto == "tcp" or r.t_services.f_name == "HTTPS":
                 atxt['5'] = A(r.t_services.f_number,
-                              _href=URL('default', 'redirect', extension='html', vars={'url': "https://%s:%s/" % (host_rec.f_ipv4, r.t_services.f_number)}),
-                              _target="%s-tcp-%s" % (host_rec.f_ipv4, r.t_services.f_number)).xml()
+                              _href=URL('default', 'redirect', extension='html', vars={'url': "https://%s:%s/" % (host_rec.f_ipaddr, r.t_services.f_number)}),
+                              _target="%s-tcp-%s" % (host_rec.f_ipaddr, r.t_services.f_number)).xml()
             else:
                 atxt['5'] = r.t_services.f_number
 
@@ -436,12 +432,12 @@ def by_host():
             atxt['3'] = svc.f_proto
             if svc.f_number in HTTP_PORTS and svc.f_proto == "tcp" or svc.f_name == "HTTP":
                 atxt['4'] = A(svc.f_number,
-                              _href="http://%s:%s/" % (record.f_ipv4, svc.f_number),
-                              _target="%s-tcp-%s" % (record.f_ipv4, svc.f_number)).xml()
+                              _href="http://%s:%s/" % (record.f_ipaddr, svc.f_number),
+                              _target="%s-tcp-%s" % (record.f_ipaddr, svc.f_number)).xml()
             elif svc.f_number in HTTPS_PORTS and svc.f_proto == "tcp" or svc.f_name == "HTTPS":
                 atxt['4'] = A(svc.f_number,
-                              _href="https://%s:%s/" % (record.f_ipv4, svc.f_number),
-                              _target="%s-tcp-%s" % (record.f_ipv4, svc.f_number)).xml()
+                              _href="https://%s:%s/" % (record.f_ipaddr, svc.f_number),
+                              _target="%s-tcp-%s" % (record.f_ipaddr, svc.f_number)).xml()
             else:
                 atxt['4'] = svc.f_number
             atxt['5'] = svc.f_status
@@ -504,8 +500,7 @@ def hosts_with_port():
         Field('f_name', type='string', label=T('Name (exact)')),
         Field('f_banner', type='string', label=T('Banner (contains)')),
         Field('ignore_filter', type='boolean', default=False, label=T('Ignore Hostfilter')),
-        #Field('f_ipv4', type='boolean', default=True, label=T('Show IPv4')),
-        #Field('f_ipv6', type='boolean', default=False, label=T('Show IPv6')),
+        #Field('f_ipaddr', type='boolean', default=True, label=T('Show IP Address')),
         #Field('f_hostname', type='boolean', default=False, label=T('Show Hostname')),
         #Field('f_engineer', type='integer', label=T('Engineer'), default=auth.user.id, requires=IS_IN_SET(userlist)),
         #Field('f_asset_group', type='string', label=T('Asset Group'), requires=IS_NOT_EMPTY()),
@@ -540,7 +535,7 @@ def hosts_with_port():
         else:
             q &= (db_svcs.f_hosts_id == db_hosts.id)
 
-        ip_list = db(q).select(db_hosts.f_ipv4, db_hosts.f_ipv6, db_svcs.f_number, db_hosts.f_hostname, cache=(cache.ram, 60))
+        ip_list = db(q).select(db_hosts.f_ipaddr, db_svcs.f_number, db_hosts.f_hostname, cache=(cache.ram, 60))
 
         return dict(
             ip_list=ip_list,
@@ -559,10 +554,8 @@ def hosts_with_port():
 def info_add():
     if request.vars.has_key('id'):
         host_id = db.t_hosts[request.vars.id] or redirect(URL('default', 'error', vars={'msg': T('Host record not found')}))
-    elif request.vars.has_key('ipv4'):
-        host_id = db(db.t_hosts.f_ipv4 == request.vars.ipv4) or redirect(URL('default', 'error', vars={'msg': T('Host record not found')}))
-    elif request.vars.has_key('ipv6'):
-        host_id = db(db.t_hosts.f_ipv6 == request.vars.ipv6) or redirect(URL('default', 'error', vars={'msg': T('Host record not found')}))
+    elif request.vars.has_key('ipaddr'):
+        host_id = db(db.t_hosts.f_ipaddr == request.vars.ipaddr) or redirect(URL('default', 'error', vars={'msg': T('Host record not found')}))
     else:
         host_id = None
 
@@ -598,7 +591,7 @@ def info_list():
             svc = db.t_services[r.f_services_id]
             atxt = []
             atxt.append(A(r.id, _target="service_info_%s" % (r.id), _href="info_edit/%s" % (r.id)).xml(), )
-            atxt.append(A(db.t_hosts[svc.f_hosts_id].f_ipv4, _target="host_detail_%s" % (svc.f_hosts_id), _href=URL('hosts', 'detail', args=svc.f_hosts_id, extension='html')).xml())
+            atxt.append(A(db.t_hosts[svc.f_hosts_id].f_ipaddr, _target="host_detail_%s" % (svc.f_hosts_id), _href=URL('hosts', 'detail', args=svc.f_hosts_id, extension='html')).xml())
             atxt.append(svc.f_proto)
             atxt.append(svc.f_number)
             atxt.append(r.f_name)
@@ -622,7 +615,7 @@ def info_list():
 @auth.requires_login()
 def info_by_svcid():
     svc = db.t_services(request.args(0)) or redirect(URL('default', 'error', vars={'msg': T('Service record not found')}))
-    response.title = "%s :: Service Info for %s" % (settings.title, svc.f_hosts_id.f_ipv4)
+    response.title = "%s :: Service Info for %s" % (settings.title, svc.f_hosts_id.f_ipaddr)
     rows = db(db.t_service_info.f_services_id == svc.id).select(db.t_service_info.id,
                                                                 db.t_service_info.f_services_id,
                                                                 db.t_service_info.f_name,

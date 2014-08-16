@@ -30,9 +30,7 @@ def add_or_update(hostfields, update=False):
         log(" [!] Hostfields is not a dictionary", logging.ERROR)
         return None
 
-    host_rec = db(db.t_hosts.f_ipv4 == hostfields.get('f_ipv4'))
-    if not host_rec:
-        host_rec = db(db.t_hosts.f_ipv4 == hostfields.get('f_ipv6'))
+    host_rec = db(db.t_hosts.f_ipaddr == hostfields.get('f_ipaddr'))
 
     if not host_rec:
         try:
@@ -71,14 +69,8 @@ def get_host_record(argument):
     if record:
         return record
     else:
-        if IS_IPADDRESS(is_ipv4=True)(argument)[1] == None:
-            host_rec = db(db.t_hosts.f_ipv4 == argument).select().first()
-            if host_rec:
-                record = db.t_hosts(host_rec['id'])
-            else:
-                record = None
-        elif IS_IPADDRESS(is_ipv6=True)(argument)[1] == None:
-            host_rec = db(db.t_hosts.f_ipv6 == request.args(0)).select().first()
+        if IS_IPADDRESS()(argument)[1] == None:
+            host_rec = db(db.t_hosts.f_ipaddr == argument).select().first()
             if host_rec:
                 record = db.t_hosts(host_rec['id'])
             else:
@@ -102,13 +94,13 @@ def get_or_create_record(argument, **defaults):
     :returns: Row with id
 
     >>> get_or_create_record('2.2.2.2')
-    <Row {'f_confirmed': False, 'f_followup': None, 'f_macaddr': None, 'f_longitude': None, 'f_vuln_count': 0L, 'f_asset_group': 'undefined', 'f_accessed': False, 'id': 1L, 'f_vuln_graph': '0,0,0,0,0,0,0,0,0,0', 'f_engineer': 1L, 'f_exploit_count': 0L, 'f_hostname': None, 'f_ipv6': None, 'f_ipv4': '2.2.2.2', 'f_city': None, 'f_country': None, 'f_latitude': None, 'f_netbios_name': None, 'f_service_count': 0L}>
+    <Row {'f_confirmed': False, 'f_followup': None, 'f_macaddr': None, 'f_longitude': None, 'f_vuln_count': 0L, 'f_asset_group': 'undefined', 'f_accessed': False, 'id': 1L, 'f_vuln_graph': '0,0,0,0,0,0,0,0,0,0', 'f_engineer': 1L, 'f_exploit_count': 0L, 'f_hostname': None, 'f_ipaddr': '2.2.2.2', 'f_city': None, 'f_country': None, 'f_latitude': None, 'f_netbios_name': None, 'f_service_count': 0L}>
 
     >>> get_or_create_record('9.9.9.9', f_engineer=9999)
     None
 
     >>> get_or_create_record(1)
-    <Row {'f_confirmed': False, 'f_followup': None, 'f_macaddr': None, 'f_longitude': None, 'f_vuln_count': 0L, 'f_asset_group': 'undefined', 'f_accessed': False, 'id': 1L, 'f_vuln_graph': '0,0,0,0,0,0,0,0,0,0', 'f_engineer': 1L, 'f_exploit_count': 0L, 'f_hostname': None, 'f_ipv6': None, 'f_ipv4': '2.2.2.2', 'f_city': None, 'f_country': None, 'f_latitude': None, 'f_netbios_name': None, 'f_service_count': 0L}>
+    <Row {'f_confirmed': False, 'f_followup': None, 'f_macaddr': None, 'f_longitude': None, 'f_vuln_count': 0L, 'f_asset_group': 'undefined', 'f_accessed': False, 'id': 1L, 'f_vuln_graph': '0,0,0,0,0,0,0,0,0,0', 'f_engineer': 1L, 'f_exploit_count': 0L, 'f_hostname': None, 'f_ipaddr': '2.2.2.2', 'f_city': None, 'f_country': None, 'f_latitude': None, 'f_netbios_name': None, 'f_service_count': 0L}>
 
     >>> get_or_create_record(9999)
     None
@@ -133,10 +125,8 @@ def get_or_create_record(argument, **defaults):
         if 'f_engineer' not in fields:
             fields['f_engineer'] = auth.user_id or 1
 
-        if IS_IPADDRESS(is_ipv4=True)(argument)[1] == None:
-            fields['f_ipv4'] = argument
-        elif IS_IPADDRESS(is_ipv6=True)(argument)[1] == None:
-            fields['f_ipv6'] = argument
+        if IS_IPADDRESS()(argument)[1] == None:
+            fields['f_ipaddr'] = argument
         else:
             # invalid ip address, clear the fields
             fields = None
@@ -228,6 +218,14 @@ def create_hostfilter_query(fdata, q=None, dbname=None):
             q &= db.t_hosts.f_asset_group.contains(f_value)
         else:
             q &= db.t_hosts.f_asset_group == f_value
+    elif f_type == "range":
+        q &= (db.t_hosts.f_ipaddr.contains(f_value))
+    elif f_type == "ipaddr_list":
+        if len(f_value) > 0:
+            ip_q = (db.t_hosts.f_ipaddr == f_value[0])
+        for host in f_value[1:]:
+            ip_q |= (db.t_hosts.f_ipaddr == host)
+        q &= ip_q
 
     return q
 
@@ -243,15 +241,12 @@ def host_title_maker(record):
     if record is None:
         return "Unknown"
 
-    hostinfo = []
-    if record.f_ipv4:
-        hostinfo.append(record.f_ipv4)
-    if record.f_ipv6:
-        hostinfo.append(record.f_ipv6)
+    if record.f_ipaddr:
+        hostinfo = record.f_ipaddr
     if record.f_hostname:
-        hostinfo.append(record.f_hostname)
+        hostinfo = "%s (%s)" % (record.f_ipaddr, record.f_hostname)
 
-    return " :: ".join(hostinfo)
+    return hostinfo
 
 
 ##-------------------------------------------------------------------------
@@ -447,6 +442,38 @@ def pagination(request, curr_host):
 
     return pagination
 
+
+##-------------------------------------------------------------------------
+
+def ip_4_6_api_kludge(ipaddress):
+    """Takes an IP address and returns a list with ipv4 and ipv6 set accordingly.
+
+    This is a kludge for api.py JSONRPC functions.
+
+    >>> ip_4_6_api_kludge('192.168.1.1')
+    ('192.168.1.1', None)
+    >>> ip_4_6_api_kludge('fdf8:f53b:82e4::53')
+    (None, 'fdf8:f53b:82e4::53')
+
+    :param ipaddress: IP Address
+    :return ipv4: if ipaddress is ipv4, this is ipaddress, otherwise None
+    :return ipv6: if ipaddress is ipv6, this is ipaddress, otherwise None
+    """
+    from gluon.validators import IS_IPADDRESS
+
+    if IS_IPADDRESS(is_ipv4=True)(ipaddress)[1] is None:
+        ipv4 = ipaddress
+    else:
+        ipv4 = None
+
+    if IS_IPADDRESS(is_ipv6=True)(ipaddress)[1] is None:
+        ipv6 = ipaddress
+    else:
+        ipv6 = None
+
+    return ipv4, ipv6
+
+##-------------------------------------------------------------------------
 
 if __name__ == '__main__':
     import doctest

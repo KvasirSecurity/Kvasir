@@ -60,7 +60,7 @@ pwtypes = [
     ("pwdump", "Windows PWDUMP"),
     ("unix", "UNIX Passwd/shadow"),
     ("userpass", "Usernamne:Password"),
-    ("csv", "ipv4,ipv6,hostname,username,cleartext,hash_1,hash1_type,hash2,hash2_type"),
+    ("csv", "ipv4,hostname,username,cleartext,hash_1,hash1_type,hash2,hash2_type"),
 ]
 
 optparser = OptionParser(version=__version__)
@@ -80,10 +80,8 @@ select_group.add_option("-e", "--empty", dest="empty",
 optparser.add_option_group(select_group)
 
 input_group = OptionGroup(optparser, "Source Input Options")
-input_group.add_option("-4", "--ipv4", dest="ipv4",
-    action="append", default=[], help="IPv4 Address or leave blank for all")
-input_group.add_option("-6", "--ipv6", dest="ipv6",
-    action="append", default=[], help="IPv6 Address or leave blank for all")
+input_group.add_option("-4", "--ip", dest="ipaddr",
+    action="append", default=[], help="IP Address or leave blank for all")
 input_group.add_option("-l", "--list", dest="filelist",
     action="store", default=None, help="File of IP addresses, one per line")
 
@@ -114,9 +112,7 @@ query = (db.t_accounts.id > 0)
 
 # build a host_query if ipv4 and/or ipv6 addresses are supplied
 host_query = HostQuery()
-for ip in options.ipv4:
-    host_query.add_host(ip, ports)
-for ip in options.ipv6:
+for ip in options.ipaddr:
     host_query.add_host(ip, ports)
 if options.filelist:
     for ip in open(options.filelist, "r").readlines():
@@ -154,7 +150,7 @@ query &= (db.t_services.f_hosts_id == db.t_hosts.id)
 
 if output_type == "csv":
     output = csv.writer(sys.stdout, quoting=csv.QUOTE_MINIMAL)
-    output.writerow(["IPv4", "IPv6", "Hostname", "Account", "Full Name", "Password", "Hash 1 type", "Hash 1", "Hash Type", "Hash 2"])
+    output.writerow(["IP Address", "Hostname", "Account", "Full Name", "Password", "Hash 1 type", "Hash 1", "Hash Type", "Hash 2"])
 else:
     output = ""
 
@@ -176,7 +172,7 @@ for row in db(query).select():
         output += ":".join((acct.f_username, acct.f_password or ""))
         output += "\n"
     elif output_type == "csv":
-        output.writerow([host.f_ipv4, host.f_ipv6, host.f_hostname,
+        output.writerow([host.f_ipaddr, host.f_hostname,
                          acct.f_username, acct.f_fullname, acct.f_password,
                          acct.f_hash1_type, acct.f_hash1, acct.f_hash2_type, acct.f_hash2])
 
