@@ -148,10 +148,9 @@ def create_hostfilter_query(fdata, q=None, dbname=None):
     """
     Creates or appends a hostfilter to a query variable
 
-    hostfilter is a set of filter_type and filter_value
-    db is the database scoped from the application
-    q is the base query we're appending to
-    dbname is used to ensure the first query adds the dbname.f_hosts_id fields
+    :param hostfilter: dict containing filtertype and content
+    :param q: A base query to append or blank
+    :param dbname: Ensures the first query adds the dbname.f_hosts_id field
     """
     db = current.globalenv['db']
     cache = current.globalenv['cache']
@@ -174,9 +173,6 @@ def create_hostfilter_query(fdata, q=None, dbname=None):
     unconfirmed = fdata.get('unconfirmed', False)
     accessed = fdata.get('accessed', False)
     followup = fdata.get('followup', False)
-
-    if db is None or cache is None:
-        return None
 
     if q is None:
         q = db.t_hosts.id > 0
