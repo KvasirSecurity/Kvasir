@@ -1218,9 +1218,9 @@ If ip_list_only is false then adds proof and status
 def vuln_service_list(vuln_name=None, vuln_id=None, hostfilter=None):
     """Returns a list of services and IPs vulnerability has been found on:
 
-'vuln-id': {'port1': [ (ipv4, ipv6, hostname ),
-                       (ipv4, ipv6, hostname ) ]},
-           {'port2': [ (ipv4, ipv6, hostname ) ]}
+'vuln-id': {'port1': [ (ipaddress, hostname ),
+                       (ipaddress, hostname ) ]},
+           {'port2': [ (ipaddress, hostname ) ]}
 
 """
 
@@ -1228,15 +1228,18 @@ def vuln_service_list(vuln_name=None, vuln_id=None, hostfilter=None):
     query = (db.t_service_vulns.f_services_id == db.t_services.id)
     query = create_hostfilter_query(hostfilter, query, 't_services')
 
-    if vuln_name is not None:
+    vuln_rec = None
+    if vuln_name:
         vuln_rec = db(db.t_vulndata.f_vulnid == vuln_name).select(cache=(cache.ram, 60)).first()
-    elif vuln_id is not None:
+        if not vuln_rec:
+            return {}
+    elif vuln_id:
         vuln_rec = db(db.t_vulndata.id == vuln_id).select(cache=(cache.ram, 60)).first()
-    else:
-        vuln_rec = None
+        if not vuln_rec:
+            return {}
 
-    if vuln_rec is None:
-        return {}
+    if vuln_rec:
+        query &= (db.t_service_vulns.f_vulndata_id == vuln_rec.id)
 
     query &= (db.t_service_vulns.f_vulndata_id == vuln_rec.id)
 
@@ -1244,7 +1247,7 @@ def vuln_service_list(vuln_name=None, vuln_id=None, hostfilter=None):
     for row in db(query).select(cache=(cache.ram, 120)):
         port = "%s/%s" % (row.t_services.f_number, row.t_services.f_proto)
         host_rec = get_host_record(row.t_services.f_hosts_id)
-        host_list = [(host_rec.f_ipaddr, host_rec.f_hostname)]
+        host_list = [host_rec.f_ipaddr, host_rec.f_hostname]
         vulnid = db.t_vulndata[row.t_service_vulns.f_vulndata_id].f_vulnid
 
         port_dict = data.setdefault(vulnid, {})
