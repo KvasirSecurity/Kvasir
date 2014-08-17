@@ -63,7 +63,9 @@ def get_host_record(argument):
 
     from gluon.validators import IS_IPADDRESS
     db = current.globalenv['db']
-    cache = current.globalenv['cache']
+
+    if isinstance(argument, int):
+        argument = str(argument)
 
     record = db.t_hosts(argument) or None
     if record:
