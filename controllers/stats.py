@@ -35,7 +35,7 @@ def vulnlist():
     from skaldship.statistics import vulnlist
 
     vulnid = request.args(0) or "%"
-    vulnlist = vulnlist(query=vulnid)
+    vulnlist = vulnlist(qstr=vulnid)
 
     response.title = "%s :: Vulnerability Statistics" % (settings.title)
     return dict(vulnlist=vulnlist)#, statistics=statistics, adv_stats=adv_stats)
