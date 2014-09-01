@@ -926,7 +926,7 @@ Returns: (True/False, Message or dictionary of records/account names added)
     if f_type is None:
         return False, 'No password filetype provided'
 
-    from skaldship.passwords import process_password_file, insert_or_update_acct
+    from skaldship.passwords.utils import process_password_file, insert_or_update_acct
 
     account_data = process_password_file(pw_data=pw_data, file_type=f_type)
     resp_text = insert_or_update_acct(svc_id, account_data)
