@@ -1241,8 +1241,6 @@ def vuln_service_list(vuln_name=None, vuln_id=None, hostfilter=None):
     if vuln_rec:
         query &= (db.t_service_vulns.f_vulndata_id == vuln_rec.id)
 
-    query &= (db.t_service_vulns.f_vulndata_id == vuln_rec.id)
-
     data = {}
     for row in db(query).select(cache=(cache.ram, 120)):
         port = "%s/%s" % (row.t_services.f_number, row.t_services.f_proto)
