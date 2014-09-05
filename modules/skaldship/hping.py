@@ -24,6 +24,7 @@ def process_file(filename=None, asset_group=None, engineer=None):
 
     # Upload and process hping Scan file
     from skaldship.hosts import get_host_record, do_host_status, add_or_update
+    from gluon.validators import IS_IPADDRESS
 
     log(" [*] Processing hping scan file %s" % filename)
 
@@ -42,7 +43,8 @@ def process_file(filename=None, asset_group=None, engineer=None):
                 host_ip = line.split()[1]
                 if IS_IPADDRESS()(host_ip)[1] == None:
                     nodefields['f_ipaddr'] = host_ip
-                    host_rec = add_or_update(nodefields, update=True)
+                    db.t_hosts.update_or_insert(**nodefields)
+		            db.commit()
                     hoststats += 1
                 else:
                     log(" [!] ERROR: Not a valid IP Address (%s)" % host_ip, logging.ERROR)
@@ -55,11 +57,11 @@ def process_file(filename=None, asset_group=None, engineer=None):
                 packets = line.split()
                 if packets[0] == packets[3]:
                     if answer_ip != host_ip:
-                        response = T("No")
+                        response = "No"
                     else:
-                        response = T("Yes")
+                        response = "Yes"
                 else:
-                    response = T("No")
+                    response = "No"
                 get_id = get_host_record(host_ip)
                 svc_db.update_or_insert(
                     f_hosts_id=get_id.id, f_proto='ICMP', f_number='0', f_status=response, f_name=ICMP_type
