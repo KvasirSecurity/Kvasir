@@ -17,6 +17,12 @@
     <div class="alert alert-info span4">
         <p>John the Ripper .pot files can be located on a path the server running Kvasir can access or uploaded.</p>
         <p>Paths can either be manually defined or use the pre-defined ones.</p>
+        <p><b>Known paths:</b></p>
+        <p><ul>
+        {{for path in known_paths:}}
+            <li>{{=path[1]}}</li>
+        {{pass}}
+        </ul></p>
     </div>
 </div>
 

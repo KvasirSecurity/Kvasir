@@ -11,7 +11,7 @@
 ##--------------------------------------#
 
 from skaldship.hosts import get_host_record, host_title_maker, host_a_maker, create_hostfilter_query
-from skaldship.passwords import process_password_file, process_cracked_file, process_mass_password, insert_or_update_acct
+from skaldship.passwords.utils import process_password_file, process_cracked_file, process_mass_password, insert_or_update_acct
 import re
 import logging
 logger = logging.getLogger("web2py.app.kvasir")
@@ -415,7 +415,8 @@ def check_john_pot():
     known_paths = []
     known_paths.append([0, None])
     known_paths.append([1, '/opt/metasploit_pro/apps/pro/engine/config/john.pot'])
-    known_paths.append([2, '/root/.john/john.pot'])
+    known_paths.append([2, '/opt/metasploit/apps/pro/engine/config/john.pot'])
+    known_paths.append([3, '/root/.john/john.pot'])
 
     form = SQLFORM.factory(
         Field('potfile', 'upload', uploadfolder=os.path.join(request.folder, settings.password_upload_dir), label=T('POT File')),
@@ -520,7 +521,7 @@ def check_john_pot():
         cache.ram.clear('accounts_list')
 
     response.title = "%s :: Process john.pot File" % (settings.title)
-    return dict(form=form)
+    return dict(form=form, known_paths=known_paths)
 
 @auth.requires_login()
 def by_host():

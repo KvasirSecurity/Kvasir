@@ -85,7 +85,7 @@ def passwords():
 """ % (z.t_accounts.f_password, z._extra['COUNT(t_accounts.f_password)']))
     top_sparx_table.append("</tbody>\n</tgroup>\n</table>")
 
-    from skaldship.passwords import password_class_stat
+    from skaldship.passwords.utils import password_class_stat
     pwlenstats = defaultdict(lambda: 0)
     pwstats = defaultdict(lambda: 0)
     passwords = db(db.t_accounts.f_compromised==True).select(db.t_accounts.f_password, cache=(cache.ram, 60))
