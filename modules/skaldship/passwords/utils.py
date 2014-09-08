@@ -6,19 +6,20 @@ __version__ = "1.0"
 ##--------------------------------------#
 ## Kvasir
 ##
-## (c) 2010-2013 Cisco Systems, Inc.
+## (c) 2010-2014 Cisco Systems, Inc.
 ##
-## SPA password file processing module
+## Password-related utilities
 ##
 ## Author: Kurt Grutzmacher <kgrutzma@cisco.com>
 ##--------------------------------------#
 """
 
-from collections import defaultdict
-import re, string
+import re
+import string
 from gluon import current
 import logging
-from skaldship.log import log
+from ..log import log
+
 
 # Module definitions
 lowercase = set(string.lowercase)
@@ -26,10 +27,10 @@ uppercase = set(string.uppercase)
 digits = set(string.digits)
 specialchars = set("!@#$%^&*()_+-=`~[]\\{}|;':\",./<>? ")
 
-has_lower = lambda s: bool( lowercase & set(s))
-has_upper = lambda s: bool( uppercase & set(s))
-has_digit = lambda s: bool( digits & set(s))
-has_special = lambda s: bool( specialchars & set(s))
+has_lower = lambda s: bool(lowercase & set(s))
+has_upper = lambda s: bool(uppercase & set(s))
+has_digit = lambda s: bool(digits & set(s))
+has_special = lambda s: bool(specialchars & set(s))
 
 CHARSET_CHECKS = [
     ('lower', "Lowercase Alpha Characters (ex: password)",
@@ -42,37 +43,37 @@ CHARSET_CHECKS = [
         lambda pw: re.search(r"^[^a-zA-Z0-9]+$", pw)),
     ('lowerupperalpha', "Upper and Lowercase Alpha Characters (ex: PASSword)",
         lambda pw: (has_lower(pw) and has_upper(pw) and
-                    not (has_digit(pw) or has_special(pw))) ),
+                    not (has_digit(pw) or has_special(pw)))),
     ('upperalphanum', "Uppercase Alphanumeric Characters (ex: PASS123)",
         lambda pw: (has_digit(pw) and has_upper(pw) and
-                    not (has_lower(pw) or has_special(pw))) ),
+                    not (has_lower(pw) or has_special(pw)))),
     ('loweralphanum', "Lowercase Alphanumeric Characters (ex: pass123)",
         lambda pw: (has_digit(pw) and has_lower(pw) and
-                    not (has_upper(pw) or has_special(pw))) ),
+                    not (has_upper(pw) or has_special(pw)))),
     ('lowerspecial', "Lowercase Alphanumeric with Special Chars (ex: pass!23)",
         lambda pw: (has_digit(pw) and not has_upper(pw) and has_lower(pw) and
-                    has_special(pw)) ),
+                    has_special(pw))),
     ('upperspecial', "Uppercase Alphanumeric with Special Chars (ex: PASS!23)",
         lambda pw: (has_digit(pw) and has_upper(pw) and not has_lower(pw) and
-                    has_special(pw)) ),
+                    has_special(pw))),
     ('lowerspecialonly', "Lowercase with Special Chars Only (ex: pass!@#)",
         lambda pw: (not has_digit(pw) and not has_upper(pw) and has_lower(pw) and
-                    has_special(pw)) ),
+                    has_special(pw))),
     ('upperspecialonly', "Uppercase with Special Chars Only (ex: PASS!@#)",
         lambda pw: (not has_digit(pw) and has_upper(pw) and not has_lower(pw) and
-                    has_special(pw)) ),
+                    has_special(pw))),
     ('uprlwralphanospecial', "Alphanumeric no Special Chars (ex: Pass123)",
         lambda pw: (has_lower(pw) and has_digit(pw) and has_upper(pw) and
-                    not has_special(pw)) ),
+                    not has_special(pw))),
     ('complexlwralphanodigit', "LowerAlpha + SpecialChars no digits (ex: Pass!23)",
         lambda pw: (has_lower(pw) and has_special(pw) and
-                    not has_digit(pw) and not has_upper(pw)) ),
+                    not has_digit(pw) and not has_upper(pw))),
     ('complexuprlwralphanodigit', "UpperLowerAlpha + SpecialChars no digits (ex: PASS!@#)",
         lambda pw: (has_upper(pw) and has_lower(pw) and has_special(pw) and
-                    not has_digit(pw)) ),
+                    not has_digit(pw))),
     ('complex', "Alphanumeric with Special Chars (ex: Pass!@#)",
         lambda pw: (has_digit(pw) and has_upper(pw) and has_lower(pw) and
-                    has_special(pw)) ),
+                    has_special(pw))),
     ('other', "Something not matching", lambda pw: True),
 ]
 
@@ -96,8 +97,8 @@ def password_class_stat(passwords):
                 break
         yield (pwlenstat, character_class, password)
 
-##-------------------------------------------------------------------------
 
+##-------------------------------------------------------------------------
 def lookup_hash(hash_data=None):
     """
     Looks up a hash in the database
@@ -135,160 +136,24 @@ def lookup_hash(hash_data=None):
 
     return None
 
-##-------------------------------------------------------------------------
-
-def process_medusa(line):
-    """
-    Process a medusa line and return a dictionary:
-
-    { 'ip'  : ip address
-      'port': port info - can be port # or module name
-      'user': username,
-      'pass': password,
-      'hash': ntlm hash if smbnt hash used
-      'msg' : status message
-    }
-    """
-    retval = {}
-
-    try:
-        data = line.split()
-    except Exception, e:
-        log("Error processing medusa line: %s -- %s" % (e, line), logging.ERROR)
-        return retval
-
-    if " ".join(data[:2]) == "ACCOUNT FOUND:":
-        retval['port'] = data[2]
-        retval['ip'] = data[4]
-        retval['user'] = data[6]
-
-        if retval['user'] == "Password:":
-            # no username provided, adjust the field modulator cap'n
-            retval['user'] = None
-            retval['pass'] = data[7]
-            retavl['msg'] = " ".join(data[9:])
-        elif data[7] == "Password:" and data[8][0] == '[':
-            # so this will break if the password starts with "[" however there's no
-            # better way I can think of to detect a blank password w/o regex. Other
-            # ideas are welcome! data[8] will be the response message which could be
-            # [SUCCESS] or [ERROR ...] or something else..
-            retval['pass'] = ""
-            retval['msg'] = " ".join(data[8:])
-        else:
-            # Standard password and message location
-            retval['pass'] = data[8]
-            retval['msg'] = " ".join(data[9:])
-
-        if len(retval['pass']) == 68 and retval['pass'][65:68] == ":::":
-            # we have an ntlm hash cap'n
-            retval['hash'] = ":".join(retval['pass'].split(':')[:2])
-            retval['pass'] = lookup_hash(retval['hash'])
-            retval['type'] = 'smb'
-        else:
-            retval['type'] = 'cleartext'
-
-        if retval['msg'].startswith("[SUCCESS"):
-            retval['error'] = False
-        else:
-            retval['error'] = True
-
-    return retval
 
 ##-------------------------------------------------------------------------
-
-def process_hydra(line):
-    """
-    Process a hydra line and return a dictionary:
-
-    { 'ip'  : ip address
-      'port': port info - can be port # or module name
-      'user': username,
-      'pass': password,
-      'hash': ntlm hash if smbnt hash used
-      'msg' : status message
-    }
-    """
-    # line: [22][ssh] host: 1.1.1.1   login: username   password: pw1234
-    retval = {}
-    try:
-        data = line.split()
-    except Exception, e:
-        log("Error processing hydra line: %s -- %s" % (e, line), logging.ERROR)
-        return retval
-
-    if data[1] == "host:":
-        # these fields are always there.. sometimes password is not
-        retval['port'] = data[0][1:data[0].find("]")]
-        retval['ip'] = data[2]
-        retval['user'] = data[4]
-
-        if "password:" not in data:
-            # no password provided, adjust the field modulator cap'n
-            retval['pass'] = None
-            if len(data) == 6:
-                retval['msg'] = data[5]
-        else:
-            retval['pass'] = data[6]
-            if len(data) == 8:
-                retval['msg'] = data[7]
-
-        # handle specific SMB errors:
-        #if "[smb]" in data and "Error:" in data:
-
-        if len(retval['pass']) == 68 and retval['pass'][65:68] == ":::":
-            # we have an ntlm hash cap'n
-            retval['hash'] = ":".join(retval['pass'].split(':')[:2])
-            retval['pass'] = lookup_hash(retval['hash'])
-            retval['type'] = 'smb'
-        else:
-            retval['type'] = 'cleartext'
-            retval['hash'] = None
-
-    retval['error'] = False
-    return retval
-
-##-------------------------------------------------------------------------
-
-def process_msfcsv(line):
-    """
-    Process a metasploit creds output csv file and return a dictionary:
-    { 'ip'  : ip address
-      'port': port info - can be port # or module name
-      'user': username,
-      'pass': password,
-      'hash': ntlm hash if smb_hash found
-      'msg' : status message
-    }
-    """
-    # host,port,user,pass,type,active?
-    retval = {}
-    hash_types = ['smb', 'rakp_hmac_sha1_hash', 'smb_challenge']
-    import csv
-    for data in csv.reader([line]):
-        retval['ip'] = data[0]
-        retval['port'] = data[1]
-        retval['user'] = data[2]
-        retval['pass'] = data[3]
-        retval['type'] = data[4]
-        retval['msg'] = 'from metasploit'
-        # isactive = data[5] # unused
-
-    #if len(retval['pass']) == 65 and retval['pass'].find(':') == 32:
-    if retval['type'] in hash_types:
-        # we have a hash cap'n
-        retval['hash'] = retval['pass']
-        retval['pass'] = lookup_hash(retval['hash'])
-    else:
-        retval['hash'] = None
-
-    retval['error'] = False
-    return retval
-
-##-------------------------------------------------------------------------
-
 def get_hashtype(pwhash):
     """
-    Tries to figure out the type of hash
+    Tries to figure out the type of hash based on UNIX crypt
+
+    >>> get_hashtype('$1$this_is_md5')
+    'MD5'
+    >>> get_hashtype('$2$this_is_blowfish')
+    'Blowfish'
+    >>> get_hashtype('$2a$this_is_blowfish')
+    'Blowfish'
+    >>> get_hashtype('$5$this_is_sha-256')
+    'SHA-256'
+    >>> get_hashtype('$6$this_is_sha-512')
+    'SHA-512'
+    >>> get_hashtype('anything_else_is_DES')
+    'DES'
     """
     # man 3 crypt
     if pwhash[0:3] == "$1$":
@@ -302,8 +167,8 @@ def get_hashtype(pwhash):
     else:
         return "DES"
 
-##-------------------------------------------------------------------------
 
+##-------------------------------------------------------------------------
 def crack_nt_hashes(hashes=[]):
     """
     Take a list of lm/nt hashes and run them through /opt/SPA/tools/jtr
@@ -314,25 +179,31 @@ def crack_nt_hashes(hashes=[]):
 
     return
 
-##-------------------------------------------------------------------------
 
-def insert_or_update_acct(svc_id=None, accounts={}):
+##-------------------------------------------------------------------------
+def insert_or_update_acct(svc_id=None, accounts=None):
     """
     Insert or updates account table in the database
+
+    :param svc_id: db.t_services.id
+    :param accounts: {'username': {'field': 'data' ... }, ... }
+    :return: Message status
     """
 
     if svc_id is None:
         return 'No Service ID record sent'
 
     db = current.globalenv['db']
-    cache = current.globalenv['cache']
 
-    resp_text = "No accounts sent to update"
+    if not isinstance(accounts, dict):
+        return 'No accounts sent to update'
+
+    response_content = []
     accounts_added = []
     accounts_updated = []
     if db(db.t_services.id == svc_id).count() > 0:
         # we have a valid service, lets add/modify accounts!
-        for username,acct_values in accounts.iteritems():
+        for username, acct_values in accounts.iteritems():
             # run through each account, if it already exists then check
             # to see if f_hash1 has value then don't overwrite it,
             # otherwise update the other fields
@@ -342,7 +213,9 @@ def insert_or_update_acct(svc_id=None, accounts={}):
                 # no password has been set, lets search for the hash and copy the
                 # cleartext over if it exists
                 if acct_values.get('f_hash1_type') == "LM":
-                    acct_values['f_password'] = lookup_hash("%s:%s" % (acct_values.get('f_hash1'), acct_values.get('f_hash2')))
+                    acct_values['f_password'] = lookup_hash("%s:%s" % (
+                        acct_values.get('f_hash1'), acct_values.get('f_hash2')
+                    ))
                 else:
                     acct_values['f_password'] = lookup_hash(acct_values.get('f_hash1'))
 
@@ -350,15 +223,18 @@ def insert_or_update_acct(svc_id=None, accounts={}):
             acct_rec = db(q).select()
             if len(acct_rec) == 0:
                 # add the record
-                db.t_accounts.insert(**acct_values)
-                accounts_added.append(username)
+                response = db.t_accounts.validate_and_insert(**acct_values)
+                if not response.errors:
+                    accounts_added.append(username)
+                else:
+                    response_content.append("Error adding %s: %s" % (username, response.errors))
             else:
                 # for existing records
                 for rec in acct_rec:
                     if rec.f_hash1 is None or rec.f_hash1 == '':
                         # f_hash1 doesn't exist so update the record
                         db.t_accounts[rec.id] = acct_values
-                        resp_text += "Updated %s<br/>" % (username)
+                        accounts_updated.append(username)
                     elif rec.f_hash1 == acct_values['f_hash1']:
                         # f_hash1 exists and is the same so update everything else
                         acct_values.pop('f_hash1')
@@ -373,24 +249,29 @@ def insert_or_update_acct(svc_id=None, accounts={}):
                     else:
                         log("%s has a different hash1 value. Nothing done. (orig: %s) (pwfile: %s)" % (username, rec.f_hash1, acct_values['f_hash1']), logging.ERROR)
                 db.commit()
-            resp_text = "Accounts added: %s\nAccounts Updated: %s\n" % (" ".join(accounts_added), " ".join(accounts_updated))
+            response_content.append("Accounts added: %s" % " ".join(accounts_added))
+            response_content.append("Accounts Updated: %s" % " ".join(accounts_updated))
     else:
-        resp_text = 'Invalid Service ID sent'
+        response_content.append('Invalid Service ID sent')
 
-    log(resp_text, logging.DEBUG)
-    return resp_text
+    response_content = "\n".join(response_content)
+    log(response_content, logging.DEBUG)
+    return response_content
+
 
 ##-------------------------------------------------------------------------
-
 def process_cracked_file(pw_file=None, file_type=None, message=""):
     """
     Process a file of cracked passwords and update the cleartext with
     the new results.
+
+    :param pw_file: Filename to process
+    :param file_type: String of a file type
+    :param message: Message string to add to f_message field
     """
     import fileinput
 
     db = current.globalenv['db']
-    cache = current.globalenv['cache']
 
     if pw_file is not None:
         try:
@@ -398,6 +279,9 @@ def process_cracked_file(pw_file=None, file_type=None, message=""):
         except IOError, e:
             log("Error opening %s: %s" % (pw_file, e), logging.ERROR)
             return "Error opening %s: %s" % (pw_file, e)
+    else:
+        log("No password file sent", logging.ERROR)
+        return "Error: No password file sent"
 
     accounts = {}
     if file_type == "JTR PWDUMP":
@@ -440,7 +324,7 @@ def process_cracked_file(pw_file=None, file_type=None, message=""):
         return "Unknown file type sent"
 
     updated = 0
-    for k,v in accounts.iteritems():
+    for k, v in accounts.iteritems():
         query = (db.t_accounts.f_hash1 == k)|(db.t_accounts.f_hash2 == k)
         for row in db(query).select():
             row.update_record(f_password=v, f_compromised=True, f_message=message)
@@ -448,17 +332,22 @@ def process_cracked_file(pw_file=None, file_type=None, message=""):
             db.commit()
     return "%s accounts updated with passwords" % updated
 
-##-------------------------------------------------------------------------
 
+##-------------------------------------------------------------------------
 def process_password_file(pw_file=None, pw_data=None, file_type=None, source=None):
     """
     Process a password file and return a dictionary fit for t_accounts
 
-    file_type values:
-
-      ('PWDUMP', 'MSCa$h Dump', 'UNIX Passwd', 'UNIX Shadow', 'Medusa', 'Hydra', 'Username:Password', 'AccountDB')
+    :param pw_file: Filename to process
+    :param pw_data: List of password lines instead of processing a file
+    :param file_type: 'PWDUMP', 'MSCa$h Dump', 'UNIX Passwd', 'UNIX Shadow', 'Medusa',
+                      'Hydra', 'Username:Password', 'Usernames', 'AccountDB', 'Metasploit Creds CSV'
+    :param source: Source to add to f_source field
     """
     import fileinput
+    from .medusa import process_medusa
+    from .hydra import process_hydra
+    from .metasploit import process_msfcsv
 
     accounts = {}
     if pw_file is not None:
@@ -479,12 +368,13 @@ def process_password_file(pw_file=None, pw_data=None, file_type=None, source=Non
             line = line.replace('\n', '')   # remove any and all carriage returns!
             try:
                 (username, uid, lm, nt) = line.split(':')[0:4]
-                if uid == "500": level = "ADMIN"
-                else: level = "USER"
+                if uid == "500":
+                    level = "ADMIN"
+                else:
+                    level = "USER"
 
-                accounts[username] = { 'f_uid': uid, 'f_level': level, 'f_source': source,
-                                       'f_hash1': lm, 'f_hash1_type': 'LM',
-                                       'f_hash2': nt, 'f_hash2_type': 'NTLM' }
+                accounts[username] = dict(f_uid=uid, f_level=level, f_source=source, f_hash1=lm, f_hash1_type='LM',
+                                          f_hash2=nt, f_hash2_type='NTLM')
             except Exception, e:
                 log("Error with line (%s): %s" % (line, e), logging.ERROR)
 
@@ -497,14 +387,14 @@ def process_password_file(pw_file=None, pw_data=None, file_type=None, source=Non
             line = line.replace('\n', '')   # remove any and all carriage returns!
             try:
                 (username, pwhash, domain) = line.split(':')
-                accounts[username] = { 'f_hash1': pwhash, 'f_hash1_type': 'MSCASH', 'f_domain': domain, 'f_source': source}
+                accounts[username] = dict(f_hash1=pwhash, f_hash1_type='MSCASH', f_domain=domain, f_source=source)
             except Exception, e:
                 log("Error with line (%s): %s" % (line, e), logging.ERROR)
 
     elif file_type == "UNIX Passwd":
         log("Processing UNIX Passwd file")
         if source is None:
-            source == "UNIX Passwd"
+            source = "UNIX Passwd"
         for line in pw_data:
             if line == "\n": continue
             line = line.replace('\n', '')   # remove any and all carriage returns!
@@ -515,12 +405,10 @@ def process_password_file(pw_file=None, pw_data=None, file_type=None, source=Non
 
                 if len(pwhash) > 4:
                     hashtype = get_hashtype(pwhash)
-                    accounts[username] = { 'f_uid': uid, 'f_gid': gid, 'f_level': level,
-                                           'f_hash1': pwhash, 'f_hash1_type': hashtype,
-                                           'f_fullname': fullname, 'f_source': source }
+                    accounts[username] = dict(f_uid=uid, f_gid=gid, f_level=level, f_hash1=pwhash,
+                                              f_hash1_type=hashtype, f_fullname=fullname, f_source=source)
                 else:
-                    accounts[username] = { 'f_uid': uid, 'f_gid': gid, 'f_level': level,
-                                           'f_fullname': fullname, 'f_source': source }
+                    accounts[username] = dict(f_uid=uid, f_gid=gid, f_level=level, f_fullname=fullname, f_source=source)
 
                 log("Account -> %s" % (accounts[username]), logging.DEBUG)
             except Exception, e:
@@ -538,9 +426,9 @@ def process_password_file(pw_file=None, pw_data=None, file_type=None, source=Non
 
                 if len(pwhash) > 4:
                     hashtype = get_hashtype(pwhash)
-                    accounts[username] = { 'f_hash1': pwhash, 'f_hash1_type': hashtype, 'f_source': source }
+                    accounts[username] = dict(f_hash1=pwhash, f_hash1_type=hashtype, f_source=source)
                 else:
-                    accounts[username] = { 'f_source': source }
+                    accounts[username] = dict(f_source=source)
 
             except Exception, e:
                 log("Error with line (%s): %s" % (line, e), logging.ERROR)
@@ -554,16 +442,23 @@ def process_password_file(pw_file=None, pw_data=None, file_type=None, source=Non
                 (username, password) = line.split(':')[0:2]
                 if source is None:
                     source = "Username:Password"
-                accounts[username] = { 'f_password': password.strip("\n"), 'f_source': source, 'f_compromised': True  }
+                accounts[username] = dict(f_password=password.strip("\n"), f_source=source, f_compromised=True)
             except Exception, e:
                 log("Error with line (%s): %s" % (line, e), logging.ERROR)
 
     elif file_type == "Usernames":
-        log("Processing Usernames only file")
+        log("Processing Username only output file")
+        if source is None:
+            source = "Username list"
         for line in pw_data:
+            if line[0] == "#": continue
             if line == "\n": continue
             line = line.replace('\n', '')   # remove any and all carriage returns!
-            accounts[line.strip("\n")] = { 'f_compromised': False }
+            try:
+                username = line.split(" ")[0]
+                accounts[username] = dict(f_source=source)
+            except:
+                continue
 
     elif file_type == "Medusa":
         log("Processing Medusa output file")
@@ -578,12 +473,12 @@ def process_password_file(pw_file=None, pw_data=None, file_type=None, source=Non
                 if pw_data.get('hash', None):
                     # we have an ntlm hash, split that instead of updating the password
                     (lm, nt) = pw_data['hash'].split(':')[0:2]
-                    accounts[pw_data['user']] = { 'f_hash1': lm, 'f_hash1_type': 'LM',
-                                                   'f_hash2': nt, 'f_hash2_type': 'NT', 'f_password': pw_data['pass'],
-                                                   'f_description': pw_data['msg'], 'f_source': source, 'f_compromised': True }
+                    accounts[pw_data['user']] = dict(f_hash1=lm, f_hash1_type='LM', f_hash2=nt, f_hash2_type='NT',
+                                                     f_password=pw_data['pass'], f_description=pw_data['msg'],
+                                                     f_source=source, f_compromised=True)
                 else:
-                    accounts[pw_data['user']] = { 'f_password': pw_data['pass'],
-                                                   'f_message': pw_data['msg'], 'f_source': source, 'f_compromised': True }
+                    accounts[pw_data['user']] = dict(f_password=pw_data['pass'], f_message=pw_data['msg'],
+                                                     f_source=source, f_compromised=True)
             except Exception, e:
                 log("Error with line (%s): %s" % (line, e), logging.ERROR)
 
@@ -599,12 +494,11 @@ def process_password_file(pw_file=None, pw_data=None, file_type=None, source=Non
                 if pw_data.has_key('hash'):
                     # we have an ntlm hash, split that instead of updating the password
                     (lm, nt) = pw_data['hash'].split(':')[0:2]
-                    accounts[pw_data['user']] = { 'f_hash1': lm, 'f_hash1_type': 'LM',
-                                                   'f_hash2': nt, 'f_hash2_type': 'NT',
-                                                   'f_description': pw_data['msg'], 'f_source': source, 'f_compromised': True }
+                    accounts[pw_data['user']] = dict(f_hash1=lm, f_hash1_type='LM', f_hash2=nt, f_hash2_type='NT',
+                                                     f_description=pw_data['msg'], f_source=source, f_compromised=True)
                 else:
-                    accounts[pw_data['user']] = { 'f_password': pw_data['pass'],
-                                                   'f_message': pw_data['msg'], 'f_source': source, 'f_compromised': True }
+                    accounts[pw_data['user']] = dict(f_password=pw_data['pass'], f_message=pw_data['msg'],
+                                                     f_source=source, f_compromised=True)
             except Exception, e:
                 log("Error with line (%s): %s" % (line, e), logging.ERROR)
 
@@ -620,35 +514,18 @@ def process_password_file(pw_file=None, pw_data=None, file_type=None, source=Non
                 if pw_data['type'] == 'smb':
                     # we have an ntlm hash, split that instead of updating the password
                     (lm, nt) = pw_data['hash'].split(':')[0:2]
-                    accounts[pw_data['user']] = {
-                        'f_hash1': lm, 'f_hash1_type': 'LM', 'f_hash2': nt, 'f_hash2_type': 'NT',
-                        'f_message': pw_data['msg'], 'f_source': source, 'f_compromised': True
-                    }
+                    accounts[pw_data['user']] = dict(f_hash1=lm, f_hash1_type='LM', f_hash2=nt, f_hash2_type='NT',
+                                                     f_message=pw_data['msg'], f_source=source, f_compromised=True)
                 else:
                     if pw_data['pass']:
                         compromised = True
                     else:
                         compromised = False
-                    accounts[pw_data['user']] = {
-                        'f_password': pw_data['pass'], 'f_hash1': pw_data['hash'], 'f_hash1_type': pw_data['type'],
-                        'f_message': pw_data['msg'], 'f_source': source, 'f_compromised': compromised,
-                    }
+                    accounts[pw_data['user']] = dict(f_password=pw_data['pass'], f_hash1=pw_data['hash'],
+                                                     f_hash1_type=pw_data['type'], f_message=pw_data['msg'],
+                                                     f_source=source, f_compromised=compromised)
             except Exception, e:
                 log("Error with line (%s): %s" % (line, e), logging.ERROR)
-
-    elif file_type == "Username Only":
-        log("Processing Username only output file")
-        if source is None:
-            source = "Username list"
-        for line in pw_data:
-            if line[0] == "#": continue
-            if line == "\n": continue
-            line = line.replace('\n', '')   # remove any and all carriage returns!
-            try:
-                username = line.split(" ")[0]
-                accounts[username] = { 'f_source': source }
-            except:
-                continue
 
     elif file_type == "AccountDB":
         log("Processing AccountDB output file")
@@ -664,23 +541,15 @@ def process_password_file(pw_file=None, pw_data=None, file_type=None, source=Non
                 log("Line length != 10, skipping", logging.ERROR)
                 continue
             if status == "DISABLED":
-                status=False
+                status = False
             else:
-                status=True
+                status = True
             if Password is not "":
-                compromised=True
+                compromised = True
             else:
-                compromised=False
-            accounts[User] = {
-                'f_password': Password,
-                'f_uid': uid,
-                'f_gid': gid,
-                'f_level': level,
-                'f_compromised': compromised,
-                'f_active': status,
-                'f_fullname': fullname,
-                'f_description': Comment,
-            }
+                compromised = False
+            accounts[User] = dict(f_password=Password, f_uid=uid, f_gid=gid, f_level=level, f_compromised=compromised,
+                                  f_active=status, f_fullname=fullname, f_description=Comment)
 
     else:
         log("Unknown file type provided: %s" % file_type, logging.ERROR)
@@ -688,8 +557,8 @@ def process_password_file(pw_file=None, pw_data=None, file_type=None, source=Non
     log(accounts, logging.DEBUG)
     return accounts
 
-##-------------------------------------------------------------------------
 
+##-------------------------------------------------------------------------
 def process_mass_password(pw_file=None, pw_type=None, message=None, proto=None, portnum=None, add_hosts=False, user_id=1):
     """
     Process a medusa/hydra mass password run
@@ -728,8 +597,7 @@ def process_mass_password(pw_file=None, pw_type=None, message=None, proto=None, 
             elif pw_type == "Metasploit Creds CSV":
                 mass_pw_data = process_msfcsv(line)
             else:
-                mass_pw_data = {}
-                mass_pw_data['error'] = 'Invalid password file type provided'
+                mass_pw_data = dict(error='Invalid password file type provided')
         except Exception, e:
             log("Error with line (%s): %s" % (line, e), logging.ERROR)
             continue
@@ -741,15 +609,10 @@ def process_mass_password(pw_file=None, pw_type=None, message=None, proto=None, 
             if mass_pw_data.get('type') == 'smb':
                 # we have an ntlm hash, split that instead of updating the password
                 (lm, nt) = mass_pw_data['hash'].split(':')[0:2]
-                ip_accts.append({
-                    'f_username': mass_pw_data.get('user'),
-                    'f_hash1': lm, 'f_hash1_type': 'LM',
-                    'f_hash2': nt, 'f_hash2_type': 'NT',
-                    'f_number': portnum, 'f_proto': proto,
-                    'f_password': mass_pw_data.get('pass'),
-                    'f_message': mass_pw_data.get('msg'),
-                    'f_source': message, 'f_compromised': True
-                })
+                ip_accts.append(dict(f_username=mass_pw_data.get('user'), f_hash1=lm, f_hash1_type='LM', f_hash2=nt,
+                                     f_hash2_type='NT', f_number=portnum, f_proto=proto,
+                                     f_password=mass_pw_data.get('pass'), f_message=mass_pw_data.get('msg'),
+                                     f_source=message, f_compromised=True))
                 ip_dict[ip] = ip_accts
             elif mass_pw_data.get('hash'):
                 # we have a hash, not a password
@@ -757,25 +620,16 @@ def process_mass_password(pw_file=None, pw_type=None, message=None, proto=None, 
                     compromised = True
                 else:
                     compromised = False
-                ip_accts.append({
-                    'f_number': portnum, 'f_proto': proto,
-                    'f_username': mass_pw_data.get('user'),
-                    'f_password': mass_pw_data.get('pass'),
-                    'f_hash1': mass_pw_data.get('hash'),
-                    'f_hash1_type': mass_pw_data.get('type'),
-                    'f_message': mass_pw_data.get('msg'),
-                    'f_source': message, 'f_compromised': compromised,
-                })
+                ip_accts.append(dict(f_number=portnum, f_proto=proto, f_username=mass_pw_data.get('user'),
+                                     f_password=mass_pw_data.get('pass'), f_hash1=mass_pw_data.get('hash'),
+                                     f_hash1_type=mass_pw_data.get('type'), f_message=mass_pw_data.get('msg'),
+                                     f_source=message, f_compromised=compromised))
                 ip_dict[ip] = ip_accts
             else:
                 # otherwise append the relevant information
-                ip_accts.append({
-                    'f_number': portnum, 'f_proto': proto,
-                    'f_username': mass_pw_data.get('user'),
-                    'f_password': mass_pw_data.get('pass'),
-                    'f_message': mass_pw_data.get('msg'),
-                    'f_source': message, 'f_compromised': True
-                })
+                ip_accts.append(dict(f_number=portnum, f_proto=proto, f_username=mass_pw_data.get('user'),
+                                     f_password=mass_pw_data.get('pass'), f_message=mass_pw_data.get('msg'),
+                                     f_source=message, f_compromised=True))
                 ip_dict[ip] = ip_accts
 
     # run through the ip_accts now to add/update them to the database
@@ -784,7 +638,7 @@ def process_mass_password(pw_file=None, pw_type=None, message=None, proto=None, 
         for ip_acct in v:
             # build a query to find the service for this host/port combo
             query = (db.t_hosts.f_ipaddr == k) & (db.t_services.f_hosts_id == db.t_hosts.id)
-            query &= (db.t_services.f_proto==ip_acct['f_proto']) & (db.t_services.f_number==ip_acct['f_number'])
+            query &= (db.t_services.f_proto == ip_acct['f_proto']) & (db.t_services.f_number == ip_acct['f_number'])
             svc = db(query).select(db.t_services.id, cache=(cache.ram, 60)).first()
             if svc is None:
                 # no service found, get the host record based on the IP
@@ -792,11 +646,7 @@ def process_mass_password(pw_file=None, pw_type=None, message=None, proto=None, 
                 if host_rec is None and add_hosts:
                     # add host to the database, unfortunately all we know is the IP address so it's pretty bare.
                     # assign it to the current user and asset group of "new_hosts_medusa"
-                    fields = {
-                        'f_ipaddr': k,
-                        'f_engineer': user_id,
-                        'f_asset_group': 'new_hosts_medusa',
-                    }
+                    fields = dict(f_ipaddr=k, f_engineer=user_id, f_asset_group='new_hosts_medusa')
                     host_rec = db.t_hosts.insert(**fields)
                     db.commit()
                     log("Added new host from Medusa output: %s" % k)
@@ -807,11 +657,7 @@ def process_mass_password(pw_file=None, pw_type=None, message=None, proto=None, 
                     continue
 
                 # add the new service to the host_rec
-                fields = {
-                    'f_hosts_id': host_rec.id,
-                    'f_proto': ip_acct['f_proto'],
-                    'f_number': ip_acct['f_number'],
-                }
+                fields = dict(f_hosts_id=host_rec.id, f_proto=ip_acct['f_proto'], f_number=ip_acct['f_number'])
                 svc_id = db.t_services.insert(**fields)
                 db.commit()
                 log("Added new service (%s/%s) to host %s" % (ip_acct['f_proto'], ip_acct['f_number'], k))
@@ -819,14 +665,14 @@ def process_mass_password(pw_file=None, pw_type=None, message=None, proto=None, 
                 svc_id = svc.id
 
             # lookup the password from the lm/nt hash fields (if they exist)
-            if ip_acct.has_key('f_hash1'):
+            if 'f_hash1' in ip_acct:
                 ip_acct['f_password'] = lookup_hash("%s:%s" % (ip_acct.get('f_hash1'), ip_acct.get('f_hash2')))
 
             # remove f_proto and f_number since they're not in t_accounts, add service id
             ip_acct.pop('f_proto')
             ip_acct.pop('f_number')
             ip_acct.update({'f_services_id': svc_id})
-            query = (db.t_accounts.f_services_id == svc_id)&(db.t_accounts.f_username == ip_acct['f_username'])
+            query = (db.t_accounts.f_services_id == svc_id) & (db.t_accounts.f_username == ip_acct['f_username'])
             row = db(query).select().first()
             if row:
                 row.update_record(**ip_acct)
@@ -838,6 +684,7 @@ def process_mass_password(pw_file=None, pw_type=None, message=None, proto=None, 
     return "Completed: %s/Added, %s/Updated, %s/New Hosts" % (added, updated, new_hosts)
 
 
+##-------------------------------------------------------------------------
 def _doctest():
     import doctest
     doctest.testmod()

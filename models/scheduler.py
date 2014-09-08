@@ -273,7 +273,7 @@ def accounts_import_file(filename=None, service=['info', '0'], f_type=None, f_so
     """
 
     print("Processing password file: %s" % (filename))
-    from skaldship.passwords import process_password_file, insert_or_update_acct
+    from skaldship.passwords.utils import process_password_file, insert_or_update_acct
 
     account_data = process_password_file(pw_file=filename, file_type=f_type, source=f_source)
     resp_text = insert_or_update_acct(service, account_data)

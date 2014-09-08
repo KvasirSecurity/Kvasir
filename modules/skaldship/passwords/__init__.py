@@ -4,7 +4,7 @@ __version__ = "1.0"
 
 """
 ##--------------------------------------#
-## Kvasir Skaldship Module Library
+## Kvasir Skaldship Password Library
 ##
 ## (c) 2010-2014 Cisco Systems, Inc.
 ##
@@ -12,4 +12,4 @@ __version__ = "1.0"
 ##--------------------------------------#
 """
 
-__all__ = ["valkyries", "passwords"]
+__all__ = ["utils", "hydra", "medusa", "metasploit"]

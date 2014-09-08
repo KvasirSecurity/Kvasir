@@ -47,7 +47,7 @@ def process_pwdump_loot(loot_list=[], msf=None):
     Takes an array of loot records in loot_list, downloads the pwdump file and
     adds the users.
     """
-    from skaldship.passwords import process_password_file, insert_or_update_acct
+    from skaldship.passwords.utils import process_password_file, insert_or_update_acct
 
     db = current.globalenv['db']
     cache = current.globalenv['cache']
@@ -133,7 +133,7 @@ def process_loot_files(loot_list=[]):
     Returns:
         An array of [filename, result text]
     """
-    from skaldship.passwords import process_password_file, insert_or_update_acct
+    from skaldship.passwords.utils import process_password_file, insert_or_update_acct
     import os
     db = current.globalenv['db']
 
@@ -196,7 +196,7 @@ def process_report_xml(
     TODO: Auto-exploits successful exploit attempts if matching CVE/VulnDB entry found
     """
     from gluon.validators import IS_IPADDRESS
-    from skaldship.passwords import lookup_hash
+    from skaldship.passwords.utils import lookup_hash
     from skaldship.hosts import get_host_record, get_or_create_record
     from skaldship.services import Services
     services = Services()
