@@ -20,26 +20,6 @@ import logging
 from skaldship.hosts import get_host_record, do_host_status
 
 
-
-##-------------------------------------------------------------------------
-
-def msf_get_config(session={}):
-    """
-    Returns a dict of metasploit configuration settings based on yaml or session
-    """
-
-    msf_config = current.globalenv['settings']['kvasir_config'].get('metasploit') or {}
-    config = {}
-    config['key'] = session.get('msf_key', msf_config.get('api_key'))
-    config['url'] = session.get('msf_url', msf_config.get('url', 'https://localhost:3790'))
-
-    config['ws_num'] = session.get('msf_workspace_num', 1)
-    config['workspace'] = session.get('msf_workspace', 'default')
-    config['user'] = session.get('msf_user', None)
-
-    return config
-
-
 ##-------------------------------------------------------------------------
 
 def process_pwdump_loot(loot_list=[], msf=None):
@@ -204,7 +184,7 @@ def process_report_xml(
     services = Services()
 
     db = current.globalenv['db']
-    cache = current.globalenv['cache']
+    #cache = current.globalenv['cache']
 
     try:
         from lxml import etree

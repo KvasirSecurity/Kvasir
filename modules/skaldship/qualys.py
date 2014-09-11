@@ -34,7 +34,7 @@ def process_xml(
     # Upload and process Qualys XML Scan file
     import os, time, re, HTMLParser
     from StringIO import StringIO
-    from MetasploitAPI import MetasploitAPI
+    from MetasploitProAPI import MetasploitProAPI
     from skaldship.hosts import html_to_markmin, get_host_record, do_host_status
     from skaldship.cpe import lookup_cpe
 
@@ -46,7 +46,7 @@ def process_xml(
     RE_IPV4 = re.compile('^(?:[0-9]{1,3}\.){3}[0-9]{1,3}$')
 
     if msf_workspace:
-        msf = MetasploitAPI(host=user_id.f_msf_pro_url, apikey=user_id.f_msf_pro_key)
+        msf = MetasploitProAPI(host=user_id.f_msf_pro_url, apikey=user_id.f_msf_pro_key)
         if msf.login():
             logger.info(" [-] Authenticated to Metasploit PRO")
         else:

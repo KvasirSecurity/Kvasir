@@ -1,30 +1,32 @@
 #!/usr/bin/env python
 #coding:utf-8
-# Author:  Kurt Grutzmacher -- <kgrutzma@cisco.com>
-# Purpose: Metasploit integraton library
-# Created: 03/25/10
-# Modified: 02/20/12
+"""
+Metasploit integration library utilizing msgpack
 
-import os, sys, logging, string, httplib
-from pprint import pprint
+Author:  Kurt Grutzmacher -- <grutz@jingojango.net>
+Created: 03/25/10
+Modified: 09/09/14
+"""
+
+import os
+import sys
+import logging
+import httplib
 try:
     import msgpack
 except ImportError, e:
     raise Exception("Install 'msgpack' library: 'pip install msgpack-python'")
 logger = logging.getLogger("web2py.app.kvasir")
 
-"""
-Metasploit integration library utilizing msgpack
-"""
 
 ########################################################################
-class MSFAPIError(Exception):
+class MSFProAPIError(Exception):
     pass
 
 ########################################################################
-class MetasploitAPI:
+class MetasploitProAPI:
     """
-    Connects to the Metasploit Framework library via msgpack
+    Connects to the Metasploit Pro library via msgpack
     """
 
     def __init__(self, host="localhost:3790", ssl=True, apikey=None, username=None, password=None):
@@ -68,18 +70,18 @@ class MetasploitAPI:
         try:
             httpclient.request("POST", self.apiurl, message, headers)
         except Exception, e:
-            raise MSFAPIError("HTTP Client error:", e)
+            raise MSFProAPIError("HTTP Client error:", e)
 
         response = httpclient.getresponse()
         if response.status == 200:
             try:
                 res = msgpack.unpackb(response.read())
             except Exception, e:
-                raise MSFAPIError("Unable to process response:", e)
+                raise MSFProAPIError("Unable to process response:", e)
             if res.get('error') is True:
-                raise MSFAPIError("API Error:", res['error_string'])
+                raise MSFProAPIError("API Error:", res['error_string'])
         else:
-            raise MSFAPIError("HTTP Error from MSF:", response.status)
+            raise MSFProAPIError("HTTP Error from MSF:", response.status)
         return res
 
     #-----------------------------------------------------------------#
@@ -601,10 +603,10 @@ def login(options):
     Login!
     """
 
-    msf = MetasploitAPI( options.username, options.password, options.server, options.ssl )
+    msf = MetasploitProAPI( options.username, options.password, options.server, options.ssl )
 
     print "-" * 75
-    print "Metasploit Framework XMLRPC v%s" % (msf.libraryversion)
+    print "Metasploit Pro API v%s" % (msf.libraryversion)
 
     if options.ssl:
         msf.ssl = True
@@ -615,7 +617,7 @@ def login(options):
         print "[main] Unable to continue, not connected!"
         sys.exit(1)
 
-    print "Connected to Metasploit version %s" % (msf.version())
+    print "Connected to Metasploit Pro version %s" % (msf.version())
     print "-" * 75
 
     return msf
@@ -655,7 +657,7 @@ if __name__=='__main__':
     root_log.addHandler(handler)
     log = logging.getLogger(Progname)
 
-    msf = MetasploitAPI(host=options.server, ssl=options.ssl, apikey=options.apikey, username=options.username, password=options.password)
+    msf = MetasploitProAPI(host=options.server, ssl=options.ssl, apikey=options.apikey, username=options.username, password=options.password)
     msf.login()
 
     if options.interactive or options.bpython:
@@ -663,7 +665,7 @@ if __name__=='__main__':
         if options.bpython:
             try:
                 import bpython
-                bpython.embed(locals_={'msf':msf}, banner="\nWelcome to MetasploitAPI, use the variable 'msf'\n")
+                bpython.embed(locals_={'msf':msf}, banner="\nWelcome to MetasploitProAPI, use the variable 'msf'\n")
             except:
                 log.warning('import bpython error; trying ipython...')
         else:

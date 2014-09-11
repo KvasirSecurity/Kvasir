@@ -680,8 +680,8 @@ def process_scanfile(
     if msf_settings.get('workspace'):
         try:
             # check to see if we have a Metasploit RPC instance configured and talking
-            from MetasploitAPI import MetasploitAPI
-            msf_api = MetasploitAPI(host=msf_settings.get('url'), apikey=msf_settings.get('key'))
+            from MetasploitProAPI import MetasploitProAPI
+            msf_api = MetasploitProAPI(host=msf_settings.get('url'), apikey=msf_settings.get('key'))
             working_msf_api = msf_api.login()
         except Exception, error:
             log(" [!] Unable to authenticate to MSF API: %s" % str(error), logging.ERROR)

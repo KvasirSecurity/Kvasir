@@ -254,8 +254,8 @@ def import_xml_scan():
     msf_settings = msf_get_config(session)
     try:
         # check to see if we have a Metasploit RPC instance configured and talking
-        from MetasploitAPI import MetasploitAPI
-        msf_api = MetasploitAPI(host=msf_settings['url'], apikey=msf_settings['key'])
+        from MetasploitProAPI import MetasploitProAPI
+        msf_api = MetasploitProAPI(host=msf_settings['url'], apikey=msf_settings['key'])
         working_msf_api = msf_api.login()
     except:
         working_msf_api = False
