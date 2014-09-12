@@ -14,7 +14,7 @@
                         </h5>
                     </div>
                     <div class="widget-content">
-                    <a href="javascript:void();" id="button_vulndata_edit" class="btn"><i class="icon-edit"></i> Edit</a>
+                    <a href="{{=URL('vulns', 'vulndata_edit', args=vulninfo.id)}}" id="button_vulndata_edit" target="_blank" class="btn"><i class="icon-edit"></i> Edit</a>
                         <table>
                             <tr><td><b>Description: </b></td><td>{{=MARKMIN(vulninfo.f_description)}}</td></tr>
                             <tr><td><b>Solution: </b></td><td>{{=MARKMIN(vulninfo.f_solution)}}</td></tr>
@@ -83,21 +83,6 @@
         </div>
     </div>
 </div>
-
-<!-- Edit Vulndata Modal -->
-<div id="edit_vulndata_modal" class="modal hide fade">
-    <div class="modal-header">
-        <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
-        <h3>Edit Vuln Data</h3>
-    </div>
-    <div class="modal-body">
-    </div>
-    <div class="modal-footer">
-        <a href="#" class="btn" data-dismiss="modal">Close</a>
-        <a href="#" class="btn btn-primary saveBtn">Save</a>
-    </div>
-</div>
-<!-- End Edit Vulndata -->
 
 <script>
 var vulntable;
@@ -193,18 +178,6 @@ jQuery(document).ready(function() {
 
     $("#exploited").click(function(e) {
         exploit_selected(e);
-    });
-
-    /* Edit Modal */
-    $("#button_vulndata_edit").click(function(e) {
-        jQuery("#edit_vulndata_modal").modal({
-            "remote": "{{=URL('vulns', 'edit.load', args=[vuln.record.id])}}"
-        });
-    });
-
-    jQuery("#edit_vulndata_modal .saveBtn").click(function() {
-        ajax_form_submit('#vuln_edit_form');
-        jQuery('#edit_vulndata_modal').modal('hide');
     });
 
 } );

@@ -224,7 +224,6 @@ def vulndata_edit():
         record,
         submit_button='Update',
         deletable=True,
-        formstyle='bootstrap',
         showid=False,
     )
 
