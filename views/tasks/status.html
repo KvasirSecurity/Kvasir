@@ -1,46 +1,66 @@
 {{ extend 'layout.html'}}
 
 <div id="status">
-    <table class="table table-bordered">
+    <table class="table table-bordered table-condensed">
         <tr>
             <td style="background-color: #D9EDF7" width="80%">
                 <div id='task_header'>
-                    <div id='task_title'><strong>Status:</strong> <span id='task_status'></span></div>
-                    <div id='task_worker'><strong>Worker:</strong> <span id='task_worker_name'></span></div>
-                    <div id='task_start_time'><strong>Queued:</strong> {{=task.start_time}}</div>
+                    <dl>
+                        <dt>Name</dt>
+                        <dd><span id='task_name'></span></dd>
+                        <dt>Status</dt>
+                        <dd><span id='task_status'></span></dd>
+                        <dt>Worker</dt>
+                        <dd><span id='task_worker_name'></span></dd>
+                        <dt>Arguments:</dt>
+                        <dd>{{=task.args}}</dd>
+                        <dd>{{=task.vars}}</dd>
                 </div>
             </td>
             <td rowspan="2">
-                <div id='task_end_time'><strong>Started:</strong> <span id='task_worker_start'></span></div>
-                <div id='task_end_time'><strong>Ended:</strong> <span id='task_worker_end'></span></div>
+                <div id='timers'>
+                    <dl>
+                        <dt>Queued</dt>
+                        <dd>{{=task.start_time}}</dd>
+                        <dt>Started</dt>
+                        <dd><span id='task_worker_start'></span></dd>
+                        <dt>Expires</dt>
+                        <dd><span id='task_expiration'></span></dd>
+                        <dt>Ended</dt>
+                        <dd><span id='task_worker_end'></span></dd>
+                    </dl>
                 </br>
-                <div id='task_stop'><button id="stop_button" class="btn btn-small btn-danger"><i class="icon-stop"></i> Stop Task</button></div>
+                <div id='txt_task_stop'><button id="stop_button" class="btn btn-small btn-danger"><i class="icon-stop"></i> Stop Task</button></div>
             </td>
-        </tr>
-        <tr class="info">
-            <td><strong>Arguments:</strong> {{=task.args}} {{=task.vars}}</td>
         </tr>
     </table>
 </div>
 
-<div id="tasklog">
-    <h2>Task Log</h2>
-    <pre id='task_logs' style="overflow: auto; height: 300px; background-color: black; color: #EEE;">
-    </pre>
-</div>
+<div>
+    <ul class="nav nav-tabs">
+        <li class="active"><a href="#tasklog" data-toggle="tab">Task Log</a></li>
+        <li><a id="a_traceback" href="#traceback" data-toggle="tab">Traceback Error</a></li>
+    </ul>
 
-<div id="traceback" style="display: none;">
-    <h2>Traceback</h2>
-    <pre id='task_traceback' style="overflow: auto; height: 300px; background-color: black; color: #EEE;">
-    </pre>
+    <div class="tab-content">
+        <div class="tab-pane active" id="tasklog">
+            <pre id='task_logs' style="overflow: auto; height: 400px; background-color: black; color: #EEE;">
+            </pre>
+        </div>
+
+        <div class="tab-pane" id="traceback">
+            <pre id='task_traceback' style="overflow: auto; height: auto; background-color: black; color: #EEE;">
+            </pre>
+        </div>
+    </div>
 </div>
 
 <script>
     $(document).ready(function() {
-        $("traceback").toggle();
+        /*$("traceback").toggle();
         $("traceback").click(function() {
             $(this).toggle();
-        });
+        });*/
 
         $("#stop_button").on('click', function() {
             if (! $(this).hasClass('disabled')) {
@@ -48,6 +68,15 @@
                 $.web2py.ajax_page( 'POST', url, "id={{=task.id}}", 'undefined' );
             }
         });
+
+        $('#a_traceback').hide();
+        $(".nav a").click(function(e) {
+           if($(this).parent('li').hasClass('active')) {
+               var target_pane=$(this).attr('href');
+               $(target_pane).is(':visible');
+           }
+        });
+
     });
 
     (function() {
@@ -74,15 +103,17 @@
             updateLog = function() {
               var lines;
               if ($("#task_logs .end").length === 0) {
-                lines = $log.children().length;
+                //lines = $log.children().length;
                 return $.get("{{=URL('tasks', 'output.json', args=task.id)}}", function(data) {
 
+                  $('#task_name').html(data['name']);
                   $('#task_status').html(data['status']);
                   $('#task_logs').html(data['output']);
                   $('#task_traceback').html(data['traceback']);
                   $('#task_worker_name').html(data['worker']);
                   $('#task_worker_start').html(data['start']);
                   $('#task_worker_end').html(data['ended']);
+                  $('#task_expiration').html(data['expiration'])
 
                   var status = data['status'];
                   if ((status != 'QUEUED') && (status != 'RUNNING') && (status != 'ASSIGNED')) {
@@ -90,7 +121,8 @@
                     $('#task_worker_end').html(data['ended']);
                     if ((status == 'FAILED') || (status == 'TIMEOUT') ){
                         $('#task_status').addClass('text-error');
-                        $('#traceback').show();
+                        $('#a_traceback').show();
+                        $('#task_logs').height('auto');
                     }
                     return clearTimeout(updateLog);
                   }
