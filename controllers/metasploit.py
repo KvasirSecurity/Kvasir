@@ -11,7 +11,7 @@
 ##--------------------------------------#
 
 from skaldship.hosts import get_host_record, host_title_maker
-from skaldship.metasploit import get_config
+from skaldship.metasploit import msf_get_config
 import logging
 logger = logging.getLogger("web2py.app.kvasir")
 crud.settings.formstyle = formstyle_bootstrap_kvasir
@@ -21,7 +21,7 @@ crud.settings.formstyle = formstyle_bootstrap_kvasir
 def api_settings():
     """Settings Metasploit API"""
 
-    msf_settings = get_config(session)
+    msf_settings = msf_get_config(session)
     response.title = "%s :: Metasploit API Settings" % (settings.title)
 
     try:
@@ -72,7 +72,7 @@ def bruteforce():
     Launches a Metasploit Pro Bruteforce based upon a list of host records
     """
     response.title = "%s :: Metasploit Pro Bruteforce" % (settings.title)
-    msf_settings = get_config(session)
+    msf_settings = msf_get_config(session)
 
     try:
         from MetasploitProAPI import MetasploitProAPI, MSFProAPIError
@@ -220,7 +220,7 @@ def exploit():
     Launches Metasploit Pro Exploit based upon a list of host records
     """
     response.title = "%s :: Metasploit Pro Exploit" % (settings.title)
-    msf_settings = get_config(session)
+    msf_settings = msf_get_config(session)
 
     try:
         from MetasploitProAPI import MetasploitProAPI, MSFProAPIError
@@ -342,7 +342,7 @@ def exploit():
 @auth.requires_login()
 def import_pwdump():
     """Downloads a pwdump loot and processes it"""
-    msf_settings = get_config(session)
+    msf_settings = msf_get_config(session)
     alert = False
     error = None
     response.title = "%s :: Import Metasploit PWDUMP Loot" % (settings.title)
@@ -402,7 +402,7 @@ def import_screenshots():
     Import Screenshot files from Metasploit Pro into Kvasir
     """
     response.title = "%s :: Import Metasploit Screenshots" % (settings.title)
-    msf_settings = get_config(session)
+    msf_settings = msf_get_config(session)
     loot_apidata={}
 
     try:
@@ -463,7 +463,7 @@ def list_lootfiles():
     import os
     import re
     response.title = "%s :: Metasploit Loots" % (settings.title)
-    msf_settings = get_config(session)
+    msf_settings = msf_get_config(session)
 
     dbsvcs = db.t_services
     loot_dir = request.args(0)
@@ -528,7 +528,7 @@ def import_report():
     TODO: FINISH HIM!
     """
 
-    msf_settings = get_config(session)
+    msf_settings = msf_get_config(session)
     if msf_settings['workspace'] is None:
         redirect(URL('api_settings'))
 
@@ -567,7 +567,7 @@ def import_report_xml():
     import os
     from skaldship.general import check_datadir
 
-    msf_settings = get_config(session)
+    msf_settings = msf_get_config(session)
     response.title = "%s :: Import Metasploit Pro Report XML" % (settings.title)
     filedir = os.path.join(request.folder,'data','scanfiles')
     fields = []
@@ -689,7 +689,7 @@ def send_scanxml():
     import os
 
     response.title = "%s :: Send Scan XML Data to Metasploit" % (settings.title)
-    msf_settings = get_config(session)
+    msf_settings = msf_get_config(session)
 
     try:
         from MetasploitProAPI import MetasploitProAPI, MSFProAPIError
@@ -762,7 +762,7 @@ def send_scanxml():
 @auth.requires_login()
 def send_accounts():
     """Builds a list of username:passwords and sends it to Metasploit"""
-    msf_settings = get_config(session)
+    msf_settings = msf_get_config(session)
     response.title = "%s :: Send Kvasir Passwords to Metasploit Pro" % (settings.title)
 
     try:
@@ -860,7 +860,7 @@ def send_accounts():
 @auth.requires_login()
 def task_list():
     """Obtains a list of tasks"""
-    msf_settings = get_config(session)
+    msf_settings = msf_get_config(session)
     response.title = "%s :: Metasploit Task List" % (settings.title)
 
     try:
@@ -889,7 +889,7 @@ def task_list():
 @auth.requires_login()
 def task_status():
     """Show details of a specifc task (but not the log file)"""
-    msf_settings = get_config(session)
+    msf_settings = msf_get_config(session)
     response.title = "%s :: Metasploit Task Status" % (settings.title)
 
     try:
@@ -925,7 +925,7 @@ def task_status():
 @auth.requires_login()
 def task_log():
     """Show the details and log file of a specifc task"""
-    msf_settings = get_config(session)
+    msf_settings = msf_get_config(session)
     response.title = "%s :: Metasploit Task Log" % (settings.title)
 
     try:
@@ -961,7 +961,7 @@ def task_log():
 @auth.requires_login()
 def task_stop():
     """Stop a running task"""
-    msf_settings = get_config(session)
+    msf_settings = msf_get_config(session)
 
     try:
         from MetasploitProAPI import MetasploitProAPI, MSFProAPIError
@@ -1006,7 +1006,7 @@ def exploit_host():
     TODO: Finish metasploit.exploit_host
     """
 
-    msf_settings = get_config(session)
+    msf_settings = msf_get_config(session)
     try:
         from MetasploitProAPI import MetasploitProAPI, MSFProAPIError
     except ImportError, error:

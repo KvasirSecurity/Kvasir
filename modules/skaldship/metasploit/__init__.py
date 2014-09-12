@@ -12,13 +12,13 @@ __version__ = "1.0"
 ##--------------------------------------#
 """
 
-__all__ = ["get_config", "pro"]
+__all__ = ["msf_get_config", "pro"]
 
 from gluon import current
 
 
 ##-------------------------------------------------------------------------
-def get_config(session=None):
+def msf_get_config(session=None):
     """
     Returns a dict of metasploit configuration settings based on yaml or session
     """
