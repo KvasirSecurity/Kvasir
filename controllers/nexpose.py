@@ -195,7 +195,7 @@ def vuln_update():
     elif form.errors:
         response.flash = 'Error in form data'
 
-    return dict(form=form)
+    return dict(form=form, nexpose_config=nexpose_config)
 
 @auth.requires_login()
 def scan_template():
