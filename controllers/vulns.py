@@ -470,16 +470,16 @@ def service_vulns_add():
     if svc_id or host_id:
         if svc_id:
             db.t_service_vulns.f_services_id.default = svc_id
-            response.title = "%s :: Add Service Vulnerablity :: %s" % (settings.title, svc)
+            response.title = "%s :: Add Service Vulnerability :: %s" % (settings.title, svc)
         else:
             db.t_service_vulns.f_services_id.requires = IS_IN_SET(svc_set)
-            response.title = "%s :: Add Service Vulnerablity :: %s" % (settings.title, host_title_maker(db.t_hosts[svc.f_hosts_id]))
+            response.title = "%s :: Add Service Vulnerability :: %s" % (settings.title, host_title_maker(db.t_hosts[svc.f_hosts_id]))
         form=crud.create(db.t_service_vulns,message='Vulnerability added',next=URL('service_vulns_add', vars={'id': svc.id}))
         db.t_service_vulns.f_services_id.requires = None
-        response.title = "%s :: Add Service Vulnerablity :: %s" % (settings.title, host_title_maker(db.t_hosts[svc.f_hosts_id]))
+        response.title = "%s :: Add Service Vulnerability :: %s" % (settings.title, host_title_maker(db.t_hosts[svc.f_hosts_id]))
     else:
         form=crud.create(db.t_service_vulns,next='service_vulns_edit/[id]')
-        response.title = "%s :: Add Service Vulnerablity" % (settings.title)
+        response.title = "%s :: Add Service Vulnerability" % (settings.title)
     return dict(form=form)
 
 @auth.requires_login()
@@ -749,9 +749,15 @@ def aa_by_host():
 
             #generation vuln link
             if settings.use_cvss:
-                severity = int(float(vulndetails.f_cvss_score))
+                if vulndetails.f_cvss_score is not None:
+                    severity = int(float(vulndetails.f_cvss_score))
+                else:
+                    severity = 0
             else:
-                severity = int(vulndetails.f_severity)
+                if vulndetails.f_severity is not None:
+                    severity = int(vulndetails.f_severity)
+                else:
+                    severity = 0
             style = textdecoration + "color:" + severity_mapping(severity - 1)[2]
             vuln_title_link = A(vulndetails.f_vulnid, _title = vulninfo.f_status+ ' Severity: ' + str(severity),
                                 _style=style, _target="vulndata_%s" % (vulndetails.id),
