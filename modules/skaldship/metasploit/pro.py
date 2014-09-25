@@ -20,26 +20,6 @@ import logging
 from skaldship.hosts import get_host_record, do_host_status
 
 
-
-##-------------------------------------------------------------------------
-
-def msf_get_config(session={}):
-    """
-    Returns a dict of metasploit configuration settings based on yaml or session
-    """
-
-    msf_config = current.globalenv['settings']['kvasir_config'].get('metasploit') or {}
-    config = {}
-    config['key'] = session.get('msf_key', msf_config.get('api_key'))
-    config['url'] = session.get('msf_url', msf_config.get('url', 'https://localhost:3790'))
-
-    config['ws_num'] = session.get('msf_workspace_num', 1)
-    config['workspace'] = session.get('msf_workspace', 'default')
-    config['user'] = session.get('msf_user', None)
-
-    return config
-
-
 ##-------------------------------------------------------------------------
 
 def process_pwdump_loot(loot_list=[], msf=None):
@@ -50,14 +30,13 @@ def process_pwdump_loot(loot_list=[], msf=None):
     from skaldship.passwords.utils import process_password_file, insert_or_update_acct
 
     db = current.globalenv['db']
-    cache = current.globalenv['cache']
+    #cache = current.globalenv['cache']
 
-    logging.debug('loot_list = %s' % (loot_list))
     data = []
     for loot_id in loot_list:
         loot = msf.loot_download(loot_id)
         if loot['ltype'] not in ['host.windows.pwdump', 'windows.hashes']:
-            logging.error("Loot is not a pwdump, it is a %s" % loot['ltype'])
+            log("Loot is not a pwdump, it is a %s" % loot['ltype'], logging.ERROR)
             continue
         else:
             # process the pwdump file
@@ -69,23 +48,23 @@ def process_pwdump_loot(loot_list=[], msf=None):
             )
 
             # find the info/0 service id for the host
-            host_id = get_host_record(loot['host'])
-            query = (db.t_services.f_number == '0') & (db.t_services.f_proto == 'info') & (db.t_services.f_hosts_id == host_id)
+            host = get_host_record(loot['host'])
+            query = (db.t_services.f_number == '0') & (db.t_services.f_proto == 'info') & (db.t_services.f_hosts_id == host.id)
             svc_id = db(query).select().first()
             if svc_id is None:
                 # info/0 not found.. add it!
-                svc_id = db.t_services.insert(f_proto="info", f_number="0", f_status="info", f_hosts_id=host_id)
+                svc_id = db.t_services.insert(f_proto="info", f_number="0", f_status="info", f_hosts_id=host.id)
                 db.commit()
 
             # insert or update the account records
             resp_text = insert_or_update_acct(svc_id.id, accounts)
-            logging.info("Added pwdump records for host: %s" % (loot['host']))
-            data.append({ loot['host']: resp_text })
+            log("Added pwdump records for host: %s" % host.f_ipaddr)
+            data.append({loot['host']: resp_text})
 
     return data
 
-##-------------------------------------------------------------------------
 
+##-------------------------------------------------------------------------
 def process_screenshot_loot(loot_list=[], msf=None):
     """
     Takes an array of loot records in loot_list, downloads the screenshot and
@@ -93,35 +72,35 @@ def process_screenshot_loot(loot_list=[], msf=None):
     """
 
     db = current.globalenv['db']
-    cache = current.globalenv['cache']
+    #cache = current.globalenv['cache']
 
     loot_count = 0
     for loot_id in loot_list:
         loot = msf.loot_download(loot_id)
-        ip = loot_dict[loot_id]
+        ip = loot_list[loot_id]
         if loot['ltype'] != 'host.windows.screenshot':
             logging.error(" [!] %s/%s is not a screenshot, it is a %s" % (ip, loot['name'], loot['ltype']))
         else:
             record = get_host_record(ip)
             if not record:
-                logging.error(" [!] Cannot find record for %s" % (ip))
+                logging.error(" [!] Cannot find record for %s" % ip)
                 continue
 
             db.t_evidence.update_or_insert(
-                f_hosts_id = record.id,
-                f_filename = "%s-msfpro-%s.png" % (ip, loot['name']),
-                f_evidence = "%s-msfpro-%s.png" % (ip, loot['name']),
-                f_data = loot['data'],
-                f_type = 'Screenshot',
-                f_text = 'From MetasploitPRO'
+                f_hosts_id=record.id,
+                f_filename="%s-msfpro-%s.png" % (ip, loot['name']),
+                f_evidence="%s-msfpro-%s.png" % (ip, loot['name']),
+                f_data=loot['data'],
+                f_type='Screenshot',
+                f_text='From MetasploitPRO'
             )
             db.commit()
             loot_count += 1
 
     return loot_count
 
-##-------------------------------------------------------------------------
 
+##-------------------------------------------------------------------------
 def process_loot_files(loot_list=[]):
     """
     Processes locally stored (to web2py) MSF password loot files into the
@@ -134,7 +113,7 @@ def process_loot_files(loot_list=[]):
         An array of [filename, result text]
     """
     from skaldship.passwords.utils import process_password_file, insert_or_update_acct
-    import os
+    #import os
     db = current.globalenv['db']
 
     data = []
@@ -142,18 +121,18 @@ def process_loot_files(loot_list=[]):
         if isinstance(loot, []):
             (filename, file_type, port) = loot
         else:
-            logger.error("Invalid loot sent: %s" % (loot))
+            log("Invalid loot sent: %s" % loot, logging.ERROR)
             continue
 
         try:
             (proto, number) = port.split('/')
         except AttributeError, e:
-            logger.error("Invalid port sent: %s", port)
+            log("Invalid port sent: %s", port, logging.ERROR)
 
         try:
             pw_data = open(filename, "rb").readlines().split('\n')
         except IOError, e:
-            logger.error("Error opening %s: %s" % (filename, e))
+            log("Error opening %s: %s" % (filename, e), logging.ERROR)
 
         accounts = process_password_file(
             pw_data=pw_data,
@@ -162,21 +141,24 @@ def process_loot_files(loot_list=[]):
         )
 
         # find the info/0 service id for the host
-        host_id = get_host_record(loot['host'])
-        query = (db.t_services.f_number == number) & (db.t_services.f_proto == proto) & (db.t_services.f_hosts_id == host_id)
+        host = get_host_record(loot['host'])
+        query = (db.t_services.f_number == number)
+        query &= (db.t_services.f_proto == proto)
+        query &= (db.t_services.f_hosts_id == host.id)
+
         svc_id = db(query).select().first()
         if svc_id is None:
             # info/0 not found.. add it!
-            svc_id = db.t_services.insert(f_proto=proto, f_number=number, f_hosts_id=host_id)
+            svc_id = db.t_services.insert(f_proto=proto, f_number=number, f_hosts_id=host.id)
             db.commit()
 
         # insert or update the account records
         resp_text = insert_or_update_acct(svc_id.id, accounts)
-        logging.info("Added loot accounts for host: %s" % ())
-        data.append({ loot['host']: resp_text })
+        log("Added loot accounts for host: %s" % host.f_ipaddr)
+        data.append({loot['host']: resp_text})
+
 
 ##-------------------------------------------------------------------------
-
 def process_report_xml(
     filename=None,
     ip_ignore_list=None,
@@ -202,7 +184,7 @@ def process_report_xml(
     services = Services()
 
     db = current.globalenv['db']
-    cache = current.globalenv['cache']
+    #cache = current.globalenv['cache']
 
     try:
         from lxml import etree

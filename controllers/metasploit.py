@@ -25,17 +25,17 @@ def api_settings():
     response.title = "%s :: Metasploit API Settings" % (settings.title)
 
     try:
-        from MetasploitAPI import MetasploitAPI, MSFAPIError
+        from MetasploitProAPI import MetasploitProAPI, MSFProAPIError
     except ImportError, error:
         return dict(error=str(error), alert=True, form=None)
 
     error=None
     alert=False
-    msf = MetasploitAPI(host=msf_settings['url'], apikey=msf_settings['key'])
+    msf = MetasploitProAPI(host=msf_settings['url'], apikey=msf_settings['key'])
     try:
         workspaces = [w for w in msf.pro_workspaces().keys()]
         users = [u for u in msf.pro_users().get('users').keys()]
-    except MSFAPIError, e:
+    except MSFProAPIError, e:
         error = str(e)
         alert = True
         workspaces = []
@@ -75,7 +75,7 @@ def bruteforce():
     msf_settings = msf_get_config(session)
 
     try:
-        from MetasploitAPI import MetasploitAPI, MSFAPIError
+        from MetasploitProAPI import MetasploitProAPI, MSFProAPIError
     except ImportError, error:
         return dict(alert=True, error=str(error), form=None)
 
@@ -93,10 +93,10 @@ def bruteforce():
 
     loot_list = []    # list of loot IDs and IPs
     alert = False
-    msf = MetasploitAPI(host=msf_settings['url'], apikey=msf_settings['key'])
+    msf = MetasploitProAPI(host=msf_settings['url'], apikey=msf_settings['key'])
     try:
         msf.login()
-    except MSFAPIError, error:
+    except MSFProAPIError, error:
         return dict(alert=True, error=str(error), form=None)
 
     form = SQLFORM.factory(
@@ -223,7 +223,7 @@ def exploit():
     msf_settings = msf_get_config(session)
 
     try:
-        from MetasploitAPI import MetasploitAPI, MSFAPIError
+        from MetasploitProAPI import MetasploitProAPI, MSFProAPIError
     except ImportError, error:
         return dict(alert=True, error=str(error), form=None)
 
@@ -241,10 +241,10 @@ def exploit():
 
     module_list = []
     alert = False
-    msf = MetasploitAPI(host=msf_settings['url'], apikey=msf_settings['key'])
+    msf = MetasploitProAPI(host=msf_settings['url'], apikey=msf_settings['key'])
     try:
         module_list = msf.module_list(modtype='exploits').get('modules')
-    except MSFAPIError, error:
+    except MSFProAPIError, error:
         return dict(alert=True, error=str(error), form=None)
 
     form = SQLFORM.factory(
@@ -348,15 +348,15 @@ def import_pwdump():
     response.title = "%s :: Import Metasploit PWDUMP Loot" % (settings.title)
 
     try:
-        from MetasploitAPI import MetasploitAPI, MSFAPIError
+        from MetasploitProAPI import MetasploitProAPI, MSFProAPIError
     except ImportError, error:
         return dict(alert=True, error=str(error), form=None)
 
-    msf = MetasploitAPI(host=msf_settings['url'], apikey=msf_settings['key'])
+    msf = MetasploitProAPI(host=msf_settings['url'], apikey=msf_settings['key'])
     try:
         msf.login()
         data = msf.loot_list(msf_settings['workspace'])
-    except MSFAPIError, error:
+    except MSFProAPIError, error:
         return dict(alert=True, error=str(error), form=None)
 
     if not alert:
@@ -406,15 +406,15 @@ def import_screenshots():
     loot_apidata={}
 
     try:
-        from MetasploitAPI import MetasploitAPI, MSFAPIError
+        from MetasploitProAPI import MetasploitProAPI, MSFProAPIError
     except ImportError, error:
         return dict(form=None, error=str(error), alert=True)
 
-    msf = MetasploitAPI(host=msf_settings['url'], apikey=msf_settings['key'])
+    msf = MetasploitProAPI(host=msf_settings['url'], apikey=msf_settings['key'])
     try:
         msf.login()
         loot_apidata = msf.loot_list(msf_settings['workspace'])
-    except MSFAPIError, error:
+    except MSFProAPIError, error:
         return dict(form=None, error=str(error), alert=True)
 
     loot_list = []
@@ -466,13 +466,12 @@ def list_lootfiles():
     msf_settings = msf_get_config(session)
 
     dbsvcs = db.t_services
-    # TODO: from skaldship.db import get_services
     loot_dir = request.args(0)
 
     if not loot_dir:
         try:
-            from MetasploitAPI import MetasploitAPI, MSFAPIError
-            msf = MetasploitAPI(host=msf_settings['url'], apikey=msf_settings['key'])
+            from MetasploitProAPI import MetasploitProAPI, MSFProAPIError
+            msf = MetasploitProAPI(host=msf_settings['url'], apikey=msf_settings['key'])
             if msf.pro_about():
                 if platform in ["linux", "linux2"]:
                     loot_dir = "/opt/metasploit_pro/apps/pro/loot"
@@ -533,7 +532,7 @@ def import_report():
     if msf_settings['workspace'] is None:
         redirect(URL('api_settings'))
 
-    msf = MetasploitAPI(host=msf_settings['url'], apikey=msf_settings['key'])
+    msf = MetasploitProAPI(host=msf_settings['url'], apikey=msf_settings['key'])
     if not msf.login():
         response.flash = "Error logging into Metasploit, check your settings"
         redirect(URL('api_settings'))
@@ -586,15 +585,15 @@ def import_report_xml():
     # check to see if we have a Metasploit Pro instance configured and talking
     # if so pull a list of the workspaces and present them
     try:
-        from MetasploitAPI import MetasploitAPI, MSFAPIError
-        msf = MetasploitAPI(host=msf_settings['url'], apikey=msf_settings['key'])
+        from MetasploitProAPI import MetasploitProAPI, MSFProAPIError
+        msf = MetasploitProAPI(host=msf_settings['url'], apikey=msf_settings['key'])
     except ImportError, error:
         msf = None
 
     if msf:
         try:
             msf_reports_res = msf.report_list(workspace=msf_settings['workspace'])
-        except MSFAPIError, error:
+        except MSFProAPIError, error:
             msf_reports_res = None
 
     if msf_reports_res:
@@ -631,17 +630,16 @@ def import_report_xml():
         if form.vars.f_msf_report:
             try:
                 msf_report = msf.report_download(rptid=form.vars.f_msf_report)
-            except MSFAPIError, error:
+            except MSFProAPIError, error:
                 error = "Unable to download report from Metasploit Pro: %s" % (str(error))
                 return dict(form=form, alert=True, error=error)
             check_datadir(request.folder)
-            filename =  os.path.join(filedir, "msfpro-%s-%s.xml" % (msf_settings['workspace'], int(time.time())))
+            filename = os.path.join(filedir, "msfpro-%s-%s.xml" % (msf_settings['workspace'], int(time.time())))
             fout = open(filename, "w")
             fout.write(msf_report['data'])
             fout.close()
             del(msf_report)
         else:
-            filename = form.vars.f_filename
             filename = os.path.join(filedir, form.vars.f_filename)
 
         if form.vars.f_taskit:
@@ -665,7 +663,7 @@ def import_report_xml():
             else:
                 response.flash = "Error submitting job: %s" % (task.errors)
         else:
-            from skaldship.metasploit import process_report_xml
+            from skaldship.metasploit.pro import process_report_xml
             logger.info("Starting Metasploit XML Import")
             result = process_report_xml(
                 filename=filename,
@@ -694,14 +692,14 @@ def send_scanxml():
     msf_settings = msf_get_config(session)
 
     try:
-        from MetasploitAPI import MetasploitAPI, MSFAPIError
+        from MetasploitProAPI import MetasploitProAPI, MSFProAPIError
     except ImportError, error:
         return dict(error=str(error), alert=True, form=None)
 
-    msf = MetasploitAPI(host=msf_settings['url'], apikey=msf_settings['key'])
+    msf = MetasploitProAPI(host=msf_settings['url'], apikey=msf_settings['key'])
     try:
         msf.login()
-    except MSFAPIError, error:
+    except MSFProAPIError, error:
         return dict(error=str(error), alert=True, form=None)
 
     filedir = os.path.join(request.folder,'data','scanfiles')
@@ -768,14 +766,14 @@ def send_accounts():
     response.title = "%s :: Send Kvasir Passwords to Metasploit Pro" % (settings.title)
 
     try:
-        from MetasploitAPI import MetasploitAPI, MSFAPIError
+        from MetasploitProAPI import MetasploitProAPI, MSFProAPIError
     except ImportError, error:
         return dict(error=str(error), alert=True, form=None)
 
-    msf = MetasploitAPI(host=msf_settings['url'], apikey=msf_settings['key'])
+    msf = MetasploitProAPI(host=msf_settings['url'], apikey=msf_settings['key'])
     try:
         msf.login()
-    except MSFAPIError, error:
+    except MSFProAPIError, error:
         return dict(error=str(error), alert=True, form=None)
 
     form = SQLFORM.factory(
@@ -866,14 +864,14 @@ def task_list():
     response.title = "%s :: Metasploit Task List" % (settings.title)
 
     try:
-        from MetasploitAPI import MetasploitAPI, MSFAPIError
+        from MetasploitProAPI import MetasploitProAPI, MSFProAPIError
     except ImportError, error:
         return dict(error=str(error), alert=True, tasks=None)
 
-    msf = MetasploitAPI(host=msf_settings['url'], apikey=msf_settings['key'])
+    msf = MetasploitProAPI(host=msf_settings['url'], apikey=msf_settings['key'])
     try:
         msf.login()
-    except MSFAPIError, error:
+    except MSFProAPIError, error:
         return dict(error=str(error), alert=True, tasks=None)
 
     tasks = msf.task_list()
@@ -895,14 +893,14 @@ def task_status():
     response.title = "%s :: Metasploit Task Status" % (settings.title)
 
     try:
-        from MetasploitAPI import MetasploitAPI, MSFAPIError
+        from MetasploitProAPI import MetasploitProAPI, MSFProAPIError
     except ImportError, error:
         return dict(error=str(error), alert=True, data=None)
 
-    msf = MetasploitAPI(host=msf_settings['url'], apikey=msf_settings['key'])
+    msf = MetasploitProAPI(host=msf_settings['url'], apikey=msf_settings['key'])
     try:
         msf.login()
-    except MSFAPIError, error:
+    except MSFProAPIError, error:
         return dict(error=str(error), alert=True, data=None)
 
     if not request.vars.has_key('taskid'):
@@ -931,14 +929,14 @@ def task_log():
     response.title = "%s :: Metasploit Task Log" % (settings.title)
 
     try:
-        from MetasploitAPI import MetasploitAPI, MSFAPIError
+        from MetasploitProAPI import MetasploitProAPI, MSFProAPIError
     except ImportError, error:
         return dict(error=str(error), alert=True, data=None)
 
-    msf = MetasploitAPI(host=msf_settings['url'], apikey=msf_settings['key'])
+    msf = MetasploitProAPI(host=msf_settings['url'], apikey=msf_settings['key'])
     try:
         msf.login()
-    except MSFAPIError, error:
+    except MSFProAPIError, error:
         return dict(error=str(error), alert=True, data=None)
 
     if not request.vars.has_key('taskid'):
@@ -966,14 +964,14 @@ def task_stop():
     msf_settings = msf_get_config(session)
 
     try:
-        from MetasploitAPI import MetasploitAPI, MSFAPIError
+        from MetasploitProAPI import MetasploitProAPI, MSFProAPIError
     except ImportError, error:
         return dict(error=str(error), alert=True, form=None)
 
-    msf = MetasploitAPI(host=msf_settings['url'], apikey=msf_settings['key'])
+    msf = MetasploitProAPI(host=msf_settings['url'], apikey=msf_settings['key'])
     try:
         msf.login()
-    except MSFAPIError, error:
+    except MSFProAPIError, error:
         return dict(error=str(error), alert=True, form=None)
 
     if not request.vars.has_key('taskid'):
@@ -1005,18 +1003,19 @@ def task_stop():
 def exploit_host():
     """
     Build an exploit for a specific target
+    TODO: Finish metasploit.exploit_host
     """
 
     msf_settings = msf_get_config(session)
     try:
-        from MetasploitAPI import MetasploitAPI, MSFAPIError
+        from MetasploitProAPI import MetasploitProAPI, MSFProAPIError
     except ImportError, error:
         return dict(error=str(error), alert=True, form=None)
 
-    msf = MetasploitAPI(host=msf_settings['url'], apikey=msf_settings['key'])
+    msf = MetasploitProAPI(host=msf_settings['url'], apikey=msf_settings['key'])
     try:
         msf.login()
-    except MSFAPIError, error:
+    except MSFProAPIError, error:
         return dict(error=str(error), alert=True, form=None)
 
     target = request.vars.f_target or None
