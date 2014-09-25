@@ -98,7 +98,7 @@ def formstyle_bootstrap_kvasir(form, fields, **kwargs):
         _submit = False
 
         if isinstance(controls, INPUT):
-            controls.add_class('span8')
+            controls.add_class(span)
             if controls['_type'] == 'submit':
                 # flag submit button
                 _submit = True
@@ -147,8 +147,8 @@ SQLFORM.formstyles['bootstrap_kvasir'] = formstyle_bootstrap_kvasir
 # overwrite the "default" table3cols with default bootstrap
 SQLFORM.formstyles.table3cols = SQLFORM.formstyles.bootstrap_kvasir
 
-##-------------------------------------------------------------------------
 
+##-------------------------------------------------------------------------
 class AddModal(object):
     """
     AddModal provides a modular method for creating "Add ..." bootstrap modals
@@ -246,3 +246,101 @@ class AddModal(object):
             self.response.flash = self.errormsg
 
         return form
+
+
+##-------------------------------------------------------------------------
+class Select2AutocompleteWidget(object):
+    """
+    Select2 Autocomplete widget using AJAX callbacks
+    """
+    _class = 'string'
+
+    def __init__(self, request, field, id_field=None, db=None,
+                 orderby=None, limitby=(0, 50), distinct=False,
+                 keyword='_s2autocomplete_%(tablename)s_%(fieldname)s',
+                 min_length=2):
+
+        self.request = request
+        self.keyword = keyword % dict(tablename=field.tablename,
+                                      fieldname=field.name)
+        self.db = db or field._db
+        self.orderby = orderby
+        self.limitby = limitby
+        self.distinct = distinct
+        self.min_length = min_length
+        self.fields = [field]
+        if id_field:
+            self.is_reference = True
+            self.fields.append(id_field)
+        else:
+            self.is_reference = False
+        if hasattr(request, 'application'):
+            self.url = URL(args=request.args)
+            self.callback()
+        else:
+            self.url = request
+
+    def callback(self):
+        if self.keyword in self.request.vars:
+            field = self.fields[0]
+            rows = self.db(field.like('%' + self.request.vars[self.keyword] + '%', case_sensitive=False))\
+                .select(orderby=self.orderby, limitby=self.limitby, distinct=self.distinct, *(self.fields))
+            raise HTTP(200, rows.as_json())
+
+    def __call__(self, field, value, **attributes):
+        from gluon.sqlhtml import StringWidget
+        default = dict(
+            _type='text',
+            value=(not value is None and str(value)) or '',
+        )
+        attr = StringWidget._attributes(field, default, **attributes)
+        div_id = self.keyword + '_div'
+        attr['_autocomplete'] = 'off'
+        attr['_class'] = 'select2-chosen'
+        select_script = """
+        $('#{0:s}').select2({{
+            placeholder: "Search for vulnerability...",
+            minimumlength: {1:d},
+            ajax: {{
+                url: "{2:s}",
+                dataType: 'json',
+                data: function(term, page) {{
+                    return {{
+                        {3:s}: term
+                    }}
+                }},
+                results: function (data) {{
+                    return {{
+                        results: $.map(data, function (item) {{
+                            console.log(item);
+                            return {{
+                                text: item.{4:s},
+                                id: item.id
+                            }}
+                        }})
+                    }};
+                }}
+            }},
+            initSelection: '',
+            dropdownCssClass: "bigdrop",
+        }});
+        """.format(attr['_id'], self.min_length, self.url, self.keyword, self.fields[0].name)
+
+        if self.is_reference:
+            key2 = self.keyword + '_aux'
+            attr['_class'] = 'string span8'         # XXX: ugly hardcoding of span8!
+            if 'requires' in attr:
+                del attr['requires']
+            attr['_name'] = key2
+            value = attr['value']
+            record = self.db(
+                self.fields[1] == value).select(self.fields[0]).first()
+            attr['value'] = record and record[self.fields[0].name]
+            return TAG[''](SPAN(**attr),
+                           SCRIPT(select_script))
+        else:
+            attr['_name'] = field.name
+            return TAG[''](SPAN(**attr),
+                           SCRIPT(select_script))
+
+SQLFORM.widgets.select2autocomplete = Select2AutocompleteWidget

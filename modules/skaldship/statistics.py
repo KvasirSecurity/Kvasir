@@ -217,9 +217,17 @@ def graphs_index():
             db.t_vulndata.f_severity, count, orderby=db.t_vulndata.f_severity, groupby=db.t_vulndata.f_severity)
     for rec in rows:
         if current.globalenv['settings'].use_cvss:
-            vuln_by_sev[int(rec.t_vulndata.f_cvss_score)] += rec[count]
+            if rec.t_vulndata.f_cvss_score is not None:
+                vuln_by_sev[int(rec.t_vulndata.f_cvss_score)] += rec[count]
+            else:
+                # no CVSS score in record (val: None)
+                vuln_by_sev[0] += rec[count]
         else:
-            vuln_by_sev[rec.t_vulndata.f_severity] = rec[count]
+            if rec.t_vulndata.f_severity is not None:
+                vuln_by_sev[rec.t_vulndata.f_severity] = rec[count]
+            else:
+                # no Severity score in record (val: None)
+                vuln_by_sev[0] = rec[count]
 
     graph['vuln_by_sev_count'] = ''
     graph['vuln_by_sev_count_raw'] = vuln_by_sev

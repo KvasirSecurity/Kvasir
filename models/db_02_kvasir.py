@@ -136,6 +136,9 @@ db.define_table('t_service_vulns',
     format='%(f_service.f_proto)s/%(f_service.f_number)s :: %(f_status)s :: %(f_vulnid)s',
     fake_migrate=settings.fake_migrate, migrate=settings.migrate)
 
+db.t_service_vulns.f_vulndata_id.widget = SQLFORM.widgets.select2autocomplete(
+     request, db.t_vulndata.f_vulnid, limitby=(0, 50), min_length=2, id_field=db.t_vulndata.id)
+
 s_service_vuln_data = db(db.t_service_vulns.f_vulndata_id==db.t_vulndata.id)
 
 ########################################
