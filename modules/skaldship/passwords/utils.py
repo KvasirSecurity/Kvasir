@@ -19,7 +19,9 @@ import string
 from gluon import current
 import logging
 from ..log import log
-
+from .medusa import process_medusa
+from .hydra import process_hydra
+from .metasploit import process_msfcsv
 
 # Module definitions
 lowercase = set(string.lowercase)
