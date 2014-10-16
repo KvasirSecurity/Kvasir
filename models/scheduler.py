@@ -226,7 +226,7 @@ def scanner_import(
             update_hosts=update_hosts,
         )
     elif scanner == 'METASPLOIT':
-        from skaldship.metasploit import process_report_xml
+        from skaldship.metasploit.pro import process_report_xml
 
         logger.info("Processing Metasploit Pro file: %s" % filename)
         process_report_xml(
