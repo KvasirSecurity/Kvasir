@@ -204,7 +204,7 @@ def process_report_xml(
         # TODO: check for ip subnet/range and break it out to individuals
     ip_only = []
     if ip_include_list:
-        ip_only = ip_include_list.split('\r\n')
+        ip_only = ip_include_list
         # TODO: check for ip subnet/range and break it out to individuals
 
     log(" [*] Processing Metasploit Pro report file: %s" % (filename))
