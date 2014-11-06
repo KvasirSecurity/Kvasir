@@ -14,8 +14,8 @@ __version__ = "1.0"
 ##--------------------------------------#
 """
 
-from .utils import lookup_hash
-from ..log import log
+from skaldship.passwords.utils import lookup_hash
+from skaldship.log import log
 import logging
 
 ##-------------------------------------------------------------------------

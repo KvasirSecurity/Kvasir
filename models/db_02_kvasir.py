@@ -77,7 +77,7 @@ db.define_table('t_services',
     Field('f_name', type='string', label=T('Service Name'), widget=autocomplete_bootstrap),
     Field('f_banner', type='text', label=T('Banner')),
     Field('f_hosts_id', type='reference t_hosts', label=T('Host'), represent=lambda id,row:XML(host_title_maker(db.t_hosts[id]))),
-    format=lambda r:XML("%s :: %s/%s" % (db.t_hosts[r.f_hosts_id.id].f_ipaddr, r.f_proto, r.f_number)),
+    format=lambda r:XML("%s :: %s/%s" % (db.t_hosts[r.f_hosts_id].f_ipaddr, r.f_proto, r.f_number)),
     fake_migrate=settings.fake_migrate, migrate=settings.migrate)
 
 ########################################
