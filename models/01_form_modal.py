@@ -288,7 +288,7 @@ class Select2AutocompleteWidget(object):
             raise HTTP(200, rows.as_json())
 
     def __call__(self, field, value, **attributes):
-        from gluon.sqlhtml import StringWidget
+        from gluon.sqlhtml import StringWidget, INPUT
         default = dict(
             _type='text',
             value=(not value is None and str(value)) or '',
@@ -297,6 +297,7 @@ class Select2AutocompleteWidget(object):
         div_id = self.keyword + '_div'
         attr['_autocomplete'] = 'off'
         attr['_class'] = 'select2-chosen'
+        attr['_name'] = field.name
         select_script = """
         $('#{0:s}').select2({{
             placeholder: "Search for vulnerability...",
@@ -312,7 +313,6 @@ class Select2AutocompleteWidget(object):
                 results: function (data) {{
                     return {{
                         results: $.map(data, function (item) {{
-                            console.log(item);
                             return {{
                                 text: item.{4:s},
                                 id: item.id
@@ -331,16 +331,14 @@ class Select2AutocompleteWidget(object):
             attr['_class'] = 'string span8'         # XXX: ugly hardcoding of span8!
             if 'requires' in attr:
                 del attr['requires']
-            attr['_name'] = key2
             value = attr['value']
             record = self.db(
                 self.fields[1] == value).select(self.fields[0]).first()
             attr['value'] = record and record[self.fields[0].name]
-            return TAG[''](SPAN(**attr),
+            return TAG[''](INPUT(**attr),
                            SCRIPT(select_script))
         else:
-            attr['_name'] = field.name
-            return TAG[''](SPAN(**attr),
+            return TAG[''](INPUT(**attr),
                            SCRIPT(select_script))
 
 SQLFORM.widgets.select2autocomplete = Select2AutocompleteWidget
