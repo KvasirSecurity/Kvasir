@@ -18,10 +18,8 @@ import re
 import string
 from gluon import current
 import logging
-from ..log import log
-from .medusa import process_medusa
-from .hydra import process_hydra
-from .metasploit import process_msfcsv
+from skaldship.log import log
+
 
 # Module definitions
 lowercase = set(string.lowercase)
@@ -347,9 +345,9 @@ def process_password_file(pw_file=None, pw_data=None, file_type=None, source=Non
     :param source: Source to add to f_source field
     """
     import fileinput
-    from .medusa import process_medusa
-    from .hydra import process_hydra
-    from .metasploit import process_msfcsv
+    from skaldship.passwords.medusa import process_medusa
+    from skaldship.passwords.hydra import process_hydra
+    from skaldship.passwords.metasploit import process_msfcsv
 
     accounts = {}
     if pw_file is not None:
