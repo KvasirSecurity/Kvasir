@@ -23,7 +23,7 @@ def index():
 @auth.requires_login()
 def import_scan():
     """
-    Upload and import Nexpose Scan file
+    Upload and import Nessus Scan file
     """
     msf_settings = msf_get_config(session)
     try:
@@ -171,7 +171,7 @@ def import_scan():
             else:
                 response.flash = "Error submitting job: %s" % (task.errors)
         else:
-            from skaldship.nessus import process_scanfile
+            from skaldship.nessus.processor import process_scanfile
             logger.info("Starting Nessus Report Import")
             response.flash = process_scanfile(
                 filename=filename,

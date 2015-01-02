@@ -213,7 +213,7 @@ def scanner_import(
             update_hosts=update_hosts,
         )
     elif scanner == 'NESSUS':
-        from skaldship.nessus import process_scanfile
+        from skaldship.nessus.processor import process_scanfile
 
         logger.info("Processing Nessus file: %s" % (filename))
         process_scanfile(
