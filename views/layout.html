@@ -63,76 +63,73 @@
 </head>
 
 <body>
-  <!-- Navbar ================================================== -->
-  <div class="navbar navbar-inverse navbar-fixed-top">
-    <div class="flash">{{=response.flash or ''}}</div>
-    <div class="navbar-inner">
-      <div class="container">
-        <!-- the next tag is necessary for bootstrap menus, do not remove -->
-        <button type="button" class="btn btn-navbar" data-toggle="collapse" data-target=".nav-collapse">
-          <span class="icon-bar"></span>
-          <span class="icon-bar"></span>
-          <span class="icon-bar"></span>
-        </button>
-	       {{=response.logo or ''}}
-        <ul id="navbar" class="nav pull-right">{{='auth' in globals() and auth.navbar(mode="dropdown") or ''}}</ul>
-        <div class="nav-collapse">
-          {{is_mobile=request.user_agent().is_mobile}}
-          {{if auth.is_logged_in():}}
-          {{=MENU(response.menu, _class='mobile-menu nav' if is_mobile else 'nav',mobile=is_mobile,li_class='dropdown',ul_class='dropdown-menu')}}
-          {{pass}}
-        </div><!--/.nav-collapse -->
-      </div>
-    </div>
-
-  </div><!--/top navbar -->
-
-  <div class="container-fluid">
-
-    <!-- Masthead ================================================== -->
-    <!--<header class="mastheader row" id="header">
-          <div id="breadcrumb">
-            <a href="{{=URL('default', 'index')}}"><i class="icon-home"></i>Home > {{=response.title or request.application}}</a>
+  <div class="wrap">
+      <!-- Navbar ================================================== -->
+      <div class="navbar navbar-inverse navbar-fixed-top">
+        <div class="flash">{{=response.flash or ''}}</div>
+        <div class="navbar-inner">
+          <div class="container">
+            <!-- the next tag is necessary for bootstrap menus, do not remove -->
+            <button type="button" class="btn btn-navbar" data-toggle="collapse" data-target=".nav-collapse">
+              <span class="icon-bar"></span>
+              <span class="icon-bar"></span>
+              <span class="icon-bar"></span>
+            </button>
+               {{=response.logo or ''}}
+            <ul id="navbar" class="nav pull-right">{{='auth' in globals() and auth.navbar(mode="dropdown") or ''}}</ul>
+            <div class="nav-collapse">
+              {{is_mobile=request.user_agent().is_mobile}}
+              {{if auth.is_logged_in():}}
+              {{=MENU(response.menu, _class='mobile-menu nav' if is_mobile else 'nav',mobile=is_mobile,li_class='dropdown',ul_class='dropdown-menu')}}
+              {{pass}}
+            </div><!--/.nav-collapse -->
           </div>
-    </header>-->
-
-    <section id="main" class="main row-fluid">
-        {{if left_sidebar_enabled:}}
-        <div class="span3 left-sidebar">
-            {{block left_sidebar}}
-            <h3>Left Sidebar</h3>
-            <p></p>
-            {{end}}
-        </div>
-        {{pass}}
-
-        <div class="{{=middle_columns}}">
-            {{block center}}
-            {{include}}
-            {{end}}
         </div>
 
-        {{if right_sidebar_enabled:}}
-        <div class="span3">
-            {{block right_sidebar}}
-            <h3>Right Sidebar</h3>
-            <p></p>
-            {{end}}
-        </div>
-        {{pass}}
-    </section><!--/main-->
+      </div><!--/top navbar -->
 
-    <!-- Footer ================================================== -->
-    <div class="row-fluid">
-        <footer class="footer span12" id="footer">
-            <div class="footer-content">
-                {{block footer}}
+      <div class="container-fluid">
+
+        <!-- Masthead ================================================== -->
+        <!--<header class="mastheader row" id="header">
+              <div id="breadcrumb">
+                <a href="{{=URL('default', 'index')}}"><i class="icon-home"></i>Home > {{=response.title or request.application}}</a>
+              </div>
+        </header>-->
+
+        <section id="main" class="main row-fluid">
+            {{if left_sidebar_enabled:}}
+            <div class="span3 left-sidebar">
+                {{block left_sidebar}}
                 {{end}}
             </div>
-        </footer>
-    </div>
+            {{pass}}
 
-  </div> <!-- /container -->
+            <div class="{{=middle_columns}}">
+                {{block center}}
+                {{include}}
+                {{end}}
+            </div>
+
+            {{if right_sidebar_enabled:}}
+            <div class="span3">
+                {{block right_sidebar}}
+                {{end}}
+            </div>
+            {{pass}}
+        </section><!--/main-->
+
+      </div> <!-- /container -->
+
+      <div class="footer" id="footer">
+        <div class="container">
+          <p class="muted">Kvasir v{{=settings.version}} -=- <a href="https://github.com/KvasirSecurity/Kvasir" target="_blank">https://github.com/KvasirSecurity/Kvasir</a></p>
+          {{block footer}}
+          {{end}}
+        </div>
+      </div>
+
+  </div> <!-- #wrap -->
 
   {{#include 'terminal.html'}}
   {{include 'hotkeys.html'}}

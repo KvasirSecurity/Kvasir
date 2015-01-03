@@ -7,7 +7,8 @@ __version__ = "1.0"
 ##--------------------------------------#
 ## Kvasir
 ##
-## (c) 2010-2013 Cisco Systems, Inc.
+## (c) 2010-2014 Cisco Systems, Inc.
+## (c) 2015 Kurt Grutzmacher
 ##
 ## Generates a password file format for input into
 ## tools like john the ripper
@@ -16,7 +17,7 @@ __version__ = "1.0"
 ##
 ##   ./web2py.py -R applications/kvasir_public/private/gen_pwfile.py -S $appname -M -A -o pwdump -H ntlm
 ##
-## Author: Kurt Grutzmacher <kgrutzma@cisco.com>
+## Author: Kurt Grutzmacher <grutz@jingojango.net>
 ##--------------------------------------#
 """
 

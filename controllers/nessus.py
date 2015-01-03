@@ -2,11 +2,12 @@
 ##--------------------------------------#
 ## Kvasir
 ##
-## (c) 2010-2013 Cisco Systems, Inc.
+## (c) 2010-2014 Cisco Systems, Inc.
+## (c) 2015 Kurt Grutzmacher
 ##
 ## Nessus controller
 ##
-## Author: Kurt Grutzmacher <kgrutzma@cisco.com>
+## Author: Kurt Grutzmacher <grutz@jingojango.net>
 ##--------------------------------------#
 
 from skaldship.metasploit import msf_get_config

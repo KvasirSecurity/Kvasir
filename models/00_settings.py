@@ -4,11 +4,12 @@
 ##--------------------------------------#
 ## Kvasir
 ##
-## (c) 2010-2013 Cisco Systems, Inc.
+## (c) 2010-2014 Cisco Systems, Inc.
+## (c) 2015 Kurt Grutzmacher
 ##
 ## Global settings which are not dependent for initial setup
 ##
-## Author: Kurt Grutzmacher <kgrutzma@cisco.com>
+## Author: Kurt Grutzmacher <grutz@jingojango.net>
 ##--------------------------------------#
 """
 
@@ -58,6 +59,7 @@ settings.author = 'Cisco Systems Security Posture Assessment Team'
 settings.author_email = 'kvasirdevs@external.cisco.com'
 settings.keywords = ''
 settings.description = ''
+settings.version = "1.1.0"
 
 # Authentication.
 login = settings.kvasir_config.get('login', {})

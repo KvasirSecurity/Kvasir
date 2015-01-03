@@ -7,7 +7,8 @@ __version__ = "1.0"
 ##--------------------------------------#
 ## Kvasir
 ##
-## (c) 2010-2013 Cisco Systems, Inc.
+## (c) 2010-2014 Cisco Systems, Inc.
+## (c) 2015 Kurt Grutzmacher
 ##
 ## Backup/Restore Kvasir database as CSV
 ##
@@ -19,7 +20,7 @@ __version__ = "1.0"
 ## Import:
 ##   ./web2py.py -R applications/$appname/private/db_csv.py -S $appname -M -A -i <filename>
 ##
-## Author: Kurt Grutzmacher <kgrutzma@cisco.com>
+## Author: Kurt Grutzmacher <grutz@jingojango.net>
 ##--------------------------------------#
 """
 

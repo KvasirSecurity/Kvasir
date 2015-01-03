@@ -9,7 +9,7 @@ ntpwchk - Finds the correct case of a password given a word and NT hash
 using case permutations.
 """
 
-__author__ =   "Kurt Grutzmacher <kgrutzma@cisco.com>"
+__author__ =   "Kurt Grutzmacher <grutz@jingojango.net>"
 __date__ =     "05/17/2012"
 __revision__ = "1.11"
 

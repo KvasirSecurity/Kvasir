@@ -1,5 +1,9 @@
 /* CSS overrides and unique settings for Kvasir */
 
+html {
+  height: 100%;
+}
+
 .navbar-inverse .brand, .navbar-inverse .nav > li > a {
   color: #fff;
   font-size: 12px;
@@ -22,9 +26,11 @@
 }
 
 body {
+  height: 100%;
   font: 10px;
   background-color: #F1F1F1;
   padding: 40px;
+  padding-bottom: 20px;  /* footer height */
 }
 
 .mastheader {
@@ -48,10 +54,6 @@ body {
     padding-left: 0px;
     margin-left: -20px;
     padding-right: 0px;
-}
-
-select {
-    width: auto;
 }
 
 #page {
@@ -336,4 +338,45 @@ div#exploitdb_exploit {
 
 #popoverwrap .popover {
     width: auto;
+}
+
+/* Sticky footer */
+/* Wrapper for page content to push down footer */
+#wrap {
+  min-height: 100%;
+  height: auto !important;
+  height: 100%;
+  /* Negative indent footer by it's height */
+  margin: 0 auto -60px;
+  position: relative;
+}
+
+/* Wrapper for page content to push down footer */
+#wrap {
+  min-height: 100%;
+  height: auto !important;
+  height: 100%;
+  /* Negative indent footer by it's height */
+  margin: 0 auto -60px;
+}
+
+/* Set the fixed height of the footer here */
+#footer {
+  height: 20px;
+  background-color: #f5f5f5;
+  bottom: 0;
+}
+#footer.container {
+  width: auto;
+  max-width: 680px;
+}
+
+/* Lastly, apply responsive CSS fixes as necessary */
+@media (max-width: 767px) {
+  #footer {
+    margin-left: -20px;
+    margin-right: -20px;
+    padding-left: 20px;
+    padding-right: 20px;
+  }
 }

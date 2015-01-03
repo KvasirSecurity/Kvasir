@@ -7,7 +7,8 @@ __version__ = "1.0"
 ##--------------------------------------#
 ## Kvasir
 ##
-## (c) 2010-2013 Cisco Systems, Inc.
+## (c) 2010-2014 Cisco Systems, Inc.
+## (c) 2015 Kurt Grutzmacher
 ##
 ## Create/Change password users for Kvasir
 ##
@@ -15,7 +16,7 @@ __version__ = "1.0"
 ##
 ##   ./web2py.py -R applications/$appname/private/user.py -S $appname -M -A -u username -p password
 ##
-## Author: Kurt Grutzmacher <kgrutzma@cisco.com>
+## Author: Kurt Grutzmacher <grutz@jingojango.net>
 ##--------------------------------------#
 """
 

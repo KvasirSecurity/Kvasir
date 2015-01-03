@@ -1,3 +1,15 @@
+##--------------------------------------#
+## Kvasir
+##
+## (c) 2010-2014 Cisco Systems, Inc.
+## (c) 2015 Kurt Grutzmacher
+##
+## Menu bar items
+##
+## Author: Kurt Grutzmacher <grutz@jingojango.net>
+##--------------------------------------#
+
+
 _a = request.application
 
 response.logo = A(B('KVASIR'), _class="brand")
@@ -58,19 +70,19 @@ response.menu = [
 
     (T('Metasploit'), False, '',
      [
-         (T('Mass Jobs'), False, '',
+         (T('Mass Jobs (Pro)'), False, '',
          [
             (T('Bruteforce'), False, URL(_a, 'metasploit', 'bruteforce'), []),
             (T('Exploit'), False, URL(_a, 'metasploit', 'exploit'), []),
          ]),
-         (T('Imports'), False, '',
+         (T('Imports (Pro)'), False, '',
          [
              (T('PWDUMP Files'), False, URL(_a, 'metasploit', 'import_pwdump'), []),
              (T('Screenshots'), False, URL(_a, 'metasploit', 'import_screenshots'), []),
              (T('Report XML'), False, URL(_a, 'metasploit', 'import_report_xml'), []),
          ]),
-         (T('Send Accounts'), False, URL(_a, 'metasploit', 'send_accounts'), []),
-         (T('Send Scan XML Files'), False, URL(_a, 'metasploit', 'send_scanxml'), []),
+         (T('Send Accounts (Pro)'), False, URL(_a, 'metasploit', 'send_accounts'), []),
+         (T('Send Scan XML Files (Pro)'), False, URL(_a, 'metasploit', 'send_scanxml'), []),
          (T('API Settings'), False, URL(_a, 'metasploit', 'api_settings'), []),
          #(T('Tasks'), False, URL(_a, 'metasploit', 'task_list'), []),
      ]),

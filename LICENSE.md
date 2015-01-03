@@ -2,6 +2,7 @@ Kvasir License Agreement
 ========================
 
 Copyright (C) 2011-2014, Cisco Systems, Inc.
+Copyright (C) 2015, Kurt Grutzmacher
 
 All rights reserved.
 
@@ -35,7 +36,7 @@ POSSIBILITY OF SUCH DAMAGE.
 ================================================================================
 
 Kvasir is provided under the 3-clause BSD license above. The copyright on this
-package is held by Cisco Systems, Inc.
+package is held by Kurt Grutzmacher.
 
 This license does not apply to the following components and any component which
 may not be included in this list:

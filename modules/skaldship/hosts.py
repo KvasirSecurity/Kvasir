@@ -10,7 +10,7 @@ __version__ = "1.0"
 ##
 ## Abstraction layer for Hosts and DB functions
 ##
-## Author: Kurt Grutzmacher <kgrutzma@cisco.com>
+## Author: Kurt Grutzmacher <grutz@jingojango.net>
 ##--------------------------------------#
 """
 
