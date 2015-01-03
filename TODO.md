@@ -15,17 +15,7 @@ Urgents
 
 * Document server-side filtering for accounts and services in html
 
-* Nessus file parsing and API needs completion
-
-* Host filter should have some help attached to it
-
 * Send a host to be re-scanned and update/replace information
-
-* vulninfo-by-vulnid updates for adding exploit/references
-
-* Better Scheduler task management and integrate MSF Pro task viewing
-  Right now we just redirect to the MSF Pro workspace task detail but
-  the API code is there and functioning. Just not Kvasir UI.
 
 * Long output results should go into an alert div and not response.flash
 
@@ -43,8 +33,6 @@ Needs
   using valkyries
 
 * Kick off aux/exploits to Metasploit / CANVAS using their API
-
-* Kick off nmap scans and import results through scheduler
 
 * QualysGuard file parsing and API needs attention. Can use existing
   internal python library to parse XML report. API will require some

@@ -9,13 +9,13 @@
                 <div class="widget-box">
                     <div class="widget-title">
                         <h5>
-                            {{=vulninfo.f_title}} Information
-                            <!-- <a href="javascript:void();" id="button_vulndata_edit" class="btn"><i class="icon-edit"></i> Edit</a> -->
+                            {{=T('Vulnerability Information')}}
                         </h5>
                     </div>
                     <div class="widget-content">
                     <a href="{{=URL('vulns', 'vulndata_edit', args=vulninfo.id)}}" id="button_vulndata_edit" target="_blank" class="btn"><i class="icon-edit"></i> Edit</a>
                         <table>
+                            <tr><td><b>ID/Source: </b></td><td>{{=vulninfo.f_vulnid}} ({{=vulninfo.f_source}})</td></tr>
                             <tr><td><b>Description: </b></td><td>{{=MARKMIN(vulninfo.f_description)}}</td></tr>
                             <tr><td><b>Solution: </b></td><td>{{=MARKMIN(vulninfo.f_solution)}}</td></tr>
                         </table>
@@ -25,7 +25,7 @@
             <div class="span3">
                 <div class="widget-box">
                     <div class="widget-title">
-                        <h5>{{=T('Vuln Details')}}</h5>
+                        <h5>{{=T('Vulnerability Details')}}</h5>
                     </div>
                     <div class="widget-content">
                         <div class="vulnDetails">

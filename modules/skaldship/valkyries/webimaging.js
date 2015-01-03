@@ -1,6 +1,7 @@
 /* Capture a screenshot of a URL and save it to a file using phantomjs
  *
- * (c) 2010-2013 Cisco Systems, Inc.
+ * (c) 2010-2014 Cisco Systems, Inc.
+ * (c) 2015 Kurt Grutzmacher
  */
 
 var page = require('webpage').create(),

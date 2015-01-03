@@ -4,7 +4,14 @@ __version__ = "1.0"
 
 """
 ##--------------------------------------#
-## Kvasir Skaldship Nessus Module Library
+## Kvasir
+##
+## (c) 2010-2014 Cisco Systems, Inc.
+## (c) 2015 Kurt Grutzmacher
+##
+## Skaldship Nessus Module Library
+##
+## Author: Kurt Grutzmacher <grutz@jingojango.net>
 ##--------------------------------------#
 """
 

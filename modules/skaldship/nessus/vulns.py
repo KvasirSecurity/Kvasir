@@ -7,7 +7,7 @@ __version__ = "1.0"
 ## Kvasir
 ##
 ## (c) 2010-2014 Cisco Systems, Inc.
-## (c) 2014 Kurt Grutzmacher
+## (c) 2015 Kurt Grutzmacher
 ##
 ## Nessus Vulnerabilities for Kvasir
 ##

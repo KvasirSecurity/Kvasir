@@ -7,7 +7,7 @@
 ##
 ## Tool output controller
 ##
-## Author: Kurt Grutzmacher <kgrutzma@cisco.com>
+## Author: Kurt Grutzmacher <grutz@jingojango.net>
 ##--------------------------------------#
 
 from skaldship.hosts import get_host_record, host_title_maker, host_a_maker

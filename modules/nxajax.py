@@ -1,4 +1,10 @@
 #!/usr/bin/python
+
+"""
+This library is historical and not used by Kvasir. It was an attempt to do
+AJAX-based functions to the Nexpose HTTPS instance for actions such as
+scan template management. At some point this code will poof as it's not used.
+"""
 # Oh.. theres an easier way to grab the nexposeCCSessionID: from the HTML response! argh!
 
 import urllib2, urllib, cookielib

@@ -1,5 +1,16 @@
 # -*- coding: utf-8 -*-
 
+##--------------------------------------#
+## Kvasir
+##
+## (c) 2010-2014 Cisco Systems, Inc.
+## (c) 2015 Kurt Grutzmacher
+##
+## Database configuration
+##
+## Author: Kurt Grutzmacher <grutz@jingojango.net>
+##--------------------------------------#
+
 from gluon.tools import Mail, Auth, Crud, Service, PluginManager
 from gluon import current
 from utils import web2py_uuid

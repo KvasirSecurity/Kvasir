@@ -10,7 +10,7 @@ __version__ = "1.0"
 ##
 ## Metasploit password functions
 ##
-## Author: Kurt Grutzmacher <kgrutzma@cisco.com>
+## Author: Kurt Grutzmacher <grutz@jingojango.net>
 ##--------------------------------------#
 """
 

@@ -12,7 +12,7 @@
 ## function calls for three fields and you only want to pass the second
 ## field then submit (None, secondvariable, None)
 ##
-## Author: Kurt Grutzmacher <kgrutzma@cisco.com>
+## Author: Kurt Grutzmacher <grutz@jingojango.net>
 ##--------------------------------------#
 
 __version__ = "1.1.0"

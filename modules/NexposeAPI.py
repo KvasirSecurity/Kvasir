@@ -1,11 +1,11 @@
 #!/usr/bin/env python
 #coding:utf-8
-# Author:  Kurt Grutzmacher -- <kgrutzma@cisco.com>
+# Author:  Kurt Grutzmacher -- <grutz@jingojango.net>
 # Purpose: Nexpose API Interface
 # Created: 01/28/10
 
 __version__ = "1.1"
-__author__ = "Kurt Grutzmacher <kgrutzma@cisco.com>"
+__author__ = "Kurt Grutzmacher <grutz@jingojango.net>"
 
 import os, sys, random
 import unittest
