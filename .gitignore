@@ -51,3 +51,4 @@ cache/
 
 # don't want your config in git
 kvasir.yaml
+models/99_local.py
