@@ -199,8 +199,8 @@ def confirmation_multi():
 
 @auth.requires_login()
 def detail():
-
     if request.args(0) is None: redirect(URL('default', 'error', vars={'msg': T('Host record not found')}))
+    from skaldship.general import oui_lookup
 
     response.files.append(URL(request.application,'static','js/jquery.sparkline.js'))
     response.files.append(URL(request.application,'static','jstree/jstree.min.js'))
@@ -215,6 +215,12 @@ def detail():
 
     hostipaddr=record.f_ipaddr
     engineername = db.auth_user[record.f_engineer].username
+
+    if record.f_macaddr:
+        oui_res = oui_lookup(mac_addr=record.f_macaddr, nmap_os_db="%s/nmap-mac-prefixes" % settings.nmap_sharedir)
+        oui_vendor = oui_res.get(record.f_macaddr, oui_res.get('error', 'None'))
+    else:
+        oui_vendor = 'None'
 
     # to allow updating of the host record from this page
     host=crud.read(db.t_hosts,record)
@@ -302,6 +308,7 @@ def detail():
 
     response.title = "%s :: Host info :: %s" % (settings.title, host_title_maker(record))
     return dict(host=host,
+                oui_vendor=oui_vendor,
                 netbios=netbios,
                 host_points=host_points,
                 host_pagination=host_pagination, hostipaddr=hostipaddr, engineername=engineername)

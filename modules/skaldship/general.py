@@ -34,7 +34,7 @@ def utf_8_decoder(unicode_data):
 def severity_mapping(sevnum='1', totype='color'):
     """
     Convert a severity number (1-10) to a name (Info, Low, Medium, High)
-    or color
+    or color. We cover 0-3 as info and go to 11 to cover the awesomeness
     """
     severitymap = [ (0, 'Informational', 'grey'),
                     (1, 'Informational', 'grey'),
@@ -47,6 +47,7 @@ def severity_mapping(sevnum='1', totype='color'):
                     (8, 'High', 'red'),
                     (9, 'High', 'red'),
                     (10, 'High', 'red'),
+                    (11, 'High', 'red'),
                   ]
     return severitymap[int(sevnum)]
 
@@ -62,6 +63,7 @@ def vulntype_mapping(vulntype='exploited'):
         'vulnerable-exploited': 'orange',
         'exploited': 'red',
     }
+    return vulnmap[vulntype]
 
 ##-------------------------------------------------------------------------
 
@@ -299,6 +301,60 @@ def exploitdb_update(indexfile):
         message = 'Load complete: %s records created' % (count)
 
     return message
+
+
+##-------------------------------------------------------------------------
+def oui_lookup(mac_addr='00:00:00:00:00:00', nmap_os_db='/usr/local/share/nmap/nmap-mac-prefixes'):
+    """
+    Lookup a vendor from the Nmap MAC Prefixes file
+
+    >>> oui_lookup('00:00:00:00:00:00')
+    {'00:00:00:00:00:00': 'Xerox'}
+    >>> oui_lookup('00-00-00-00-00-00')
+    {'00-00-00-00-00-00': 'Xerox'}
+    >>> oui_lookup(-1)
+    {}
+    >>> oui_lookup('00:00:00:00:00:00', nmap_os_db='DOESNOT_EXIST_A_FILE_kvasirerr')
+    {'00:00:00:00:00:00': None, 'error': 'No such file or directory'}
+    >>> oui_lookup(['00-00-00-00-00-00', '00:00:00:00:00:00'])
+    {'00-00-00-00-00-00': 'Xerox', '00:00:00:00:00:00': 'Xerox'}
+    >>> oui_lookup(['00-00-00-00-00-00', 'Xerox'])
+    {'00-00-00-00-00-00': 'Xerox', 'Xerox': 'Unknown'}
+    """
+    import mmap
+
+    try:
+        oui_fs = open(nmap_os_db, "r")
+    except IOError, err:
+        return {mac_addr: None, 'error': err[1]}
+
+    oui_data = mmap.mmap(oui_fs.fileno(), 0, access=mmap.ACCESS_READ)
+    def _lookup(mac_addr, oui_data):
+        oui_result = 'Unknown'
+        # remove : or - or just accept it as is and be lucky
+        if mac_addr.find(':') > -1:
+            mac_lookup = "".join(mac_addr.split(':')[:3])
+        else:
+            mac_lookup = "".join(mac_addr.split('-')[:3])
+
+        if len(mac_lookup) == 6:
+            # MAC addresses in nmap db are in upper case and we want start of line (post \n)
+            location = oui_data.find('\n' + mac_lookup.upper())
+            location += 1   # remove leading \n
+            if location > 0:
+                oui_result = oui_data[location+7:location+oui_data[location:].find('\n')]
+
+        return oui_result
+
+    result = {}
+    if isinstance(mac_addr, list):
+        for addr in mac_addr:
+            result[addr] = _lookup(addr, oui_data)
+
+    if isinstance(mac_addr, str):
+        result[mac_addr] = _lookup(mac_addr, oui_data)
+
+    return result
 
 
 ##-------------------------------------------------------------------------
