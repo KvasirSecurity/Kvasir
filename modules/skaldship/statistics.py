@@ -40,6 +40,7 @@ def vulnlist(qstr="%", hostfilter=None):
     svcv_id = db.t_service_vulns.id
     vulnid = db.t_vulndata.id
     f_vulnid = db.t_vulndata.f_vulnid
+    f_title = db.t_vulndata.f_title
     sev = db.t_vulndata.f_severity
     cvss = db.t_vulndata.f_cvss_score
 
@@ -51,7 +52,7 @@ def vulnlist(qstr="%", hostfilter=None):
     #query = (db.t_service_vulns.f_vulndata_id == db.t_vulndata.id)
 
     vulnlist = {}
-    for rec in db(query).select(status, vulnid, f_vulnid, svcv_id, sev, cvss):
+    for rec in db(query).select(status, vulnid, f_vulnid, f_title, svcv_id, sev, cvss):
         q2 = (query & ((db.t_service_vulns.f_vulndata_id == rec.t_vulndata.id) &
              (db.t_service_vulns.f_status == rec.t_service_vulns.f_status)))
         count = db(q2).count()
@@ -60,7 +61,8 @@ def vulnlist(qstr="%", hostfilter=None):
             vstats.append([rec.t_service_vulns.f_status,
                             count,
                             rec.t_vulndata.f_severity,
-                            rec.t_vulndata.f_cvss_score
+                            rec.t_vulndata.f_cvss_score,
+                            rec.t_vulndata.f_title,
                          ] )
             vulnlist[rec.t_vulndata.f_vulnid] = vstats
 
