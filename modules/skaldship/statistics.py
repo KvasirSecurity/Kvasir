@@ -55,14 +55,16 @@ def vulnlist(qstr="%", hostfilter=None):
     for rec in db(query).select(status, vulnid, f_vulnid, f_title, svcv_id, sev, cvss):
         q2 = (query & ((db.t_service_vulns.f_vulndata_id == rec.t_vulndata.id) &
              (db.t_service_vulns.f_status == rec.t_service_vulns.f_status)))
-        count = db(q2).count()
+        vcount = db(q2).count()
         vstats = vulnlist.setdefault(rec.t_vulndata.f_vulnid, list())
         if rec.t_service_vulns.f_status not in map(lambda a:a[0], vstats):
+            ecount = db(db.t_exploit_references.f_vulndata_id==rec.t_vulndata.id).count()
             vstats.append([rec.t_service_vulns.f_status,
-                            count,
+                            vcount,
                             rec.t_vulndata.f_severity,
                             rec.t_vulndata.f_cvss_score,
                             rec.t_vulndata.f_title,
+                            ecount,
                          ] )
             vulnlist[rec.t_vulndata.f_vulnid] = vstats
 
@@ -196,10 +198,12 @@ def graphs_index():
     host_by_sev = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
     if current.globalenv['settings'].use_cvss:
         maxhostsev = db.t_vulndata.f_cvss_score.max()
+        q = (db.t_vulndata.f_cvss_score >= 1.0)
     else:
         maxhostsev = db.t_vulndata.f_severity.max()
+        q = (db.t_vulndata.f_severity >= 1.0)
 
-    q = (db.t_service_vulns.f_services_id == db.t_services.id) & (db.t_vulndata.id == db.t_service_vulns.f_vulndata_id)
+    q &= (db.t_service_vulns.f_services_id == db.t_services.id) & (db.t_vulndata.id == db.t_service_vulns.f_vulndata_id)
     for rec in db(q).select(maxhostsev, db.t_services.f_hosts_id, orderby=db.t_services.f_hosts_id, groupby=db.t_services.f_hosts_id):
         host_by_sev[int(rec[maxhostsev])] += 1
 
@@ -213,10 +217,12 @@ def graphs_index():
     vuln_by_sev = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
     count = db.t_vulndata.id.count()
     if current.globalenv['settings'].use_cvss:
-        rows = db(db.t_vulndata.id == db.t_service_vulns.f_vulndata_id).select(
+        q = (db.t_vulndata.id == db.t_service_vulns.f_vulndata_id) & (db.t_vulndata.f_cvss_score >= 1.0)
+        rows = db(q).select(
             db.t_vulndata.f_cvss_score, count, orderby=db.t_vulndata.f_cvss_score, groupby=db.t_vulndata.f_cvss_score)
     else:
-        rows = db(db.t_vulndata.id == db.t_service_vulns.f_vulndata_id).select(
+        q = (db.t_vulndata.id == db.t_service_vulns.f_vulndata_id) & (db.t_vulndata.f_severity > 0)
+        rows = db(q).select(
             db.t_vulndata.f_severity, count, orderby=db.t_vulndata.f_severity, groupby=db.t_vulndata.f_severity)
     for rec in rows:
         if current.globalenv['settings'].use_cvss:

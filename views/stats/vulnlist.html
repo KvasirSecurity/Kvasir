@@ -11,6 +11,7 @@
       <TH>Title</TH>
       <TH>Status</TH>
       <TH>Count</TH>
+      <TH>Exploits</TH>
       <TH>Severity</TH>
       <TH>CVSS Score</TH>
     </THEAD>
@@ -22,6 +23,7 @@
       <TD>{{=r[4]}}</TD>
       <TD>{{=r[0]}}</TD>
       <TD>{{=r[1]}}</TD>
+      <TD>{{=r[5]}}</TD>
       <TD>{{=r[2]}}</TD>
       <TD>{{=r[3]}}</TD>
     </TR>
@@ -39,7 +41,7 @@ var vulnlist;
 
 jQuery(document).ready(function() {
     vulnlist = $('#vulnlist').dataTable( {
-          "aaSorting": [ [4, "desc"], [3, "desc"] ],
+          "aaSorting": [ [5, "desc"], [3, "desc"] ],
           "sDom": 'T<"clear">lfrtip',
           "oTableTools": {
               "sSwfPath": "{{=URL(request.application,'static','TableTools/swf/copy_csv_xls.swf')}}",
