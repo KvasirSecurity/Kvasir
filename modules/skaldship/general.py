@@ -35,15 +35,16 @@ def severity_mapping(sevnum='1', totype='color'):
     """
     Convert a severity number (1-10) to a name (Info, Low, Medium, High)
     or color. We cover 0-3 as info and go to 11 to cover the awesomeness
+    This follows CVSS' severity mapping https://nvd.nist.gov/cvss.cfm
     """
     severitymap = [ (0, 'Informational', 'grey'),
-                    (1, 'Informational', 'grey'),
-                    (2, 'Informational', 'grey'),
+                    (1, 'Low', 'grey'),
+                    (2, 'Low', 'grey'),
                     (3, 'Low', 'green'),
-                    (4, 'Low', 'green'),
+                    (4, 'Medium', 'green'),
                     (5, 'Medium', 'orange'),
                     (6, 'Medium', 'orange'),
-                    (7, 'Medium', 'orange'),
+                    (7, 'High', 'orange'),
                     (8, 'High', 'red'),
                     (9, 'High', 'red'),
                     (10, 'High', 'red'),
