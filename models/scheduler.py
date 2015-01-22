@@ -320,6 +320,17 @@ def import_all_nexpose_vulndata(overwrite=False, nexpose_server={}):
     return True
 
 ##-------------------------------------------------------
+def connect_exploits():
+    """
+    Process Nexpose exploits.xml file into the database
+    """
+    from skaldship.exploits import connect_exploits
+
+    connect_exploits()
+    return True
+
+##----------------------------------------------------------------------------
+
 
 scheduler = Scheduler(
     db=db,
