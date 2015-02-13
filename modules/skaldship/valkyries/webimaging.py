@@ -85,7 +85,10 @@ def do_screenshot(services=None):
     Grab a screenshot of a URL and import it to the evidence db.
     """
 
-    from gluon.dal import Row
+    try:
+        from pydal.objects import Row
+    except ImportError:
+        from gluon.dal import Row
     from skaldship.general import check_datadir
 
     db = current.globalenv['db']
