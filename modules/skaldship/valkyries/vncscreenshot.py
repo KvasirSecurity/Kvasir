@@ -90,7 +90,10 @@ def do_screenshot(services=None):
     Grab a screenshot and import it to the evidence db.
     """
 
-    from gluon.dal import Row
+    try:
+        from pydal.objects import Row
+    except ImportError:
+        from gluon.dal import Row
     from gluon import current
     import os
     from skaldship.general import check_datadir
