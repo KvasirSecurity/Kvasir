@@ -38,6 +38,12 @@ optparser.add_option("-n", "--nochange", dest="nochange",
     action="store_true", default=False, help="Do not change the user information")
 optparser.add_option("-f", "--force", dest="forcechange",
     action="store_true", default=False, help="Force the change of user information without prompt")
+optparser.add_option("-F", "--first", dest="first",
+    action="store", default="Kvasir", help="First name")
+optparser.add_option("-L", "--last", dest="last",
+    action="store", default="User", help="Last name")
+optparser.add_option("-E", "--email", dest="email",
+    action="store", default="nobody@example.com", help="E-mail Addresss")
 
 (options, params) = optparser.parse_args()
 
@@ -78,8 +84,14 @@ if user_row:
 else:
     # new user
     print "Adding %s to Kvasir user database..." % (user)
-    db.auth_user.validate_and_insert(
+    ret = db.auth_user.validate_and_insert(
         username=user,
-        password=password
+        password=password,
+        first_name=options.first,
+        last_name=options.last,
+        email=options.email
     )
+    if not ret.id:
+        print "[!] Error inserting user: %s" % (ret.errors)
+
     db.commit()
