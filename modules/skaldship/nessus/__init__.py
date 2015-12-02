@@ -34,8 +34,13 @@ def nessus_get_config():
         for k,v in server.iteritems():
             config['servers'][k] = {
                 'url': v.get('url', 'http://localhost:8834/'),
-                'user': v.get('user', 'admin'),
-                'password': v.get('password', 'password')
+                'user': v.get('user'),
+                'password': v.get('password'),
+                'access_key': v.get('access_key'),
+                'secret_key': v.get('secret_key'),
+                'verify_ssl': v.get('verify_ssl'),
+                'proxies': v.get('proxies'),
+                'version': v.get('version', 6)
             }
 
     return config
