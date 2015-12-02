@@ -56,18 +56,45 @@ def import_scan():
     #                           'user': 'admin'}}}
     nessusreports = [[0, None]]
     import NessusAPI
-    #if auth.user.f_nessus_host is not None:
+    from skaldship.nessus.ness6api import Nessus6API
+
     servers = nessus_config.get('servers', {})
     for k, v in servers.iteritems():
-        try:
-            # check to see if NessusAPI is working
-            nessus = NessusAPI.NessusConnection(v.get('user'), v.get('password'), url=v.get('url'))
-            reports = nessus.list_reports()
-            for report in reports:
-                ts = time.ctime(float(report.timestamp))
-                nessusreports.append(["%s:%s" % (k, report.name), "%s: %s - %s (%s)" % (k, report.readablename, ts, report.status)])
-        except Exception, e:
-            logger.error("Error communicating with %s: %s" % (k, str(e)))
+        if v.get('version') == 6:
+            # nessus >= 6
+            try:
+                nessus = Nessus6API(
+                    url=v.get('url'),
+                    username=v.get('username'),
+                    password=v.get('password'),
+                    access_key=v.get('access_key'),
+                    secret_key=v.get('secret_key'),
+                    verify=v.get('verify_ssl'),
+                    proxies=v.get('proxies')
+                )
+            except Exception, e:
+                logger.error("Error communicating with %s: %s" % (k, str(e)))
+
+            try:
+                for report in nessus.get_scans():
+                    ts = time.ctime(float(report.get('last_modification_date', 0)))
+                    nessusreports.append([
+                        "%s:%s" % (k, report.get('id')),
+                        "%s: %s - %s (%s)" % (k, report.get('name'), ts, report.get('status'))
+                    ])
+            except Exception, e:
+                logger.error("Error making scan list: %s" % (str(e)))
+        else:
+            # nessus <= 5
+            try:
+                # check to see if NessusAPI is working
+                nessus = NessusAPI.NessusConnection(v.get('user'), v.get('password'), url=v.get('url'))
+                reports = nessus.list_reports()
+                for report in reports:
+                    ts = time.ctime(float(report.timestamp))
+                    nessusreports.append(["%s:%s" % (k, report.name), "%s: %s - %s (%s)" % (k, report.readablename, ts, report.status)])
+            except Exception, e:
+                logger.error("Error communicating with %s: %s" % (k, str(e)))
 
     if len(nessusreports) > 1:
         fields.append(Field('f_nessus_report', type='integer', label=T('Nessus Report'), requires=IS_IN_SET(nessusreports, zero=None)))
@@ -113,20 +140,47 @@ def import_scan():
 
         if report_name != '0':
             # download a report from a Nessus server
+            n_server = nessus_config.get('servers').get(server)
             filename = os.path.join(filedir, "nessus-%s-%s.xml" % (form.vars.f_asset_group, int(time.time())))
             check_datadir(request.folder)
-            fout = open(filename, "w")
-            try:
-                # build a new nessus connection with the configured server details and download the report
-                n_server = nessus_config.get('servers').get(server)
-                nessus = NessusAPI.NessusConnection(n_server.get('user'), n_server.get('password'), url=n_server.get('url'))
-                nessus.download_report(report_name, fout)
-                fout.close()
-            except Exception, e:
-                msg = ("Error download Nessus report: %s" % (e))
-                logger.error(msg)
-                response.flash = msg
-                return dict(form=form)
+
+            if n_server.get('version') == 6:
+                # nessus version => 6
+                try:
+
+                    nessus = Nessus6API(
+                        url=n_server.get('url'),
+                        username=n_server.get('username'),
+                        password=n_server.get('password'),
+                        access_key=n_server.get('access_key'),
+                        secret_key=n_server.get('secret_key'),
+                        verify=n_server.get('verify_ssl'),
+                        proxies=n_server.get('proxies')
+                    )
+                    nessus_report = nessus.report_download(report_name)
+                    fout = open(filename, "w")
+                    fout.write(nessus_report)
+                    fout.close()
+                except Exception, e:
+                    msg = ("Error download Nessus report: %s" % (e))
+                    logger.error(msg)
+                    response.flash = msg
+                    return dict(form=form)
+
+            else:
+                # nessus version <= 5
+                try:
+                    # build a new nessus connection with the configured server details and download the report
+                    n_server = nessus_config.get('servers').get(server)
+                    nessus = NessusAPI.NessusConnection(n_server.get('user'), n_server.get('password'), url=n_server.get('url'))
+                    fout = open(filename, "w")
+                    nessus.download_report(report_name, fout)
+                    fout.close()
+                except Exception, e:
+                    msg = ("Error download Nessus report: %s" % (e))
+                    logger.error(msg)
+                    response.flash = msg
+                    return dict(form=form)
         else:
             filename = os.path.join(filedir, form.vars.f_filename)
 

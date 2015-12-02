@@ -1,6 +1,6 @@
 ##########################################################################################################
 #
-# Kvasir Configuration file.
+# Kvasir Configuration file for Docker deployment
 #
 # Lookup priority:
 #
@@ -21,8 +21,8 @@ db:
   lazy_tables: false      # set this to True after setup is complete for faster db access
   kvasir:
     # any web2py supported URI connection string is acceptable - additional libraries may be required
-    # see ttp://web2py.com/books/default/chapter/29/06#Connection-strings
-    uri: postgres://pguser:pgpass@localhost:5432/kvasir
+    # see http://web2py.com/books/default/chapter/29/06#Connection-strings
+    uri: postgres://kvuser:kvpass@localhost:5432/kvasir
     pool_size: 10
   msf:
     # direct msf db support is not currently supported - future support planned
@@ -155,8 +155,12 @@ nessus:
   servers: [
     server_name: {
       url: 'https://localhost:8834/',
-      user: admin,
-      password: password,
+      secret_key: ''',
+      access_key: '',
+      username: '',
+      password: '',
+      version: 6,
+      verify_ssl: false
     },
   ]
   ignored_plugins: [
