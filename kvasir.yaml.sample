@@ -155,7 +155,7 @@ nessus:
   servers: [
     server_name: {
       url: 'https://localhost:8834/',
-      secret_key: ''',
+      secret_key: '',
       access_key: '',
       username: '',
       password: '',
