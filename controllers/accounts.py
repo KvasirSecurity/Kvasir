@@ -955,7 +955,7 @@ def paste():
         response.flash = 'Error in form'
         return TABLE(*[TR(k, v) for k, v in form.errors.items()])
     elif form.accepts(request.vars, session):
-        from utils import web2py_uuid
+        from gluon.utils import web2py_uuid
         host_id = db.t_services[form.vars.f_service].f_hosts_id
         pwd_file_dir = os.path.join(request.folder, 'data', 'passwords', 'other')
         if not os.path.exists(pwd_file_dir):

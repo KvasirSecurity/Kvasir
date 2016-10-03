@@ -13,7 +13,6 @@
 
 from gluon.tools import Mail, Auth, Crud, Service, PluginManager
 from gluon import current
-from utils import web2py_uuid
 import os
 
 # Database settings
