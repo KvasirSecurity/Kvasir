@@ -47,7 +47,7 @@ optparser.add_option("-E", "--email", dest="email",
 
 (options, params) = optparser.parse_args()
 
-print "\n\nKvasir User Add/Modify Management\n"
+print("\n\nKvasir User Add/Modify Management\n")
 if not options.user:
     user = raw_input("Username: ")
 else:
@@ -77,21 +77,22 @@ if not password or password == '':
 
 if user_row:
     # user exists, update password
-    print "Updating password for %s..." % (user)
+    print("Updating password for {0}...".format(user))
     user_row.update(password=password)
     db.commit()
 
 else:
     # new user
-    print "Adding %s to Kvasir user database..." % (user)
+    print("Adding {0} to Kvasir user database...".format(user))
     ret = db.auth_user.validate_and_insert(
         username=user,
         password=password,
         first_name=options.first,
         last_name=options.last,
-        email=options.email
+        email=options.email,
+        registration_id=options.email
     )
     if not ret.id:
-        print "[!] Error inserting user: %s" % (ret.errors)
+        print("[!] Error inserting user: {0}".format(ret.errors))
 
     db.commit()
