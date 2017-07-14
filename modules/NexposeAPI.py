@@ -203,11 +203,11 @@ class Sites(NexposeAPI):
         self.alerts = {}
 
     #----------------------------------------------------------------------
-    def save(self, siteid="-1", hosts=[], name="", description="", template="pentest-audit"):
+    def save(self, siteid="-1", sitename="", hosts=[], configid="", configname="", sitedescription="", template="pentest-audit")
         """
         Save changes to a new or existing site.
 
-        XXX: Fix this.. it doesn't respond correctly!
+        TODO: Validate changes work
         """
 
         if not self.isLoggedIn():
@@ -232,7 +232,7 @@ class Sites(NexposeAPI):
         <Alerting></Alerting>
         <ScanConfig configID="%s" name="%s" templateID="%s"></ScanConfig>"
     </Site>
-</SiteSaveRequest>""" % (self.sessionid, siteid, name, description, "".join(hostxml), siteid, name, template)
+</SiteSaveRequest>""" % (self.sessionid, siteid, sitename, sitedescription, "".join(hostxml), configid, configname, template)
 
         #xml = self.make_xml('SiteSaveRequest', attributes, isroot=True)
         self.log.debug("Sending SiteSaveRequest:\n%s" % (xml))
